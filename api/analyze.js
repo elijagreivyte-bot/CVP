@@ -141,3 +141,4 @@ ${text.slice(0, 60000)}`;
     return res.status(500).json({ error: 'Serverio klaida: ' + e.message });
   }
 };
+
