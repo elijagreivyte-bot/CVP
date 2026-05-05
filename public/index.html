@@ -10,6 +10,7 @@
 <script src="https://cdnjs.cloudflare.com/ajax/libs/mammoth/1.6.0/mammoth.browser.min.js"></script>
 <script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.5.1/jspdf.umd.min.js"></script>
 <script src="https://cdnjs.cloudflare.com/ajax/libs/jszip/3.10.1/jszip.min.js"></script>
+<script src="https://cdn.jsdelivr.net/npm/tesseract.js@5/dist/tesseract.min.js"></script>
 <style>
 *{margin:0;padding:0;box-sizing:border-box}
 :root{
@@ -825,6 +826,16 @@ footer{
     </div>
   </div>
 
+  <!-- PROJECTS -->
+  <div id="pg-projects" class="hidden">
+    <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:8px">
+      <h1 class="pg-h">Projektai</h1>
+      <button class="btn btn-primary" onclick="newProject()">+ Naujas projektas</button>
+    </div>
+    <p class="pg-sub">Sukurkite atskirus projektus ir grupuokite jose susijusias analizes</p>
+    <div id="proj-list"></div>
+  </div>
+
   <!-- HISTORY -->
   <div id="pg-history" class="hidden">
     <h1 class="pg-h">Analizių istorija</h1>
@@ -887,7 +898,7 @@ pdfjsLib.GlobalWorkerOptions.workerSrc='https://cdnjs.cloudflare.com/ajax/libs/p
 const STEPS=['Failų nuskaitymas','Teksto ištraukimas','AI analizė','Rezultatų paruošimas'];
 
 // ── STATE ──
-let files=[],extText='',curResult=null,selPlan='monthly',curUser=null;
+let files=[],extText='',curResult=null,selPlan='monthly',curUser=null,currentProject=null,projects=[];
 
 // ── INIT ──
 window.addEventListener('DOMContentLoaded',()=>{
@@ -905,12 +916,15 @@ function showApp(){
   updSB();pg('analyze');
 }
 function pg(n){
-  ['analyze','history','account'].forEach(p=>{
-    document.getElementById('pg-'+p).classList.toggle('hidden',p!==n);
-    document.getElementById('sn-'+p).classList.toggle('on',p===n);
+  ['analyze','projects','history','account'].forEach(p=>{
+    const el=document.getElementById('pg-'+p);
+    if(el)el.classList.toggle('hidden',p!==n);
+    const sn=document.getElementById('sn-'+p);
+    if(sn)sn.classList.toggle('on',p===n);
   });
   if(n==='history')renderHist();
   if(n==='account')renderAcc();
+  if(n==='projects')renderProjects();
 }
 function updSB(){
   if(!curUser)return;
@@ -981,7 +995,36 @@ function renderFL(){
 }
 
 // ── EXTRACT ──
-async function extPDF(f){const ab=await f.arrayBuffer();const pdf=await pdfjsLib.getDocument({data:ab}).promise;let t='';for(let i=1;i<=Math.min(pdf.numPages,40);i++){const pg=await pdf.getPage(i);const tc=await pg.getTextContent();const pt=tc.items.map(x=>x.str).join(' ');if(pt.trim().length>50)t+=pt+'\n'}return t}
+async function extPDF(f){
+  const ab=await f.arrayBuffer();
+  const pdf=await pdfjsLib.getDocument({data:ab}).promise;
+  let t='';
+  for(let i=1;i<=Math.min(pdf.numPages,40);i++){
+    const pg=await pdf.getPage(i);
+    const tc=await pg.getTextContent();
+    const pt=tc.items.map(x=>x.str).join(' ');
+    if(pt.trim().length>50)t+=pt+'\n';
+  }
+  if(t.trim().length<200&&window.Tesseract){
+    document.getElementById('ls2').textContent='Atpa\u017e\u012fstamas tekstas i\u0161 skenuoto PDF (gali u\u017etrukti kelias minutes)...';
+    try{
+      const worker=await Tesseract.createWorker(['lit','eng']);
+      let ocrText='';
+      for(let i=1;i<=Math.min(pdf.numPages,15);i++){
+        const pg=await pdf.getPage(i);
+        const viewport=pg.getViewport({scale:2.5});
+        const canvas=document.createElement('canvas');
+        canvas.width=viewport.width;canvas.height=viewport.height;
+        await pg.render({canvasContext:canvas.getContext('2d'),viewport}).promise;
+        const r=await worker.recognize(canvas);
+        ocrText+=r.data.text+'\n';
+      }
+      await worker.terminate();
+      if(ocrText.length>t.length)t=ocrText;
+    }catch(e){console.error('OCR failed:',e)}
+  }
+  return t;
+}
 async function extDOCX(f){const ab=await f.arrayBuffer();const r=await mammoth.extractRawText({arrayBuffer:ab});return r.value}
 async function extAll(){
   let all='';
@@ -1034,7 +1077,7 @@ async function startAn(){
     document.getElementById('szh').textContent=pct>80?'⚠ Didelis dokumentų kiekis – gali užtrukti ilgiau':'';
     ls(2,false);
     const tok=localStorage.getItem(TK);
-    const resp=await fetch(API+'/api/analyze',{method:'POST',headers:{'Content-Type':'application/json','Authorization':'Bearer '+tok},body:JSON.stringify({text:extText,documentName:files[0]?.name||'Dokumentas'})});
+    const resp=await fetch(API+'/api/analyze',{method:'POST',headers:{'Content-Type':'application/json','Authorization':'Bearer '+tok},body:JSON.stringify({text:extText,documentName:files[0]?.name||'Dokumentas',projectId:currentProject?.id||null,companyProfile:curUser?.company_profile||null})});
     const data=await resp.json();
     ls(2,true);
     if(!resp.ok){if(resp.status===403){hld();document.getElementById('pm').classList.add('open');return}throw new Error(data.error||'Analizės klaida')}
@@ -1186,7 +1229,9 @@ function loadH(r){curResult=r;pg('analyze');setTimeout(()=>renderResult(r),100)}
 // ── ACCOUNT ──
 function renderAcc(){
   if(!curUser)return;const pro=curUser.plan==='pro';const l=curUser.free_analyses_left??3;
-  document.getElementById('ac').innerHTML=`
+  const profileSection = curUser?.company_profile ? '<div class="acc-card" style="grid-column:1/-1"><h3>📋 Įmonės profilis</h3><div class="acc-row"><span class="al">Pavadinimas</span><span>'+(curUser.company_profile.name||'Nenurodyta')+'</span></div><div class="acc-row"><span class="al">Veiklos sritis</span><span>'+(curUser.company_profile.sector||'Nenurodyta')+'</span></div><div class="acc-row"><span class="al">Specializacija</span><span style="text-align:right;max-width:60%">'+(curUser.company_profile.specialization||'Nenurodyta')+'</span></div><div class="acc-row"><span class="al">Dydis</span><span>'+(curUser.company_profile.size||'Nenurodyta')+'</span></div><div class="acc-row"><span class="al">Patirtis</span><span>'+(curUser.company_profile.experience||'Nenurodyta')+'</span></div><div class="acc-row"><span class="al">Apyvarta</span><span>'+(curUser.company_profile.revenue||'Nenurodyta')+'</span></div><div class="acc-row"><span class="al">Sertifikatai</span><span>'+(curUser.company_profile.certificates||'Nenurodyta')+'</span></div><button class="btn btn-outline btn-sm" style="margin-top:16px" onclick="document.getElementById(\'ac\').insertAdjacentHTML(\'afterbegin\',showProfileSetup());setTimeout(fillProfileFields,50);window.scrollTo(0,0)">✏️ Redaguoti profilį</button></div>' : '<div style="grid-column:1/-1">'+showProfileSetup()+'<script>setTimeout(fillProfileFields,50)</script></div>';
+
+document.getElementById('ac').innerHTML=`
     <div class="acc-card"><h3>👤 Paskyros informacija</h3>
       <div class="acc-row"><span class="al">Vardas</span><span>${curUser.name||'–'}</span></div>
       <div class="acc-row"><span class="al">El. paštas</span><span>${curUser.email}</span></div>
@@ -1226,7 +1271,123 @@ function sendContact(){
   document.getElementById('cf-ok').classList.add('show');
   document.getElementById('cf-n').value='';document.getElementById('cf-e').value='';document.getElementById('cf-m').value='';
 }
+
+
+// ── PROJECTS ──
+async function loadProjects(){
+  try{
+    const r=await fetch(API+'/api/projects',{headers:{'Authorization':'Bearer '+localStorage.getItem(TK)}});
+    if(r.ok){const d=await r.json();projects=d.projects||[];}
+  }catch(e){console.error(e)}
+}
+
+async function renderProjects(){
+  await loadProjects();
+  const list=document.getElementById('proj-list');
+  if(!projects.length){
+    list.innerHTML='<div class="empty"><div class="ei">📁</div><h3 style="font-family:Sora,sans-serif;font-size:22px;color:var(--text)">Dar nėra projektų</h3><p>Sukurkite pirmą projektą (pvz. „Kauno mokyklos spintelių konkursai")</p></div>';
+    return;
+  }
+  list.innerHTML='<div style="display:grid;grid-template-columns:repeat(auto-fill,minmax(280px,1fr));gap:16px">'+projects.map(p=>{
+    const count=p.analyses?.[0]?.count||0;
+    return '<div style="background:var(--card);border:1px solid var(--border);border-radius:14px;padding:24px;cursor:pointer;transition:all .2s" onclick="openProject(\''+p.id+'\',\''+p.name.replace(/'/g,"\\'")+'\')" onmouseover="this.style.borderColor=\'var(--blue3)\'" onmouseout="this.style.borderColor=\'var(--border)\'">'+
+      '<div style="display:flex;align-items:center;gap:10px;margin-bottom:12px"><span style="font-size:24px">📁</span><h3 style="font-family:Sora,sans-serif;font-size:16px;font-weight:700">'+p.name+'</h3></div>'+
+      (p.description?'<p style="font-size:12px;color:var(--text2);margin-bottom:12px;line-height:1.5">'+p.description+'</p>':'')+
+      '<div style="display:flex;justify-content:space-between;align-items:center;font-size:11px;color:var(--text2)"><span>'+count+' analizės</span><span>'+new Date(p.created_at).toLocaleDateString('lt-LT')+'</span></div>'+
+      '<button onclick="event.stopPropagation();delProject(\''+p.id+'\')" style="margin-top:14px;background:none;border:none;color:var(--danger);cursor:pointer;font-size:11px;padding:0">🗑 Ištrinti</button>'+
+      '</div>';
+  }).join('')+'</div>';
+}
+
+async function newProject(){
+  const name=prompt('Projekto pavadinimas (pvz. "Kauno m. mokyklos spintelių konkursai"):');
+  if(!name)return;
+  const description=prompt('Aprašymas (nebūtina):')||'';
+  try{
+    const r=await fetch(API+'/api/projects',{method:'POST',headers:{'Content-Type':'application/json','Authorization':'Bearer '+localStorage.getItem(TK)},body:JSON.stringify({name,description})});
+    if(r.ok){await renderProjects();}
+    else{const d=await r.json();alert('Klaida: '+d.error)}
+  }catch(e){alert('Klaida: '+e.message)}
+}
+
+async function delProject(id){
+  if(!confirm('Ar tikrai ištrinti projektą? Analizės bus išlaikytos istorijoje.'))return;
+  try{
+    await fetch(API+'/api/projects',{method:'DELETE',headers:{'Content-Type':'application/json','Authorization':'Bearer '+localStorage.getItem(TK)},body:JSON.stringify({id})});
+    await renderProjects();
+  }catch(e){alert('Klaida: '+e.message)}
+}
+
+function openProject(id,name){
+  currentProject=projects.find(p=>p.id===id);
+  pg('analyze');
+  setTimeout(function(){
+    const h=document.querySelector('#pg-analyze .pg-h');
+    if(h)h.innerHTML='Nova analizė <span style="color:var(--blue3);font-size:18px">→ 📁 '+name+'</span>';
+    const sub=document.querySelector('#pg-analyze .pg-sub');
+    if(sub)sub.innerHTML='Analizė bus išsaugota projekte <strong>'+name+'</strong>. <a href="#" onclick="currentProject=null;pg(\'analyze\');return false" style="color:var(--blue3)">Išeiti iš projekto</a>';
+  },50);
+}
+
+// ── COMPANY PROFILE ──
+function showProfileSetup(){
+  const profileHTML = '<div style="background:var(--card);border:1px solid var(--border);border-radius:14px;padding:32px;margin-bottom:24px">' +
+    '<h2 style="font-family:Sora,sans-serif;font-size:20px;font-weight:800;margin-bottom:8px">📋 Įmonės profilis</h2>' +
+    '<p style="font-size:13px;color:var(--text2);margin-bottom:24px;line-height:1.7">Užpildykite profilį – AI geriau pritaikys analizes Jūsų įmonei. Tai padės įvertinti ar atitinkate konkurso reikalavimus.</p>' +
+    '<div class="form-2col">' +
+      '<div class="fg"><label>Įmonės pavadinimas</label><input class="inp" id="cp-name" placeholder="UAB Pavyzdys"></div>' +
+      '<div class="fg"><label>Veiklos sritis</label><select class="inp" id="cp-sector"><option value="">Pasirinkite...</option><option>Statybos ir renovacija</option><option>IT ir programinė įranga</option><option>Konsultacinės paslaugos</option><option>Medicinos įranga</option><option>Švietimas</option><option>Aplinkosauga</option><option>Transportas</option><option>Maisto produktai</option><option>Baldai ir interjeras</option><option>Kanceliarinės prekės</option><option>Saugumas</option><option>Kita</option></select></div>' +
+    '</div>' +
+    '<div class="fg"><label>Specializacija (kuo konkrečiai užsiimate)</label><textarea class="inp" id="cp-spec" rows="3" placeholder="Pvz. Mokyklų ir biurų baldų gamyba bei montavimas, ypač spintelių, lentynų ir stalų"></textarea></div>' +
+    '<div class="form-2col">' +
+      '<div class="fg"><label>Įmonės dydis</label><select class="inp" id="cp-size"><option value="">Pasirinkite...</option><option>Labai maža (iki 10)</option><option>Maža (10-49)</option><option>Vidutinė (50-249)</option><option>Didelė (250+)</option></select></div>' +
+      '<div class="fg"><label>Patirtis viešuosiuose pirkimuose</label><select class="inp" id="cp-exp"><option value="">Pasirinkite...</option><option>Pradedantys (0-1 m.)</option><option>1-3 metai</option><option>3-7 metai</option><option>7+ metai</option></select></div>' +
+    '</div>' +
+    '<div class="form-2col">' +
+      '<div class="fg"><label>Metinė apyvarta</label><select class="inp" id="cp-rev"><option value="">Pasirinkite...</option><option>Iki 100 000 €</option><option>100 000 - 500 000 €</option><option>500 000 - 1 mln. €</option><option>1-5 mln. €</option><option>Virš 5 mln. €</option></select></div>' +
+      '<div class="fg"><label>Sertifikatai</label><input class="inp" id="cp-cert" placeholder="ISO 9001, ISO 14001, ..."></div>' +
+    '</div>' +
+    '<button class="btn btn-primary" onclick="saveProfile()" style="margin-top:8px">💾 Išsaugoti profilį</button>' +
+  '</div>';
+  return profileHTML;
+}
+
+async function saveProfile(){
+  const profile = {
+    name: document.getElementById('cp-name').value,
+    sector: document.getElementById('cp-sector').value,
+    specialization: document.getElementById('cp-spec').value,
+    size: document.getElementById('cp-size').value,
+    experience: document.getElementById('cp-exp').value,
+    revenue: document.getElementById('cp-rev').value,
+    certificates: document.getElementById('cp-cert').value
+  };
+  try{
+    const r=await fetch(API+'/api/profile',{method:'POST',headers:{'Content-Type':'application/json','Authorization':'Bearer '+localStorage.getItem(TK)},body:JSON.stringify({companyProfile:profile})});
+    if(r.ok){
+      curUser.company_profile = profile;
+      localStorage.setItem(UK,JSON.stringify(curUser));
+      alert('✓ Profilis išsaugotas! AI dabar geriau pritaikys analizes Jūsų įmonei.');
+      pg('account');
+    }else{
+      const d=await r.json();
+      alert('Klaida: '+d.error);
+    }
+  }catch(e){alert('Klaida: '+e.message)}
+}
+
+function fillProfileFields(){
+  if(!curUser?.company_profile)return;
+  const p = curUser.company_profile;
+  ['name','sector','spec','size','exp','rev','cert'].forEach(function(k){
+    const el = document.getElementById('cp-'+k);
+    if(!el)return;
+    const map = {name:'name',sector:'sector',spec:'specialization',size:'size',exp:'experience',rev:'revenue',cert:'certificates'};
+    el.value = p[map[k]] || '';
+  });
+}
+
+
 </script>
 </body>
 </html>
-
