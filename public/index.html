@@ -381,7 +381,9 @@ footer{
   cursor:pointer;color:var(--text2);font-size:13px;
   border:none;background:transparent;width:100%;
   text-align:left;font-family:'Inter',sans-serif;font-weight:500;
-  transition:all .2s
+  transition:all .2s;
+  white-space:nowrap;overflow:hidden;text-overflow:ellipsis;
+  position:relative;z-index:1
 }
 .sb-btn:hover{background:var(--card);color:var(--text)}
 .sb-btn.on{background:rgba(59,130,246,.1);color:var(--blue3);border:1px solid rgba(59,130,246,.15)}
@@ -833,7 +835,7 @@ footer{
       <h1 class="pg-h">Projektai</h1>
       <button class="btn btn-primary" onclick="newProject()">+ Naujas projektas</button>
     </div>
-    <p class="pg-sub">Sukurkite projektus ir grupuokite juose susijusias analizes (pvz. „Kauno mokyklos spinteliai")</p>
+    <p class="pg-sub">Sukurkite projektus ir grupuokite juose susijusias analizes (pvz. „Kauno virtuvės įranga")</p>
     <div id="proj-list"></div>
   </div>
 
@@ -1247,7 +1249,7 @@ async function loadProjects(){try{const r=await fetch(API+'/api/projects',{heade
 
 async function renderProjects(){await loadProjects();const list=document.getElementById('proj-list');if(!projects.length){list.innerHTML='<div style="text-align:center;padding:60px 20px;color:var(--text2)"><div style="font-size:48px;margin-bottom:16px">📁</div><h3 style="font-family:Sora,sans-serif;font-size:22px;color:var(--text);margin-bottom:8px">Dar nėra projektų</h3><p>Sukurkite pirmą projektą paspausdami mygtuką viršuje</p></div>';return}let cards='';for(const p of projects){const count=(p.analyses&&p.analyses[0]&&p.analyses[0].count)||0;const desc=p.description?'<p style="font-size:12px;color:var(--text2);margin-bottom:12px;line-height:1.5">'+p.description+'</p>':'';const safeName=p.name.replace(/'/g,'&#39;').replace(/"/g,'&quot;');cards+='<div style="background:var(--card);border:1px solid var(--border);border-radius:14px;padding:24px;cursor:pointer;transition:border-color .2s" onclick="openProject(&#39;'+p.id+'&#39;,&#39;'+safeName+'&#39;)" onmouseover="this.style.borderColor=&#39;var(--blue3)&#39;" onmouseout="this.style.borderColor=&#39;var(--border)&#39;"><div style="display:flex;align-items:center;gap:10px;margin-bottom:12px"><span style="font-size:24px">📁</span><h3 style="font-family:Sora,sans-serif;font-size:16px;font-weight:700">'+p.name+'</h3></div>'+desc+'<div style="display:flex;justify-content:space-between;align-items:center;font-size:11px;color:var(--text2)"><span>'+count+' analizės</span><span>'+new Date(p.created_at).toLocaleDateString('lt-LT')+'</span></div><button onclick="event.stopPropagation();delProject(&#39;'+p.id+'&#39;)" style="margin-top:14px;background:none;border:none;color:var(--danger);cursor:pointer;font-size:11px;padding:0">🗑 Ištrinti</button></div>'}list.innerHTML='<div style="display:grid;grid-template-columns:repeat(auto-fill,minmax(280px,1fr));gap:16px">'+cards+'</div>'}
 
-async function newProject(){const name=prompt('Projekto pavadinimas (pvz. Kauno m. mokyklos spintelės):');if(!name)return;const description=prompt('Aprašymas (nebūtina):')||'';try{const r=await fetch(API+'/api/projects',{method:'POST',headers:{'Content-Type':'application/json','Authorization':'Bearer '+localStorage.getItem(TK)},body:JSON.stringify({name:name,description:description})});if(r.ok){await renderProjects()}else{const d=await r.json();alert('Klaida: '+d.error)}}catch(e){alert('Klaida: '+e.message)}}
+async function newProject(){const name=prompt('Projekto pavadinimas (pvz. Kauno virtuvės įranga):');if(!name)return;const description=prompt('Aprašymas (nebūtina):')||'';try{const r=await fetch(API+'/api/projects',{method:'POST',headers:{'Content-Type':'application/json','Authorization':'Bearer '+localStorage.getItem(TK)},body:JSON.stringify({name:name,description:description})});if(r.ok){await renderProjects()}else{const d=await r.json();alert('Klaida: '+d.error)}}catch(e){alert('Klaida: '+e.message)}}
 
 async function delProject(id){if(!confirm('Ar tikrai ištrinti projektą? Analizės liks istorijoje.'))return;try{await fetch(API+'/api/projects',{method:'DELETE',headers:{'Content-Type':'application/json','Authorization':'Bearer '+localStorage.getItem(TK)},body:JSON.stringify({id:id})});await renderProjects()}catch(e){alert('Klaida: '+e.message)}}
 
