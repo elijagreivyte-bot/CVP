@@ -5,6 +5,6 @@
     { "src": "/(.*)", "dest": "/public/index.html" }
   ],
   "functions": {
-    "api/*.js": { "memory": 1024, "maxDuration": 60 }
+    "api/analyze.js": { "maxDuration": 300 }
   }
 }
