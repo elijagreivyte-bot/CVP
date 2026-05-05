@@ -24,7 +24,7 @@ module.exports = async (req, res) => {
     const token = jwt.sign({ id: user.id, email: user.email }, JWT_SECRET, { expiresIn: '30d' });
     return res.status(200).json({
       token,
-      user: { id: user.id, name: user.name, email: user.email, plan: user.plan, free_analyses_left: user.free_analyses_left, subscription_end: user.subscription_end }
+      user: { id: user.id, name: user.name, email: user.email, plan: user.plan, free_analyses_left: user.free_analyses_left, subscription_end: user.subscription_end, company_profile: user.company_profile }
     });
   } catch (e) {
     return res.status(500).json({ error: 'Serverio klaida: ' + e.message });
