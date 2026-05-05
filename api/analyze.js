@@ -10,6 +10,60 @@ function verifyToken(req) {
   try { return jwt.verify(token, JWT_SECRET); } catch { return null; }
 }
 
+// Try to extract valid JSON even from truncated responses
+function extractJSON(raw) {
+  let cleaned = raw.trim();
+  // Remove markdown code fences
+  cleaned = cleaned.replace(/^```json\s*/i, '').replace(/^```\s*/, '');
+  cleaned = cleaned.replace(/```\s*$/, '');
+  cleaned = cleaned.trim();
+
+  // Try direct parse
+  try { return JSON.parse(cleaned); } catch(e) {}
+
+  // Find JSON object boundaries
+  const start = cleaned.indexOf('{');
+  if (start === -1) return null;
+
+  // Try parsing from { to end
+  try { return JSON.parse(cleaned.slice(start)); } catch(e) {}
+
+  // Try to find matching closing brace
+  let depth = 0;
+  let inString = false;
+  let escape = false;
+  let lastValidEnd = -1;
+  for (let i = start; i < cleaned.length; i++) {
+    const c = cleaned[i];
+    if (escape) { escape = false; continue; }
+    if (c === '\\') { escape = true; continue; }
+    if (c === '"') { inString = !inString; continue; }
+    if (inString) continue;
+    if (c === '{') depth++;
+    if (c === '}') {
+      depth--;
+      if (depth === 0) lastValidEnd = i;
+    }
+  }
+  if (lastValidEnd > 0) {
+    try { return JSON.parse(cleaned.slice(start, lastValidEnd + 1)); } catch(e) {}
+  }
+
+  // Last resort: try to fix truncated JSON by closing braces
+  if (depth > 0) {
+    let attempt = cleaned.slice(start);
+    // Remove trailing partial value (everything after last comma or last key)
+    attempt = attempt.replace(/,\s*"[^"]*":\s*"[^"]*$/, '');
+    attempt = attempt.replace(/,\s*"[^"]*":?\s*$/, '');
+    attempt = attempt.replace(/,\s*$/, '');
+    // Close open braces
+    while (depth > 0) { attempt += '}'; depth--; }
+    try { return JSON.parse(attempt); } catch(e) {}
+  }
+
+  return null;
+}
+
 module.exports = async (req, res) => {
   res.setHeader('Access-Control-Allow-Origin', '*');
   res.setHeader('Access-Control-Allow-Headers', 'Content-Type, Authorization');
@@ -22,7 +76,6 @@ module.exports = async (req, res) => {
   const { text, documentName, projectId, companyProfile } = req.body || {};
   if (!text) return res.status(400).json({ error: 'Dokumentų tekstas būtinas' });
 
-  // Get user data and check limits
   let userData = { plan: 'free', free_analyses_left: 3 };
   let supabase = null;
   if (process.env.SUPABASE_URL && process.env.SUPABASE_SERVICE_KEY) {
@@ -38,7 +91,6 @@ module.exports = async (req, res) => {
     } catch(e) { console.error('DB read error:', e.message); }
   }
 
-  // Build company context
   let profileContext = '';
   if (companyProfile && Object.keys(companyProfile).length > 0) {
     profileContext = `\n\nĮMONĖS PROFILIS (analizuok atsižvelgdamas į šią įmonę):
@@ -51,59 +103,39 @@ module.exports = async (req, res) => {
 - Apyvarta: ${companyProfile.revenue || 'Nenurodyta'}\n`;
   }
 
-  const prompt = `Tu esi aukščiausios kvalifikacijos viešųjų pirkimų ekspertas Lietuvoje.
-Išanalizuok šiuos CVP konkurso dokumentus IŠSAMIAI ir grąžink TIKTAI JSON objektą be jokio kito teksto.
+  const prompt = `Tu esi viešųjų pirkimų ekspertas Lietuvoje. Išanalizuok CVP konkurso dokumentus ir grąžink TIK JSON objektą be markdown žymių, be ```json fence, tiesiog grynas JSON.
+
+Atsakymas turi būti KOMPAKTIŠKAS – kiekvieno lauko reikšmė trumpa bet informatyvi (1-3 sakiniai). Tik "strategija" ir "isViso" gali būti ilgesnės (5-8 sakiniai).
 ${profileContext}
 
-Atlik DETALIĄ analizę – kiekvieną sekciją išplėsk, paaiškink, pateik konkrečius pavyzdžius.
-
-JSON struktūra (visi laukai PRIVALOMI):
+Privalomi laukai:
 {
-  "pavadinimas": "tikslus konkurso pavadinimas",
+  "pavadinimas": "trumpas",
   "score": 70,
   "scoreLabel": "Geros galimybės",
-  "perkanciojiOrganizacija": "tikslus organizacijos pavadinimas",
-  "pirkimoTipas": "procedūros tipas",
-  "bendraVerte": "vertė su valiuta",
-  "cpt": "CPV kodas",
-  "terminai": {
-    "pasiulymoTerminas": "data ir valanda",
-    "vokuAtplesimas": "data arba Nenurodyta",
-    "vykdymoTerminas": "trukmė",
-    "garantija": "garantijos laikotarpis",
-    "klausimaiIki": "data klausimams"
-  },
-  "kvalifikacija": {
-    "apyvarta": "konkretus reikalavimas",
-    "darbuotojai": "skaičius su detalėmis",
-    "patirtis": "DETALUS patirties reikalavimas",
-    "sertifikatai": "VISI reikalingi sertifikatai",
-    "finansinis": "finansiniai reikalavimai",
-    "kita": "kiti specifiniai reikalavimai"
-  },
-  "vertinimoKriterijai": [{"kriterijus": "pavadinimas", "svoris": "30%", "aprasas": "DETALUS aprašas kaip vertinama"}],
-  "techninieReikalavimai": "ITIN DETALUS techninių reikalavimų aprašas su visomis pozicijomis, parametrais, kiekiais",
-  "finansinesSalygos": {
-    "avansas": "avanso sąlygos",
-    "apmokejimas": "apmokėjimo terminai",
-    "baudos": "konkrečios nuobaudos su sumomis",
-    "garantinis": "garantinio išlaikymo sąlygos",
-    "indeksavimas": "kainos indeksavimo sąlygos"
-  },
-  "draudimas": "konkretūs draudimo reikalavimai su sumomis",
-  "subtiekejiai": "ar leidžiama, kokiomis sąlygomis",
-  "konsorciumai": "ar galima, sąlygos",
-  "rizikos": ["KONKREČIOS rizikos su paaiškinimais"],
-  "galimybes": ["KONKREČIOS galimybės"],
-  "strategija": "ITIN DETALI laimėjimo strategija – ką tiksliai daryti, kaip pateikti pasiūlymą, į ką akcentuoti",
-  "butinaiIttraukti": [{"dokumentas": "pavadinimas", "pastaba": "kodėl būtina ir kaip paruošti"}],
-  "dazniausiasKlaidos": ["konkrečios klaidos"],
-  "klausimaiPerkanciajai": ["konkretūs klausimai"],
-  "isViso": "10-15 sakinių IŠSAMI išvada – ar dalyvauti, kodėl, ko atkreipti dėmesį, atsižvelgiant į įmonės profilį"
+  "perkanciojiOrganizacija": "trumpas",
+  "pirkimoTipas": "trumpas",
+  "bendraVerte": "vertė",
+  "cpt": "kodas",
+  "terminai": {"pasiulymoTerminas":"data","vokuAtplesimas":"data","vykdymoTerminas":"trukmė","garantija":"laikotarpis","klausimaiIki":"data"},
+  "kvalifikacija": {"apyvarta":"reikalavimas","darbuotojai":"skaičius","patirtis":"trumpas","sertifikatai":"trumpas","finansinis":"trumpas","kita":"trumpas"},
+  "vertinimoKriterijai": [{"kriterijus":"pavad","svoris":"30%","aprasas":"trumpas"}],
+  "techninieReikalavimai": "santrauka 3-5 sakiniai",
+  "finansinesSalygos": {"avansas":"trumpas","apmokejimas":"trumpas","baudos":"trumpas","garantinis":"trumpas","indeksavimas":"trumpas"},
+  "draudimas": "trumpas",
+  "subtiekejiai": "trumpas",
+  "konsorciumai": "trumpas",
+  "rizikos": ["rizika1","rizika2","rizika3"],
+  "galimybes": ["galimybe1","galimybe2","galimybe3"],
+  "strategija": "5-8 sakiniai konkrečių patarimų",
+  "butinaiIttraukti": [{"dokumentas":"pavad","pastaba":"trumpas"}],
+  "dazniausiasKlaidos": ["klaida1","klaida2"],
+  "klausimaiPerkanciajai": ["k1","k2"],
+  "isViso": "5-8 sakinių išvada"
 }
 
 DOKUMENTAI:
-${text.slice(0, 80000)}`;
+${text.slice(0, 100000)}`;
 
   try {
     const response = await fetch('https://api.anthropic.com/v1/messages', {
@@ -115,7 +147,7 @@ ${text.slice(0, 80000)}`;
       },
       body: JSON.stringify({
         model: 'claude-sonnet-4-6',
-        max_tokens: 8000,
+        max_tokens: 16000,
         messages: [{ role: 'user', content: prompt }]
       })
     });
@@ -128,28 +160,26 @@ ${text.slice(0, 80000)}`;
 
     const data = await response.json();
     const raw = data.content?.[0]?.text || '';
+    const stopReason = data.stop_reason;
 
-    let result;
-    try {
-      // Try to extract JSON from response
-      let cleaned = raw.trim();
-      if (cleaned.startsWith('```json')) cleaned = cleaned.replace(/^```json\s*/, '').replace(/```\s*$/, '');
-      if (cleaned.startsWith('```')) cleaned = cleaned.replace(/^```\s*/, '').replace(/```\s*$/, '');
-      const match = cleaned.match(/\{[\s\S]*\}/);
-      result = JSON.parse(match ? match[0] : cleaned);
-    } catch(e) {
-      console.error('JSON parse error. Raw:', raw.slice(0, 1000));
-      return res.status(500).json({ error: 'Nepavyko apdoroti AI atsakymo. Bandykite dar kartą.', debug: raw.slice(0, 300) });
+    let result = extractJSON(raw);
+
+    if (!result) {
+      console.error('JSON parse failed. Stop reason:', stopReason, 'Length:', raw.length);
+      console.error('Raw start:', raw.slice(0, 500));
+      console.error('Raw end:', raw.slice(-500));
+      return res.status(500).json({ 
+        error: 'AI atsakymas buvo per ilgas arba neteisingo formato. Bandykite dar kartą su mažiau dokumentų.',
+        debug: { stopReason, length: raw.length }
+      });
     }
 
-    // Decrement counter only on success
     if (supabase && userData.plan === 'free') {
       try {
         await supabase.from('users').update({ free_analyses_left: userData.free_analyses_left - 1 }).eq('id', user.id);
       } catch(e) { console.error('Counter update error:', e.message); }
     }
 
-    // Save analysis
     if (supabase) {
       try {
         await supabase.from('analyses').insert([{
