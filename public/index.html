@@ -1731,17 +1731,39 @@ function openNewProjectModal(){document.getElementById('newProjModal').classList
 async function createProject(){
   const name=document.getElementById('np-name').value.trim();
   const desc=document.getElementById('np-desc').value.trim();
-  if(!name){const e=document.getElementById('np-err');e.textContent='Pavadinimas būtinas';e.classList.add('show');return;}
+  const errEl=document.getElementById('np-err');
+  errEl.classList.remove('show');
+  if(!name){errEl.textContent='Pavadinimas būtinas';errEl.classList.add('show');return;}
   const tok=localStorage.getItem(TK);
+  if(!tok){errEl.textContent='Nesate prisijungę. Atnaujinkite puslapį.';errEl.classList.add('show');return;}
+  const btn=document.querySelector('#newProjModal .btn-primary');
+  if(btn){btn.disabled=true;btn.textContent='Kuriama...';}
   try{
-    const r=await fetch(API+'/api/projects',{method:'POST',headers:{'Content-Type':'application/json','Authorization':'Bearer '+tok},body:JSON.stringify({name,description:desc})});
-    const d=await r.json();
-    if(!r.ok){const e=document.getElementById('np-err');e.textContent=d.error||'Klaida';e.classList.add('show');return;}
+    const r=await fetch(API+'/api/projects',{
+      method:'POST',
+      headers:{'Content-Type':'application/json','Authorization':'Bearer '+tok},
+      body:JSON.stringify({name,description:desc})
+    });
+    let d={};
+    try{d=await r.json();}catch(je){d={error:'Serverio atsakymas neįskaitomas ('+r.status+')'}}
+    if(!r.ok){
+      let msg=d.error||'Serverio klaida ('+r.status+')';
+      if(r.status===401)msg='Sesija pasibaigė — atsijunkite ir prisijunkite iš naujo';
+      if(r.status===404)msg='Projektų API nerasta. Patikrinkite ar api/projects.js įdėta į Vercel';
+      if(r.status===500)msg='Serverio klaida: '+(d.error||'Supabase gali būti neprijungtas');
+      errEl.textContent=msg;errEl.classList.add('show');return;
+    }
     document.getElementById('newProjModal').classList.remove('open');
     document.getElementById('np-name').value='';
     document.getElementById('np-desc').value='';
     renderProjects();
-  }catch(e){const err=document.getElementById('np-err');err.textContent='Klaida';err.classList.add('show')}
+  }catch(e){
+    let msg='Ryšio klaida: '+e.message;
+    if(e.message.includes('fetch'))msg='Nepavyko pasiekti serverio. Patikrinkite ar Vercel deployment veikia.';
+    errEl.textContent=msg;errEl.classList.add('show');
+  }finally{
+    if(btn){btn.disabled=false;btn.textContent='Sukurti projektą →';}
+  }
 }
 async function deleteProject(id){
   if(!confirm('Ar tikrai norite ištrinti projektą?'))return;
