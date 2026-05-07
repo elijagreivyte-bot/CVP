@@ -1366,18 +1366,35 @@ async function extZIP(f){
   const ab=await f.arrayBuffer();
   const zip=await JSZip.loadAsync(ab);
   let t='';
-  for(const [name,zf] of Object.entries(zip.files)){
-    if(zf.dir)continue;
-    if(name.endsWith('.txt')){
-      t+=await zf.async('string')+'\n';
-    } else if(name.endsWith('.pdf')){
-      const blob=await zf.async('blob');
-      const pf=new File([blob],name,{type:'application/pdf'});
-      t+=await extPDF(pf)+'\n';
-    } else if(name.endsWith('.docx')){
-      const blob=await zf.async('blob');
-      const df=new File([blob],name);
-      t+=await extDOCX(df)+'\n';
+  const MAX_CHARS=90000;
+  const entries=Object.entries(zip.files).filter(([n,zf])=>!zf.dir);
+  // Prioritizuojam svarbius failus
+  const priority=['salygos','salyg','specif','reikalav','kvalif','techni','pirkimo'];
+  entries.sort(([a],[b])=>{
+    const aP=priority.some(p=>a.toLowerCase().includes(p))?0:1;
+    const bP=priority.some(p=>b.toLowerCase().includes(p))?0:1;
+    return aP-bP;
+  });
+  for(const [name,zf] of entries){
+    if(t.length>MAX_CHARS)break;
+    try{
+      if(name.endsWith('.txt')){
+        const s=await zf.async('string');
+        t+='\n=== '+name+' ===\n'+s.slice(0,20000)+'\n';
+      } else if(name.endsWith('.pdf')){
+        const blob=await zf.async('blob');
+        const pf=new File([blob],name,{type:'application/pdf'});
+        const extracted=await extPDF(pf);
+        t+='\n=== '+name+' ===\n'+extracted.slice(0,20000)+'\n';
+      } else if(name.endsWith('.docx')||name.endsWith('.doc')){
+        const blob=await zf.async('blob');
+        const df=new File([blob],name);
+        const extracted=await extDOCX(df);
+        t+='\n=== '+name+' ===\n'+extracted.slice(0,20000)+'\n';
+      }
+    }catch(e){
+      console.warn('ZIP failo klaida:',name,e.message);
+      t+='\n=== '+name+' === [klaida skaitant]\n';
     }
   }
   return t;
@@ -1458,7 +1475,17 @@ async function startAn(){
     if(!r.ok){
       loading.style.display='none';
       if(r.status===403){document.getElementById('pm').classList.add('open');}
-      else alert(d.error||'Klaida');
+      else{
+        const errMsg=d.error||'Nežinoma klaida ('+r.status+')';
+        const errDiv=document.createElement('div');
+        errDiv.style.cssText='background:rgba(239,68,68,.1);border:1px solid rgba(239,68,68,.3);border-radius:12px;padding:16px 20px;margin-bottom:16px;font-size:13px;color:#fca5a5;line-height:1.6';
+        errDiv.innerHTML='<strong>⚠️ Analizės klaida</strong><br>'+errMsg+'<br><span style="font-size:11px;opacity:.7;margin-top:6px;display:block">Pabandykite su mažesniu failu arba atskirais PDF failais vietoj ZIP</span>';
+        const analyzeSection=document.getElementById('pg-analyze');
+        const existing=document.getElementById('an-error-msg');
+        if(existing)existing.remove();
+        errDiv.id='an-error-msg';
+        analyzeSection.insertBefore(errDiv,analyzeSection.querySelector('#result-view'));
+      }
       return;
     }
     // Update free analyses counter
