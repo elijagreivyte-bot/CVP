@@ -974,6 +974,14 @@ footer{background:var(--navy2);border-top:1px solid var(--border);padding:48px 3
     <h1 class="pg-h">Nova analizė</h1>
     <p class="pg-sub">Įkelkite iki 10 failų (PDF, Word, TXT) arba ZIP archyvą</p>
     <div class="tip">💡 <strong>Patarimas:</strong> Įkelkite pirkimo sąlygas, techninę specifikaciją ir kvalifikacijos reikalavimus. Brėžinių įkelti nebūtina — jie neturi teksto kurį AI galėtų analizuoti.</div>
+    <div style="background:rgba(59,130,246,.05);border:1px solid rgba(59,130,246,.15);border-radius:10px;padding:14px 18px;margin-bottom:20px;display:flex;align-items:center;gap:12px;flex-wrap:wrap">
+      <span style="font-size:13px;font-weight:600;color:var(--text2);white-space:nowrap">📁 Priskirti projektui:</span>
+      <select id="proj-sel" class="inp" style="flex:1;min-width:180px;max-width:320px;padding:9px 12px" onchange="currentProject=this.value||null">
+        <option value="">— Be projekto —</option>
+      </select>
+      <button class="btn btn-outline btn-sm" onclick="openNewProjectModal()" style="white-space:nowrap">+ Naujas</button>
+      <span id="proj-sel-hint" style="font-size:11px;color:var(--text3)">Analizė bus išsaugota pasirinktame projekte</span>
+    </div>
     <div class="doc-checks">
       <label class="dc req"><input type="checkbox" checked> Pirkimo sąlygos <span style="color:var(--danger);font-size:10px;margin-left:4px">BŪTINA</span></label>
       <label class="dc req"><input type="checkbox" checked> Techninė specifikacija <span style="color:var(--danger);font-size:10px;margin-left:4px">BŪTINA</span></label>
@@ -1212,6 +1220,12 @@ function showApp(){
   document.getElementById('app').classList.add('open');
   updSB();
   pg('analyze');
+  // Load projects for selector
+  const tok=localStorage.getItem(TK);
+  if(tok){
+    fetch(API+'/api/projects',{headers:{'Authorization':'Bearer '+tok}})
+      .then(r=>r.json()).then(d=>{projects=d.projects||[];refreshProjSelector();}).catch(()=>{});
+  }
 }
 
 function pg(n){
@@ -1800,7 +1814,17 @@ async function renderProjects(){
           <button class="proj-del" onclick="event.stopPropagation();deleteProject('${p.id}')">🗑</button>
         </div>
       </div>`).join('')+'</div>';
+    refreshProjSelector();
   }catch(e){document.getElementById('proj-list').innerHTML='<p style="color:var(--text2)">Klaida</p>'}
+}
+
+function refreshProjSelector(){
+  const sel=document.getElementById('proj-sel');
+  if(!sel)return;
+  const cur=sel.value;
+  sel.innerHTML='<option value="">— Be projekto —</option>'+
+    projects.map(p=>`<option value="${p.id}"${cur===p.id?' selected':''}>${p.name}</option>`).join('');
+  if(cur)sel.value=cur;
 }
 
 function openNewProjectModal(){document.getElementById('newProjModal').classList.add('open')}
@@ -1832,6 +1856,16 @@ async function createProject(){
     document.getElementById('newProjModal').classList.remove('open');
     document.getElementById('np-name').value='';
     document.getElementById('np-desc').value='';
+    // Auto-select newly created project
+    if(d.project){
+      projects.unshift(d.project);
+      currentProject=d.project.id;
+      refreshProjSelector();
+      const sel=document.getElementById('proj-sel');
+      if(sel)sel.value=d.project.id;
+      document.getElementById('proj-sel-hint').textContent='✓ Priskirta: '+d.project.name;
+      document.getElementById('proj-sel-hint').style.color='var(--success)';
+    }
     renderProjects();
   }catch(e){
     let msg='Ryšio klaida: '+e.message;
