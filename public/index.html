@@ -1715,22 +1715,45 @@ function filterHistory(){
     if(cutoff&&new Date(a.created_at)<cutoff)return false;
     return true;
   });
+  window._filteredAnalyses=filtered; // store safely for click handlers
   const hc=document.getElementById('hc');
   const emptyEl=document.getElementById('hist-empty');
   if(!filtered.length){hc.innerHTML='';if(emptyEl)emptyEl.classList.remove('hidden');return;}
   if(emptyEl)emptyEl.classList.add('hidden');
-  hc.innerHTML='<table class="hist"><thead><tr><th>Data</th><th>Konkurso pavadinimas</th><th>Balas</th><th>Projektas</th><th></th></tr></thead><tbody>'+
-    filtered.map(function(a){
+  hc.innerHTML='<div style="display:flex;flex-direction:column;gap:10px">'+
+    filtered.map(function(a,i){
       const sc=a.score||0;
       const cl=sc>=70?'sc-hi':sc>=40?'sc-md':'sc-lo';
-      const title=(a.result_json&&a.result_json.pavadinimas)||a.document_name||'–';
-      const projName=a.project_name||'–';
-      return '<tr><td>'+new Date(a.created_at).toLocaleDateString('lt-LT')+'</td>'+
-        '<td style="max-width:300px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis">'+title+'</td>'+
-        '<td><span class="sc-badge '+cl+'">'+sc+'%</span></td>'+
-        '<td style="font-size:12px;color:var(--text2)">'+projName+'</td>'+
-        '<td><button class="btn btn-outline btn-sm" onclick="loadH('+JSON.stringify(a.result_json)+')">Peržiūrėti</button></td></tr>';
-    }).join('')+'</tbody></table>';
+      const scColor=sc>=70?'var(--success)':sc>=40?'var(--warn)':'var(--danger)';
+      const title=(a.result_json&&a.result_json.pavadinimas)||a.document_name||'Nežinomas konkursas';
+      const org=(a.result_json&&a.result_json.perkanciojiOrganizacija)||'';
+      const projName=a.project_name;
+      const date=new Date(a.created_at).toLocaleDateString('lt-LT');
+      const terminas=(a.result_json&&a.result_json.terminai&&a.result_json.terminai.pasiulymoTerminas)||'';
+      return `<div style="background:var(--card);border:1px solid var(--border);border-radius:14px;padding:18px 20px;cursor:pointer;transition:all .2s" 
+        onmouseover="this.style.borderColor='rgba(59,130,246,.35)';this.style.background='var(--card2)'" 
+        onmouseout="this.style.borderColor='var(--border)';this.style.background='var(--card)'"
+        onclick="loadHistEntry(${i})">
+        <div style="display:flex;align-items:flex-start;gap:16px;flex-wrap:wrap">
+          <div style="font-size:26px;font-weight:900;font-family:Sora,sans-serif;color:${scColor};min-width:52px;line-height:1">${sc}%</div>
+          <div style="flex:1;min-width:0">
+            <div style="font-size:14px;font-weight:700;color:var(--text);margin-bottom:3px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis">${title}</div>
+            <div style="font-size:12px;color:var(--text2);margin-bottom:6px">${org}</div>
+            <div style="display:flex;gap:8px;flex-wrap:wrap;align-items:center">
+              ${projName?`<span style="font-size:11px;background:rgba(59,130,246,.1);color:var(--blue3);border:1px solid rgba(59,130,246,.2);padding:2px 8px;border-radius:10px">📁 ${projName}</span>`:''}
+              <span style="font-size:11px;color:var(--text3)">📅 ${date}</span>
+              ${terminas?`<span style="font-size:11px;color:var(--text3)">⏰ Terminas: ${terminas}</span>`:''}
+            </div>
+          </div>
+          <button class="btn btn-primary btn-sm" style="flex-shrink:0;white-space:nowrap" onclick="event.stopPropagation();loadHistEntry(${i})">Atidaryti analizę →</button>
+        </div>
+      </div>`;
+    }).join('')+'</div>';
+}
+
+function loadHistEntry(i){
+  const a=window._filteredAnalyses&&window._filteredAnalyses[i];
+  if(a&&a.result_json)loadH(a.result_json);
 }
 
 function clearHistoryFilters(){
@@ -1796,26 +1819,124 @@ function openOnboardingEdit(){
 // ── PROJECTS ──
 async function renderProjects(){
   const tok=localStorage.getItem(TK);
+  const pl=document.getElementById('proj-list');
+  pl.innerHTML='<div style="display:flex;align-items:center;gap:12px;padding:32px;color:var(--text2)"><div class="spin"></div><span>Kraunama...</span></div>';
   try{
-    const r=await fetch(API+'/api/projects',{headers:{'Authorization':'Bearer '+tok}});
-    const d=await r.json();
-    projects=d.projects||[];
-    const pl=document.getElementById('proj-list');
+    // Load projects and all analyses in parallel
+    const [rp,ra]=await Promise.all([
+      fetch(API+'/api/projects',{headers:{'Authorization':'Bearer '+tok}}),
+      fetch(API+'/api/history',{headers:{'Authorization':'Bearer '+tok}})
+    ]);
+    const dp=await rp.json();
+    const da=await ra.json();
+    projects=dp.projects||[];
+    const analyses=da.analyses||[];
+    allAnalyses=analyses; // keep in sync
+
     if(!projects.length){
-      pl.innerHTML='<div style="text-align:center;padding:64px;color:var(--text2)"><div style="font-size:40px;margin-bottom:12px">📁</div><p>Dar neturite projektų.</p><p style="font-size:12px;margin-top:8px">Sukurkite projektą ir grupuokite analizes.</p></div>';
+      pl.innerHTML=`<div style="text-align:center;padding:64px 32px">
+        <div style="font-size:48px;margin-bottom:16px">📁</div>
+        <h3 style="font-family:Sora,sans-serif;font-size:18px;font-weight:700;margin-bottom:10px">Dar nėra projektų</h3>
+        <p style="font-size:13px;color:var(--text2);max-width:400px;margin:0 auto 24px;line-height:1.7">
+          <strong>Projektas = vienas konkursas</strong> kurį sekate.<br>
+          Pvz: "LSMU laboratorijų įranga" — vienas projektas, kuriame galite laikyti kelias analizes to paties konkurso skirtingais dokumentais.
+        </p>
+        <button class="btn btn-primary" onclick="openNewProjectModal()">+ Sukurti pirmą projektą</button>
+      </div>`;
       return;
     }
-    pl.innerHTML='<div class="proj-grid">'+projects.map(p=>`
-      <div class="proj-card">
-        <div class="proj-name">📁 ${p.name}</div>
-        <div class="proj-desc">${p.description||'Nėra aprašymo'}</div>
-        <div class="proj-meta">
-          <span class="proj-count">${(p.analyses&&p.analyses[0]&&p.analyses[0].count)||0} analizių</span>
-          <button class="proj-del" onclick="event.stopPropagation();deleteProject('${p.id}')">🗑</button>
-        </div>
-      </div>`).join('')+'</div>';
+
+    // Group analyses by project
+    const byProj={};
+    analyses.forEach(a=>{
+      const pid=a.project_id||'__none__';
+      if(!byProj[pid])byProj[pid]=[];
+      byProj[pid].push(a);
+    });
+
+    pl.innerHTML=`
+      <div style="background:rgba(59,130,246,.05);border:1px solid rgba(59,130,246,.12);border-radius:12px;padding:14px 18px;margin-bottom:20px;font-size:13px;color:var(--text2);line-height:1.6">
+        💡 <strong>Kaip naudoti:</strong> Kiekvienam konkursui sukurkite atskirą projektą. Prieš analizuodami — pasirinkite projektą analizės puslapyje. Tada čia matysite visas to konkurso analizes vienoje vietoje ir galėsite jas palyginti.
+      </div>
+      <div style="display:flex;flex-direction:column;gap:16px">
+        ${projects.map(p=>{
+          const pAnalyses=byProj[p.id]||[];
+          const count=pAnalyses.length;
+          const lastDate=count?new Date(pAnalyses[0].created_at).toLocaleDateString('lt-LT'):'';
+          const avgScore=count?Math.round(pAnalyses.reduce((s,a)=>s+(a.score||0),0)/count):null;
+          const scColor=avgScore>=70?'var(--success)':avgScore>=40?'var(--warn)':'var(--danger)';
+          return `<div style="background:var(--card);border:1px solid var(--border);border-radius:16px;overflow:hidden">
+            <div style="padding:20px 22px;display:flex;align-items:flex-start;gap:16px;cursor:pointer" onclick="toggleProjAnalyses('${p.id}')">
+              <div style="font-size:28px;margin-top:2px">📁</div>
+              <div style="flex:1">
+                <div style="font-family:Sora,sans-serif;font-size:16px;font-weight:700;margin-bottom:4px">${p.name}</div>
+                ${p.description?`<div style="font-size:12px;color:var(--text2);margin-bottom:8px">${p.description}</div>`:''}
+                <div style="display:flex;gap:10px;flex-wrap:wrap;align-items:center">
+                  <span style="font-size:12px;color:var(--text3)">${count} analiz${count===1?'ė':'ės'}</span>
+                  ${lastDate?`<span style="font-size:12px;color:var(--text3)">Paskutinė: ${lastDate}</span>`:''}
+                  ${avgScore!==null?`<span style="font-size:12px;font-weight:700;color:${scColor}">Vidurkis: ${avgScore}%</span>`:''}
+                </div>
+              </div>
+              <div style="display:flex;gap:8px;align-items:center">
+                <button class="btn btn-primary btn-sm" onclick="event.stopPropagation();selectProjAndAnalyze('${p.id}','${p.name.replace(/'/g,"\'")}')">+ Analizuoti</button>
+                <button class="proj-del" onclick="event.stopPropagation();deleteProject('${p.id}')">🗑</button>
+                <span id="proj-arrow-${p.id}" style="color:var(--text3);font-size:18px;transition:transform .2s">▸</span>
+              </div>
+            </div>
+            <div id="proj-analyses-${p.id}" style="display:none;border-top:1px solid var(--border);padding:12px 16px">
+              ${count===0
+                ? `<p style="font-size:13px;color:var(--text2);padding:12px 6px;text-align:center">Šiame projekte dar nėra analizių.<br><button class="btn btn-outline btn-sm" style="margin-top:8px" onclick="selectProjAndAnalyze('${p.id}','${p.name.replace(/'/g,"\'")}')">Pradėti analizę →</button></p>`
+                : pAnalyses.map((a,i)=>{
+                    const sc=a.score||0;
+                    const cl=sc>=70?'sc-hi':sc>=40?'sc-md':'sc-lo';
+                    const scColor2=sc>=70?'var(--success)':sc>=40?'var(--warn)':'var(--danger)';
+                    const title=(a.result_json&&a.result_json.pavadinimas)||a.document_name||'Analizė';
+                    const terminas=(a.result_json&&a.result_json.terminai&&a.result_json.terminai.pasiulymoTerminas)||'';
+                    // Store analysis in global map
+                    window._projAnalyses=window._projAnalyses||{};
+                    window._projAnalyses[a.id]=a;
+                    return `<div style="display:flex;align-items:center;gap:12px;padding:10px 8px;border-bottom:1px solid var(--border);cursor:pointer;border-radius:8px;transition:background .15s" 
+                      onmouseover="this.style.background='var(--card2)'" onmouseout="this.style.background=''"
+                      onclick="loadAnalysisById('${a.id}')">
+                      <span style="font-size:15px;font-weight:800;color:${scColor2};min-width:40px">${sc}%</span>
+                      <div style="flex:1;min-width:0">
+                        <div style="font-size:13px;font-weight:600;white-space:nowrap;overflow:hidden;text-overflow:ellipsis">${title}</div>
+                        ${terminas?`<div style="font-size:11px;color:var(--text3)">⏰ ${terminas}</div>`:''}
+                      </div>
+                      <span style="font-size:11px;color:var(--text3)">${new Date(a.created_at).toLocaleDateString('lt-LT')}</span>
+                      <button class="btn btn-outline btn-sm" style="flex-shrink:0" onclick="event.stopPropagation();loadAnalysisById('${a.id}')">Atidaryti →</button>
+                    </div>`;
+                  }).join('')
+              }
+            </div>
+          </div>`;
+        }).join('')}
+      </div>`;
     refreshProjSelector();
-  }catch(e){document.getElementById('proj-list').innerHTML='<p style="color:var(--text2)">Klaida</p>'}
+  }catch(e){pl.innerHTML='<p style="color:var(--danger);padding:24px">Klaida: '+e.message+'</p>'}
+}
+
+function toggleProjAnalyses(pid){
+  const el=document.getElementById('proj-analyses-'+pid);
+  const arrow=document.getElementById('proj-arrow-'+pid);
+  if(!el)return;
+  const open=el.style.display==='block';
+  el.style.display=open?'none':'block';
+  if(arrow)arrow.style.transform=open?'':'rotate(90deg)';
+}
+
+function loadAnalysisById(id){
+  const a=window._projAnalyses&&window._projAnalyses[id];
+  if(a&&a.result_json)loadH(a.result_json);
+}
+
+function selectProjAndAnalyze(id,name){
+  currentProject=id;
+  pg('analyze');
+  const sel=document.getElementById('proj-sel');
+  if(sel)sel.value=id;
+  const hint=document.getElementById('proj-sel-hint');
+  if(hint){hint.textContent='✓ Priskirta: '+name;hint.style.color='var(--success)';}
 }
 
 function refreshProjSelector(){
