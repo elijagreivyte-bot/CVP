@@ -419,6 +419,7 @@ footer{background:var(--navy2);border-top:1px solid var(--border);padding:48px 3
 /* CHAT */
 .chat-wrap{position:fixed;bottom:24px;right:24px;z-index:200;display:none}
 .chat-wrap.open{display:block}
+#app.open .chat-wrap{display:block}
 .chat-bubble{width:56px;height:56px;border-radius:50%;background:var(--grad);border:none;cursor:pointer;font-size:24px;box-shadow:0 4px 20px rgba(26,86,219,.4);transition:all .2s;display:flex;align-items:center;justify-content:center}
 .chat-bubble:hover{transform:scale(1.1)}
 .chat-panel{position:absolute;bottom:68px;right:0;width:380px;background:var(--navy2);border:1px solid var(--border);border-radius:20px;box-shadow:0 20px 60px rgba(0,0,0,.5);display:none;flex-direction:column;overflow:hidden;max-height:520px}
@@ -1342,7 +1343,10 @@ function showApp(){
   document.getElementById('app').classList.add('open');
   updSB();
   pg('analyze');
-  // Load projects for selector
+  // Always show chat bubble in app
+  const cw=document.getElementById('chat-wrap');
+  if(cw)cw.classList.add('open');
+  setTimeout(initMobile,100);
   const tok=localStorage.getItem(TK);
   if(tok){
     fetch(API+'/api/projects',{headers:{'Authorization':'Bearer '+tok}})
@@ -1356,10 +1360,15 @@ function pg(n){
     if(el)el.classList.toggle('hidden',p!==n);
     const sn=document.getElementById('sn-'+p);
     if(sn)sn.classList.toggle('on',p===n);
+    // sync mobile buttons
+    const mob=document.getElementById('mob-sn-'+p);
+    if(mob){mob.style.background=p===n?'rgba(59,130,246,.15)':'var(--card)';mob.style.borderColor=p===n?'var(--blue3)':'var(--border)';mob.style.color=p===n?'var(--text)':'var(--text2)';}
   });
   if(n==='history')renderHist();
   if(n==='account')renderAcc();
   if(n==='projects')renderProjects();
+  if(n==='assistant')initAssistant();
+  if(n==='cvp'){setTimeout(()=>document.getElementById('cvp-q')?.focus(),100);}
 }
 
 function updSB(){
@@ -2562,6 +2571,35 @@ Grąžink TIK JSON be markdown, tokios struktūros:
   }
 }
 
+
+// ── MOBILE NAV ──
+function initMobile(){
+  const mob=window.innerWidth<769;
+  const bar=document.getElementById('mob-app-bar');
+  const sb=document.querySelector('.sidebar');
+  if(bar)bar.style.display=mob?'flex':'none';
+  if(sb)sb.style.display=mob?'none':'flex';
+  const logoSrc=document.querySelector('.sb-logo img')?.src;
+  const mobLogo=document.getElementById('mob-logo');
+  if(mobLogo&&logoSrc&&!mobLogo.src.includes('data:'))mobLogo.src=logoSrc;
+}
+window.addEventListener('resize',initMobile);
+
+// ── startFromCVP ──
+function startFromCVP(id,title,url){
+  pg('analyze');
+  const analyzeDiv=document.getElementById('pg-analyze');
+  if(!analyzeDiv)return;
+  const existing=document.getElementById('cvp-tip');
+  if(existing)existing.remove();
+  const tip=document.createElement('div');
+  tip.id='cvp-tip';
+  tip.style.cssText='background:rgba(59,130,246,.08);border:1px solid rgba(59,130,246,.2);border-radius:12px;padding:14px 18px;margin-bottom:16px;font-size:13px;line-height:1.65';
+  tip.innerHTML='📋 <strong>Pasirinktas:</strong> '+title+'<br><a href="'+url+'" target="_blank" rel="noopener" style="color:var(--blue3)">→ Atsisiųsti dokumentus iš CVP.lt</a>, tada įkelkite juos žemiau ir spauskite „Analizuoti"';
+  const tipEl=analyzeDiv.querySelector('.tip');
+  if(tipEl)tipEl.parentNode.insertBefore(tip,tipEl);else analyzeDiv.insertBefore(tip,analyzeDiv.firstChild);
+}
+
 </script>
 
 <!-- AI CHAT WIDGET -->
@@ -2574,15 +2612,20 @@ Grąžink TIK JSON be markdown, tokios struktūros:
       </div>
       <button onclick="toggleChat()" style="background:none;border:none;color:var(--text2);cursor:pointer;font-size:18px;padding:4px">✕</button>
     </div>
+    <div id="chat-no-analysis" style="text-align:center;padding:20px 16px">
+      <div style="font-size:28px;margin-bottom:8px">📄</div>
+      <p style="font-size:12px;color:var(--text2);line-height:1.5">Atlikite analizę — tada galėsite klausti AI apie konkursą</p>
+      <button class="btn btn-primary btn-sm" style="margin-top:8px;width:100%;justify-content:center" onclick="toggleChat();pg('analyze')">→ Pradėti analizę</button>
+    </div>
     <div id="chat-pro-wall" class="chat-pro-wall hidden">
       <div style="font-size:32px;margin-bottom:12px">🔒</div>
       <p>AI asistentas prieinamas tik <strong>Pro</strong> ir <strong>Komanda</strong> planams.</p>
       <button class="btn btn-primary btn-sm" onclick="selP('pro');goChk()">Gauti Pro →</button>
     </div>
-    <div id="chat-msgs" class="chat-msgs">
+    <div id="chat-msgs" class="chat-msgs" style="display:none">
       <div class="cm cm-ai">Sveiki! Aš galiu atsakyti į klausimus apie šį konkursą — reikalavimus, terminus, rizikas ar strategiją. Kuo galiu padėti?</div>
     </div>
-    <div class="chat-inp" id="chat-input-area">
+    <div class="chat-inp" id="chat-input-area" style="display:none">
       <textarea id="chat-q" placeholder="Klauskite apie konkursą..." rows="1" 
         oninput="this.style.height='auto';this.style.height=this.scrollHeight+'px'"
         onkeydown="if(event.key==='Enter'&&!event.shiftKey){event.preventDefault();sendChat()}"></textarea>
