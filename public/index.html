@@ -416,6 +416,30 @@ footer{background:var(--navy2);border-top:1px solid var(--border);padding:48px 3
 .proj-del{background:none;border:none;color:var(--text3);cursor:pointer;font-size:16px;padding:4px;transition:color .2s}
 .proj-del:hover{color:var(--danger)}
 
+/* CHAT */
+.chat-wrap{position:fixed;bottom:24px;right:24px;z-index:200;display:none}
+.chat-wrap.open{display:block}
+.chat-bubble{width:56px;height:56px;border-radius:50%;background:var(--grad);border:none;cursor:pointer;font-size:24px;box-shadow:0 4px 20px rgba(26,86,219,.4);transition:all .2s;display:flex;align-items:center;justify-content:center}
+.chat-bubble:hover{transform:scale(1.1)}
+.chat-panel{position:absolute;bottom:68px;right:0;width:380px;background:var(--navy2);border:1px solid var(--border);border-radius:20px;box-shadow:0 20px 60px rgba(0,0,0,.5);display:none;flex-direction:column;overflow:hidden;max-height:520px}
+.chat-panel.show{display:flex}
+.chat-hdr{padding:16px 18px;border-bottom:1px solid var(--border);display:flex;justify-content:space-between;align-items:center;flex-shrink:0}
+.chat-hdr h4{font-family:Sora,sans-serif;font-size:14px;font-weight:700;margin:0}
+.chat-hdr p{font-size:11px;color:var(--text2);margin:0}
+.chat-msgs{flex:1;overflow-y:auto;padding:16px;display:flex;flex-direction:column;gap:10px;min-height:200px}
+.cm{max-width:88%;padding:10px 14px;border-radius:12px;font-size:13px;line-height:1.6}
+.cm-user{background:var(--grad);color:#fff;align-self:flex-end;border-bottom-right-radius:4px}
+.cm-ai{background:rgba(255,255,255,.06);color:var(--text);align-self:flex-start;border-bottom-left-radius:4px}
+.cm-thinking{color:var(--text2);font-style:italic;animation:pulse 1.5s infinite}
+.chat-inp{padding:12px 14px;border-top:1px solid var(--border);display:flex;gap:8px;flex-shrink:0}
+.chat-inp textarea{flex:1;background:rgba(255,255,255,.05);border:1px solid var(--border);border-radius:10px;color:var(--text);font-family:Inter,sans-serif;font-size:13px;padding:8px 12px;outline:none;resize:none;line-height:1.5;max-height:80px}
+.chat-inp textarea:focus{border-color:var(--blue3)}
+.chat-inp button{background:var(--grad);border:none;color:#fff;width:38px;height:38px;border-radius:10px;cursor:pointer;font-size:16px;flex-shrink:0;align-self:flex-end}
+.chat-inp button:disabled{opacity:.5;cursor:not-allowed}
+.chat-pro-wall{text-align:center;padding:28px 20px}
+.chat-pro-wall p{font-size:13px;color:var(--text2);margin-bottom:16px;line-height:1.6}
+@media(max-width:768px){.chat-panel{width:calc(100vw - 32px);right:-8px}}
+
 /* RESPONSIVE */
 @media(max-width:768px){
   .sidebar{width:100%;height:auto;position:relative;border-right:none;border-bottom:1px solid var(--border)}
@@ -1678,6 +1702,8 @@ function renderResult(r){
     ${r.isViso?`<div class="r-summ"><h4>📝 Išvada</h4><p>${r.isViso}</p></div>`:''}
   `;
   rv.scrollIntoView({behavior:'smooth',block:'start'});
+  // Open chat with analysis context
+  if(r&&document.getElementById('chat-wrap'))openChat(r);
 }
 
 function ri(k,v,extraClass=''){
@@ -2135,7 +2161,7 @@ function exportPDF(){
       chk(20);
       doc.setFillColor(239,246,255);
       doc.setDrawColor(147,197,253);
-      doc.roundedRect(ml,y,cw,6,'F');
+      doc.roundedRect(ml,y,cw,6,2,2,'F');
       doc.setFont('helvetica','bold');doc.setFontSize(8.5);doc.setTextColor(29,78,216);
       doc.text('KAINŲ KRITERIJAI IR STRATEGIJA',ml+3,y+4);
       y+=8;
@@ -2153,7 +2179,7 @@ function exportPDF(){
       chk(12);
       if(riz.length){
         doc.setFillColor(254,242,242);doc.setDrawColor(252,165,165);
-        doc.roundedRect(ml,y,cw,6,'F');
+        doc.roundedRect(ml,y,cw,6,2,2,'F');
         doc.setFont('helvetica','bold');doc.setFontSize(8.5);doc.setTextColor(185,28,28);
         doc.text('RIZIKOS',ml+3,y+4);y+=8;
         doc.setFont('helvetica','normal');doc.setFontSize(8.5);doc.setTextColor(30,41,59);
@@ -2166,7 +2192,7 @@ function exportPDF(){
       if(gal.length){
         chk(10);
         doc.setFillColor(240,253,244);doc.setDrawColor(134,239,172);
-        doc.roundedRect(ml,y,cw,6,'F');
+        doc.roundedRect(ml,y,cw,6,2,2,'F');
         doc.setFont('helvetica','bold');doc.setFontSize(8.5);doc.setTextColor(21,128,61);
         doc.text('GALIMYBĖS',ml+3,y+4);y+=8;
         doc.setFont('helvetica','normal');doc.setFontSize(8.5);doc.setTextColor(30,41,59);
@@ -2182,7 +2208,7 @@ function exportPDF(){
     if(curResult.strategija){
       chk(16);
       doc.setFillColor(245,243,255);doc.setDrawColor(196,181,253);
-      doc.roundedRect(ml,y,cw,6,'F');
+      doc.roundedRect(ml,y,cw,6,2,2,'F');
       doc.setFont('helvetica','bold');doc.setFontSize(8.5);doc.setTextColor(109,40,217);
       doc.text('REKOMENDUOJAMA STRATEGIJA',ml+3,y+4);y+=8;
       doc.setFont('helvetica','normal');doc.setFontSize(9);doc.setTextColor(30,41,59);
@@ -2195,7 +2221,7 @@ function exportPDF(){
     if(curResult.isViso){
       chk(16);
       doc.setFillColor(240,253,250);doc.setDrawColor(110,231,183);
-      doc.roundedRect(ml,y,cw,6,'F');
+      doc.roundedRect(ml,y,cw,6,2,2,'F');
       doc.setFont('helvetica','bold');doc.setFontSize(8.5);doc.setTextColor(6,95,70);
       doc.text('IŠVADA',ml+3,y+4);y+=8;
       doc.setFont('helvetica','normal');doc.setFontSize(9);doc.setTextColor(30,41,59);
@@ -2246,61 +2272,67 @@ async function genLetterFinal(){
   const btn=document.getElementById('letter-gen-btn');
   btn.disabled=true;btn.textContent='⏳ Generuojama...';
 
-  // Collect checked suggested questions
   const checkedQs=[];
   (curResult.klausimaiPerkanciajai||[]).forEach((q,i)=>{
     const cb=document.getElementById('sq-'+i);
     if(cb&&cb.checked)checkedQs.push(q);
   });
-  // User questions
   const userQ=(document.getElementById('letter-user-q').value||'').trim();
   const userQList=userQ.split('\n').map(s=>s.trim()).filter(Boolean);
   const allQ=[...checkedQs,...userQList];
 
-  if(!allQ.length){
-    btn.disabled=false;btn.textContent='✨ Generuoti oficialų raštą →';
-    alert('Pridėkite bent vieną klausimą');return;
-  }
+  if(!allQ.length){btn.disabled=false;btn.textContent='✨ Generuoti oficialų raštą →';alert('Pridėkite bent vieną klausimą');return;}
 
   const tok=localStorage.getItem(TK);
-  try{
-    const today=new Date().toLocaleDateString('lt-LT');
-    const prompt=`Parašyk oficialų lietuvišką klausimų raštą perkančiajai organizacijai.
+  const today=new Date().toLocaleDateString('lt-LT');
+  const prompt=`Parašyk oficialų lietuvišką klausimų raštą.
 
 Data: ${today}
 Konkursas: ${curResult.pavadinimas||''}
 Perkančioji organizacija: ${curResult.perkanciojiOrganizacija||''}
 Pasiūlymo terminas: ${curResult.terminai?.pasiulymoTerminas||''}
 
-Klausimai kuriuos reikia įtraukti:
+Klausimai:
 ${allQ.map((q,i)=>(i+1)+'. '+q).join('\n')}
 
-Parašyk TIKTAI oficialų raštą su:
-- Viršuje: Data, Kam (perkančiajai org.), Tema
-- Pradžia: oficialus kreipinys
-- Kiekvienas klausimas sunumeruotas, aiškiai suformuluotas ir pagrįstas
-- Pabaiga: prašymas atsakyti iki termino, mandagus uždarymas
-- Parašas: [Įmonės pavadinimas], [Vardas Pavardė], [El. paštas]
+Rašto struktūra:
+[Data]
+Kam: [Perkančiosios organizacijos pavadinimas]
+Tema: Klausimai dėl [Konkurso pavadinimas]
 
-Grąžink tik raštą, be jokių komentarų.`;
+Gerbiami,
 
-    const r=await fetch(API+'/api/analyze',{
+[Įvadas — kas rašo ir dėl kokio konkurso]
+
+Prašome atsakyti į šiuos klausimus:
+[Klausimai su pagrindimais]
+
+Prašome atsakyti ne vėliau kaip [terminas - 2 darbo dienos].
+
+Pagarbiai,
+[Įmonės pavadinimas]
+[Vardas Pavardė]
+[El. paštas | Telefonas]`;
+
+  try{
+    const r=await fetch(API+'/api/chat',{
       method:'POST',
       headers:{'Content-Type':'application/json','Authorization':'Bearer '+tok},
-      body:JSON.stringify({text:prompt,documentName:'Klausimų raštas'})
+      body:JSON.stringify({messages:[{role:'user',content:prompt}],mode:'letter'})
     });
     const data=await r.json();
-    const text=data.result?(data.result.isViso||data.result.strategija||JSON.stringify(data.result)):(data.error||'Klaida generuojant raštą');
+    if(!r.ok)throw new Error(data.error||'Klaida');
+    const text=data.text||'Klaida generuojant raštą';
     window._letterText=text;
     document.getElementById('letter-result').textContent=text;
     document.getElementById('letter-step1').style.display='none';
     document.getElementById('letter-step2').style.display='flex';
     document.getElementById('letter-step2').style.flexDirection='column';
   }catch(e){
-    alert('Klaida: '+e.message);
-  }finally{
-    btn.disabled=false;btn.textContent='✨ Generuoti oficialų raštą →';
-  }
+    document.getElementById('letter-result').textContent='Klaida: '+e.message;
+    document.getElementById('letter-step1').style.display='none';
+    document.getElementById('letter-step2').style.display='flex';
+  }finally{btn.disabled=false;btn.textContent='✨ Generuoti oficialų raštą →';}
 }
 
 function downloadLetterWord(){
@@ -2349,20 +2381,23 @@ Grąžink TIK JSON be markdown, tokios struktūros:
   "kainodara": "2–3 sakiniai apie kaip skaičiuoti kainą ir kokius elementus įtraukti"
 }`;
 
-    const r=await fetch(API+'/api/analyze',{
+    const r=await fetch(API+'/api/chat',{
       method:'POST',
       headers:{'Content-Type':'application/json','Authorization':'Bearer '+tok},
-      body:JSON.stringify({text:prompt,documentName:'Pasiūlymo sąrašas'})
+      body:JSON.stringify({messages:[{role:'user',content:prompt}],mode:'supplier'})
     });
     const data=await r.json();
-    let result=data.result||null;
-
-    // Try parsing if result is string
-    if(typeof result==='string'){try{result=JSON.parse(result);}catch(e){}}
+    if(!r.ok){content.innerHTML='<p style="color:var(--danger);font-size:13px">'+( data.error||'Klaida')+'</p>';return;}
+    let result=null;
+    try{
+      let txt=data.text||'';
+      txt=txt.replace(/^```json\s*/i,'').replace(/^```\s*/,'').replace(/```\s*$/,'').trim();
+      const fb=txt.indexOf('{'),lb=txt.lastIndexOf('}');
+      if(fb!==-1&&lb!==-1)result=JSON.parse(txt.slice(fb,lb+1));
+    }catch(e){}
 
     if(!result||(!result.pirkimai&&!result.dokumentai&&!result.tikrinti)){
-      // Fallback: show strategija text
-      const fallback=data.result?(data.result.strategija||data.result.isViso||JSON.stringify(data.result)):(data.error||'Klaida');
+      const fallback=data.text||'Nepavyko gauti duomenų';
       content.innerHTML='<p style="font-size:13px;color:var(--text2);line-height:1.7;white-space:pre-wrap">'+fallback+'</p>';
       return;
     }
@@ -2430,5 +2465,34 @@ Grąžink TIK JSON be markdown, tokios struktūros:
 }
 
 </script>
+
+<!-- AI CHAT WIDGET -->
+<div class="chat-wrap" id="chat-wrap">
+  <div class="chat-panel" id="chat-panel">
+    <div class="chat-hdr">
+      <div>
+        <h4>💬 AI Asistentas</h4>
+        <p id="chat-context-label">Klauskite apie šį konkursą</p>
+      </div>
+      <button onclick="toggleChat()" style="background:none;border:none;color:var(--text2);cursor:pointer;font-size:18px;padding:4px">✕</button>
+    </div>
+    <div id="chat-pro-wall" class="chat-pro-wall hidden">
+      <div style="font-size:32px;margin-bottom:12px">🔒</div>
+      <p>AI asistentas prieinamas tik <strong>Pro</strong> ir <strong>Komanda</strong> planams.</p>
+      <button class="btn btn-primary btn-sm" onclick="selP('pro');goChk()">Gauti Pro →</button>
+    </div>
+    <div id="chat-msgs" class="chat-msgs">
+      <div class="cm cm-ai">Sveiki! Aš galiu atsakyti į klausimus apie šį konkursą — reikalavimus, terminus, rizikas ar strategiją. Kuo galiu padėti?</div>
+    </div>
+    <div class="chat-inp" id="chat-input-area">
+      <textarea id="chat-q" placeholder="Klauskite apie konkursą..." rows="1" 
+        oninput="this.style.height='auto';this.style.height=this.scrollHeight+'px'"
+        onkeydown="if(event.key==='Enter'&&!event.shiftKey){event.preventDefault();sendChat()}"></textarea>
+      <button onclick="sendChat()" id="chat-send-btn" title="Siųsti">↑</button>
+    </div>
+  </div>
+  <button class="chat-bubble" onclick="toggleChat()" title="AI Asistentas">💬</button>
+</div>
+
 </body>
 </html>
