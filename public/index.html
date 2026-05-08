@@ -442,7 +442,7 @@ footer{background:var(--navy2);border-top:1px solid var(--border);padding:48px 3
 
 /* RESPONSIVE */
 @media(max-width:768px){
-  .sidebar{width:100%;height:auto;position:relative;border-right:none;border-bottom:1px solid var(--border)}
+  .sidebar{display:none!important}
   .main-wrap{margin-left:0}
   #app.open{flex-direction:column}
   .main{padding:24px 16px}
@@ -500,7 +500,7 @@ footer{background:var(--navy2);border-top:1px solid var(--border);padding:48px 3
   <p class="hero-sub au d2">Įkelkite konkurso dokumentus — AI per 30 sekundžių išanalizuoja reikalavimus, kainų kriterijus, terminus ir parodo ar atitinkate kvalifikaciją.</p>
   <div class="hero-cta au d3">
     <button class="btn btn-primary" style="padding:16px 36px;font-size:15px" onclick="openAuth('register')">🚀 Pradėti nemokamai</button>
-    <button class="btn btn-outline" style="padding:16px 28px;font-size:15px" onclick="scrollTo({top:document.getElementById('kaip-veikia').offsetTop-80,behavior:'smooth'})">Kaip tai veikia?</button>
+    <button class="btn btn-outline" style="padding:16px 28px;font-size:15px" onclick="runDemo()">▶ Išbandyti demo</button>
   </div>
   <div class="hero-trust au d4">
     <div class="hero-trust-item"><span>✓</span> 3 analizės nemokamai</div>
@@ -975,6 +975,12 @@ footer{background:var(--navy2);border-top:1px solid var(--border);padding:48px 3
     <button class="sn on" id="sn-analyze" onclick="pg('analyze')">
       <span class="sn-icon">🔍</span> Nova analizė
     </button>
+    <button class="sn" id="sn-cvp" onclick="pg('cvp')">
+      <span class="sn-icon">🇱🇹</span> CVP.lt paieška
+    </button>
+    <button class="sn" id="sn-assistant" onclick="pg('assistant')">
+      <span class="sn-icon">💬</span> AI Asistentas <span style="font-size:9px;background:rgba(124,58,237,.2);color:var(--purple2);padding:2px 6px;border-radius:8px;margin-left:4px">PRO</span>
+    </button>
     <button class="sn" id="sn-projects" onclick="pg('projects')">
       <span class="sn-icon">📁</span> Projektai
     </button>
@@ -991,6 +997,22 @@ footer{background:var(--navy2);border-top:1px solid var(--border);padding:48px 3
 </div>
 
 <div class="main-wrap">
+<!-- MOBILE TOP BAR (only visible on mobile) -->
+<div id="mob-app-bar" style="display:none;position:sticky;top:0;z-index:60;background:var(--navy2);border-bottom:1px solid var(--border);padding:0 16px;height:56px;align-items:center;justify-content:space-between">
+  <div style="display:flex;align-items:center;gap:10px">
+    <div style="width:32px;height:32px;background:#fff;border-radius:8px;display:flex;align-items:center;justify-content:center;overflow:hidden">
+      <img id="mob-logo" style="width:30px;height:30px;object-fit:contain" alt="B">
+    </div>
+    <span style="font-family:Sora,sans-serif;font-size:15px;font-weight:800">Bidwise <span class="grad-text">AI</span></span>
+  </div>
+  <div style="display:flex;gap:4px">
+    <button onclick="pg('analyze')" id="mob-sn-analyze" style="padding:6px 10px;border-radius:8px;background:var(--card2);border:1px solid var(--blue3);color:var(--text);font-size:11px;cursor:pointer;font-family:Inter,sans-serif;font-weight:600">🔍</button>
+    <button onclick="pg('cvp')" id="mob-sn-cvp" style="padding:6px 10px;border-radius:8px;background:var(--card);border:1px solid var(--border);color:var(--text2);font-size:11px;cursor:pointer;font-family:Inter,sans-serif">🇱🇹</button>
+    <button onclick="pg('projects')" id="mob-sn-projects" style="padding:6px 10px;border-radius:8px;background:var(--card);border:1px solid var(--border);color:var(--text2);font-size:11px;cursor:pointer;font-family:Inter,sans-serif">📁</button>
+    <button onclick="pg('history')" id="mob-sn-history" style="padding:6px 10px;border-radius:8px;background:var(--card);border:1px solid var(--border);color:var(--text2);font-size:11px;cursor:pointer;font-family:Inter,sans-serif">📂</button>
+    <button onclick="pg('account')" id="mob-sn-account" style="padding:6px 10px;border-radius:8px;background:var(--card);border:1px solid var(--border);color:var(--text2);font-size:11px;cursor:pointer;font-family:Inter,sans-serif">👤</button>
+  </div>
+</div>
 <div class="main">
 
   <!-- ANALYZE PAGE -->
@@ -1035,6 +1057,8 @@ footer{background:var(--navy2);border-top:1px solid var(--border);padding:48px 3
       <div class="r-topbar">
         <h2>Analizės ataskaita</h2>
         <div class="r-acts">
+          <button class="btn btn-outline btn-sm" onclick="openEligCheck()">⚡ Tinkamumas</button>
+          <button class="btn btn-outline btn-sm" onclick="setReminderFromResult()">🔔 Priminti</button>
           <button class="btn btn-outline btn-sm" onclick="generateQuestionLetter()">📨 Klausimų raštas</button>
           <button class="btn btn-outline btn-sm" onclick="generateSupplierSuggestions()">🛒 Tiekėjų pasiūlymai</button>
           <button class="btn btn-outline btn-sm" onclick="openEmailM()">✉ El. paštas</button>
@@ -1109,6 +1133,59 @@ footer{background:var(--navy2);border-top:1px solid var(--border);padding:48px 3
     <div class="acc-grid" id="ac"></div>
   </div>
 
+  <!-- CVP.lt SEARCH PAGE -->
+  <div id="pg-cvp" class="hidden">
+    <h1 class="pg-h">🇱🇹 CVP.lt konkursų paieška</h1>
+    <p class="pg-sub">Ieškokite aktyvių viešųjų pirkimų ir vienų paspaudimu pradėkite analizę</p>
+    <div style="display:flex;gap:10px;flex-wrap:wrap;margin-bottom:20px">
+      <input id="cvp-q" class="inp" placeholder="🔍 Pavadinimas, raktažodis..." style="flex:2;min-width:180px" onkeydown="if(event.key==='Enter')searchCVP()">
+      <input id="cvp-cpv" class="inp" placeholder="CPV kodas (nebūtina)" style="flex:1;min-width:130px">
+      <input id="cvp-min" class="inp" placeholder="Min. vertė EUR" style="width:130px" type="number">
+      <input id="cvp-max" class="inp" placeholder="Maks. vertė EUR" style="width:130px" type="number">
+      <button class="btn btn-primary" onclick="searchCVP()">Ieškoti</button>
+    </div>
+    <div id="cvp-results">
+      <div style="text-align:center;padding:48px;color:var(--text2)">
+        <div style="font-size:40px;margin-bottom:12px">🔍</div>
+        <p>Įveskite paieškos žodį arba palikite tuščią ir spauskite „Ieškoti" — pamatysite aktyvius konkursus</p>
+      </div>
+    </div>
+    <div id="cvp-pagination" style="display:flex;justify-content:center;gap:10px;margin-top:16px"></div>
+  </div>
+
+  <!-- AI ASSISTANT PAGE -->
+  <div id="pg-assistant" class="hidden">
+    <h1 class="pg-h">💬 AI Asistentas</h1>
+    <p class="pg-sub">Diskutuokite apie analizę ir gaukite konkrečius atsakymus</p>
+    <div id="assistant-no-result" style="text-align:center;padding:64px 32px">
+      <div style="font-size:48px;margin-bottom:16px">💬</div>
+      <h3 style="font-family:Sora,sans-serif;font-size:18px;margin-bottom:10px">Pradėkite nuo analizės</h3>
+      <p style="font-size:13px;color:var(--text2);max-width:400px;margin:0 auto 24px;line-height:1.7">AI asistentas veikia su analizės kontekstu — atlikite analizę ir asistentas žinos apie jūsų konkursą.</p>
+      <button class="btn btn-primary" onclick="pg('analyze')">→ Atlikti analizę</button>
+    </div>
+    <div id="assistant-chat-full" style="display:none;max-width:720px">
+      <div style="background:var(--card);border:1px solid var(--border);border-radius:14px;margin-bottom:8px;padding:14px 18px;font-size:13px;color:var(--text2)">
+        📋 Kontekstas: <span id="asst-ctx-label" style="color:var(--text);font-weight:600"></span>
+        <button onclick="pg('analyze')" style="background:none;border:none;color:var(--blue3);cursor:pointer;font-size:12px;margin-left:12px;font-family:Inter,sans-serif">← Keisti analizę</button>
+      </div>
+      <div id="asst-msgs" style="background:var(--card);border:1px solid var(--border);border-radius:14px;padding:16px;min-height:320px;max-height:480px;overflow-y:auto;display:flex;flex-direction:column;gap:10px;margin-bottom:10px">
+        <div class="cm cm-ai">Sveiki! Aš galiu atsakyti į klausimus apie šį konkursą — reikalavimus, terminus, rizikas ar strategiją.</div>
+      </div>
+      <div style="display:flex;gap:8px">
+        <textarea id="asst-q" class="inp" placeholder="Klauskite apie konkursą..." rows="2"
+          style="flex:1;resize:none"
+          onkeydown="if(event.key==='Enter'&&!event.shiftKey){event.preventDefault();sendFullChat()}"></textarea>
+        <button class="btn btn-primary" onclick="sendFullChat()" id="asst-send" style="align-self:flex-end;padding:12px 18px">↑ Siųsti</button>
+      </div>
+      <div style="display:flex;gap:8px;margin-top:10px;flex-wrap:wrap">
+        <button class="btn btn-outline btn-sm" onclick="quickAsk('Ar mūsų įmonė atitinka kvalifikacijos reikalavimus?')">Kvalifikacija?</button>
+        <button class="btn btn-outline btn-sm" onclick="quickAsk('Kokie didžiausi rizikos faktoriai šiame konkurse?')">Rizikos?</button>
+        <button class="btn btn-outline btn-sm" onclick="quickAsk('Kaip turėtume suformuluoti kainą?')">Kainodara?</button>
+        <button class="btn btn-outline btn-sm" onclick="quickAsk('Kokius dokumentus turime paruošti?')">Dokumentai?</button>
+      </div>
+    </div>
+  </div>
+
 </div>
 </div>
 </div><!-- /app -->
@@ -1159,6 +1236,27 @@ footer{background:var(--navy2);border-top:1px solid var(--border);padding:48px 3
     <div id="supplier-content" style="padding:24px 28px;overflow-y:auto;flex:1">
       <div style="display:flex;align-items:center;justify-content:center;min-height:200px"><div class="spin"></div></div>
     </div>
+  </div>
+</div>
+
+<!-- TINKAMUMO PATIKRINIMAS -->
+<div id="elig-modal" style="position:fixed;inset:0;z-index:350;background:rgba(6,13,42,.95);backdrop-filter:blur(12px);display:none;align-items:center;justify-content:center;padding:24px">
+  <div style="background:#0d1740;border:1px solid var(--border);border-radius:20px;width:100%;max-width:560px">
+    <div style="padding:24px 28px 16px;border-bottom:1px solid var(--border)">
+      <h3 style="font-family:Sora,sans-serif;font-size:19px;font-weight:800;margin-bottom:4px">⚡ Greitas tinkamumo patikrinimas</h3>
+      <p style="font-size:13px;color:var(--text2)">Įveskite savo duomenis — per 10 sekundžių pamatysite ar verta gilintis</p>
+    </div>
+    <div style="padding:24px 28px" id="elig-form">
+      <div class="fg"><label>Metinė apyvarta (EUR)</label><input class="inp" id="elig-revenue" type="number" placeholder="pvz. 500000"></div>
+      <div class="fg"><label>Darbuotojų skaičius</label><input class="inp" id="elig-employees" type="number" placeholder="pvz. 25"></div>
+      <div class="fg"><label>Patirtis šioje srityje (metai)</label><input class="inp" id="elig-exp" type="number" placeholder="pvz. 5"></div>
+      <div class="fg"><label>Sertifikatai (išvardinkite per kablelį)</label><input class="inp" id="elig-certs" placeholder="pvz. ISO 9001, ISO 14001"></div>
+      <div style="display:flex;gap:10px">
+        <button class="btn btn-primary" style="flex:1;justify-content:center" onclick="checkEligibility()">⚡ Patikrinti</button>
+        <button onclick="document.getElementById('elig-modal').style.display='none'" class="btn btn-outline">Atšaukti</button>
+      </div>
+    </div>
+    <div id="elig-result" style="display:none;padding:24px 28px"></div>
   </div>
 </div>
 
@@ -1253,7 +1351,7 @@ function showApp(){
 }
 
 function pg(n){
-  ['analyze','projects','history','account'].forEach(p=>{
+  ['analyze','projects','history','account','cvp','assistant'].forEach(p=>{
     const el=document.getElementById('pg-'+p);
     if(el)el.classList.toggle('hidden',p!==n);
     const sn=document.getElementById('sn-'+p);
