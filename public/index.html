@@ -749,51 +749,73 @@ footer{background:var(--navy2);border-top:1px solid var(--border);padding:48px 3
 
 <!-- ═══════════════════ ONBOARDING MODAL ═══════════════════ -->
 <div id="onboarding-modal">
-  <div class="onboard-box">
-    <div class="onboard-step">Žingsnis 1 iš 1</div>
-    <h2>Sveiki, <span id="ob-name">!</span></h2>
-    <p>Papasakokite apie savo įmonę — AI analizė bus tikslesnė ir labiau pritaikyta jūsų veiklos sričiai.</p>
-    <div class="onboard-progress">
-      <div class="onboard-dot active"></div>
+  <div class="onboard-box" style="max-width:600px">
+
+    <!-- STEP 1: Basic info -->
+    <div id="ob-step1">
+      <div class="onboard-step">Žingsnis 1 iš 3</div>
+      <h2>Sveiki, <span id="ob-name"></span>! 👋</h2>
+      <p>Papasakokite apie savo įmonę — AI sugeneruos tikslius klausimus ir sukurs jūsų profilį. Tada kiekviena analizė bus personalizuota.</p>
+      <div class="onboard-progress" style="margin-bottom:24px">
+        <div class="onboard-dot active"></div>
+        <div class="onboard-dot"></div>
+        <div class="onboard-dot"></div>
+      </div>
+      <div class="fg"><label>Įmonės pavadinimas</label><input class="inp" id="ob-company" placeholder="UAB Mano Įmonė"></div>
+      <div class="fg"><label>Veiklos sritis</label>
+        <select class="inp" id="ob-sector">
+          <option value="">Pasirinkite...</option>
+          <option>Statybos ir remontas</option>
+          <option>IT ir programinė įranga</option>
+          <option>Medicinos įranga ir farmacija</option>
+          <option>Švietimas ir mokymai</option>
+          <option>Valymo paslaugos</option>
+          <option>Maisto tiekimas ir maitinimas</option>
+          <option>Transportas ir logistika</option>
+          <option>Konsultacijos ir tyrimai</option>
+          <option>Inžinerinės paslaugos</option>
+          <option>Aplinkosauga ir želdynas</option>
+          <option>Saugos ir apsaugos paslaugos</option>
+          <option>Kita</option>
+        </select>
+      </div>
+      <div class="onboard-actions">
+        <button class="onboard-skip" onclick="skipOnboarding()">Praleisti</button>
+        <button class="btn btn-primary" style="flex:1;justify-content:center" id="ob-next1" onclick="obStep1Next()">Toliau →</button>
+      </div>
     </div>
-    <div class="fg"><label>Įmonės pavadinimas</label><input class="inp" id="ob-company" placeholder="UAB Mano Įmonė"></div>
-    <div class="fg"><label>Veiklos sritis</label>
-      <select class="inp" id="ob-sector">
-        <option value="">Pasirinkite...</option>
-        <option value="Statybos ir remontas">Statybos ir remontas</option>
-        <option value="IT ir programinė įranga">IT ir programinė įranga</option>
-        <option value="Medicinos įranga ir farmacija">Medicinos įranga ir farmacija</option>
-        <option value="Švietimas ir mokymai">Švietimas ir mokymai</option>
-        <option value="Valymo paslaugos">Valymo paslaugos</option>
-        <option value="Maisto tiekimas ir maitinimas">Maisto tiekimas ir maitinimas</option>
-        <option value="Transportas ir logistika">Transportas ir logistika</option>
-        <option value="Konsultacijos ir tyrimai">Konsultacijos ir tyrimai</option>
-        <option value="Inžinerinės paslaugos">Inžinerinės paslaugos</option>
-        <option value="Kita">Kita</option>
-      </select>
+
+    <!-- STEP 2: AI Questions -->
+    <div id="ob-step2" style="display:none">
+      <div class="onboard-step">Žingsnis 2 iš 3</div>
+      <h2>Keletas klausimų 🎯</h2>
+      <p id="ob-step2-sub">AI sugeneravo šiuos klausimus pagal jūsų veiklos sritį — atsakymai padės personalizuoti analizes.</p>
+      <div class="onboard-progress" style="margin-bottom:24px">
+        <div class="onboard-dot active"></div>
+        <div class="onboard-dot active"></div>
+        <div class="onboard-dot"></div>
+      </div>
+      <div id="ob-questions" style="display:flex;flex-direction:column;gap:14px;max-height:380px;overflow-y:auto;padding-right:4px"></div>
+      <div class="onboard-actions" style="margin-top:20px">
+        <button class="onboard-skip" onclick="obGoStep(1)">← Atgal</button>
+        <button class="btn btn-primary" style="flex:1;justify-content:center" onclick="obStep2Next()">Kurti profilį →</button>
+      </div>
     </div>
-    <div class="fg"><label>Įmonės dydis</label>
-      <select class="inp" id="ob-size">
-        <option value="">Pasirinkite...</option>
-        <option value="Labai maža (1-9 darbuotojai)">Labai maža (1–9 darbuotojai)</option>
-        <option value="Maža (10-49 darbuotojai)">Maža (10–49 darbuotojai)</option>
-        <option value="Vidutinė (50-249 darbuotojai)">Vidutinė (50–249 darbuotojai)</option>
-        <option value="Didelė (250+ darbuotojų)">Didelė (250+ darbuotojų)</option>
-      </select>
+
+    <!-- STEP 3: Profile created -->
+    <div id="ob-step3" style="display:none;text-align:center">
+      <div class="onboard-step">Žingsnis 3 iš 3</div>
+      <div style="font-size:48px;margin:16px 0">✅</div>
+      <h2>Profilis sukurtas!</h2>
+      <div id="ob-profile-preview" style="background:rgba(16,185,129,.06);border:1px solid rgba(16,185,129,.15);border-radius:12px;padding:16px;text-align:left;margin:20px 0;font-size:13px;color:var(--text2);line-height:1.7"></div>
+      <div class="onboard-progress" style="margin-bottom:24px">
+        <div class="onboard-dot active"></div>
+        <div class="onboard-dot active"></div>
+        <div class="onboard-dot active"></div>
+      </div>
+      <button class="btn btn-primary" style="width:100%;justify-content:center" onclick="closeOnboarding()">🚀 Pradėti analizuoti</button>
     </div>
-    <div class="fg"><label>Metinė apyvarta (nebūtina)</label>
-      <select class="inp" id="ob-revenue">
-        <option value="">Pasirinkite...</option>
-        <option value="iki 100 000 EUR">iki 100 000 EUR</option>
-        <option value="100 000 – 500 000 EUR">100 000 – 500 000 EUR</option>
-        <option value="500 000 – 2 000 000 EUR">500 000 – 2 000 000 EUR</option>
-        <option value="virš 2 000 000 EUR">virš 2 000 000 EUR</option>
-      </select>
-    </div>
-    <div class="onboard-actions">
-      <button class="onboard-skip" onclick="skipOnboarding()">Praleisti</button>
-      <button class="btn btn-primary" style="flex:1;justify-content:center" onclick="saveOnboarding()">Išsaugoti ir pradėti →</button>
-    </div>
+
   </div>
 </div>
 
@@ -1444,38 +1466,130 @@ function doLogout(){
   document.getElementById('landing').style.display='block';
 }
 
-// ── ONBOARDING ──
+// ── SMART ONBOARDING ──
+let obAnswers={};
+let obQuestions=[];
+
 function openOnboarding(){
-  document.getElementById('ob-name').textContent=(curUser&&curUser.name)?curUser.name+'!':'!';
+  const name=(curUser&&curUser.name)||'';
+  document.getElementById('ob-name').textContent=name;
+  obGoStep(1);
   document.getElementById('onboarding-modal').classList.add('open');
 }
+
+function openOnboardingEdit(){
+  const cp=curUser&&curUser.company_profile||{};
+  document.getElementById('ob-company').value=cp.name||'';
+  document.getElementById('ob-sector').value=cp.sector||'';
+  openOnboarding();
+}
+
 function closeOnboarding(){
   document.getElementById('onboarding-modal').classList.remove('open');
   showApp();
 }
+
 function skipOnboarding(){
-  closeOnboarding();
+  document.getElementById('onboarding-modal').classList.remove('open');
+  showApp();
 }
-async function saveOnboarding(){
+
+function obGoStep(n){
+  [1,2,3].forEach(i=>{
+    const el=document.getElementById('ob-step'+i);
+    if(el)el.style.display=i===n?'block':'none';
+  });
+}
+
+async function obStep1Next(){
   const company=document.getElementById('ob-company').value.trim();
   const sector=document.getElementById('ob-sector').value;
-  const size=document.getElementById('ob-size').value;
-  const revenue=document.getElementById('ob-revenue').value;
-  if(company||sector||size){
-    const profile={name:company,sector,size,revenue};
-    // Update localStorage
+  if(!sector){alert('Pasirinkite veiklos sritį');return;}
+  const btn=document.getElementById('ob-next1');
+  btn.disabled=true;btn.textContent='⏳ AI generuoja klausimus...';
+  obGoStep(2);
+  document.getElementById('ob-step2-sub').textContent='AI generuoja klausimus pagal „'+sector+'"...';
+  document.getElementById('ob-questions').innerHTML='<div style="display:flex;align-items:center;gap:12px;color:var(--text2);padding:20px"><div class="spin"></div><span>Generuojama...</span></div>';
+  const tok=localStorage.getItem(TK);
+  try{
+    const r=await fetch(API+'/api/onboarding',{
+      method:'POST',
+      headers:{'Content-Type':'application/json','Authorization':'Bearer '+tok},
+      body:JSON.stringify({step:'questions',sector,name:company})
+    });
+    const d=await r.json();
+    obQuestions=d.questions||[];
+    renderObQuestions(obQuestions);
+    document.getElementById('ob-step2-sub').textContent='Atsakykite į šiuos klausimus — AI sukurs jūsų įmonės profilį.';
+  }catch(e){
+    // Fallback: use default questions
+    obQuestions=getDefaultObQuestions(sector);
+    renderObQuestions(obQuestions);
+  }finally{btn.disabled=false;btn.textContent='Toliau →';}
+}
+
+function renderObQuestions(qs){
+  const container=document.getElementById('ob-questions');
+  container.innerHTML=qs.map((q,i)=>{
+    const id='obq_'+i;
+    if(q.tipas==='select'&&q.variantai?.length){
+      return '<div class="fg" style="margin-bottom:0"><label style="font-size:13px;font-weight:500;color:var(--text);margin-bottom:6px;display:block">'+(i+1)+'. '+q.klausimas+'</label><select class="inp" id="'+id+'" style="font-size:13px"><option value="">Pasirinkite...</option>'+q.variantai.map(v=>'<option>'+v+'</option>').join('')+'</select></div>';
+    } else if(q.tipas==='multiselect'&&q.variantai?.length){
+      return '<div class="fg" style="margin-bottom:0"><label style="font-size:13px;font-weight:500;color:var(--text);margin-bottom:8px;display:block">'+(i+1)+'. '+q.klausimas+'</label><div style="display:flex;flex-wrap:wrap;gap:6px">'+q.variantai.map(v=>'<label style="display:flex;align-items:center;gap:6px;font-size:12px;cursor:pointer;background:var(--card);border:1px solid var(--border);padding:6px 10px;border-radius:8px"><input type="checkbox" name="'+id+'" value="'+v+'" style="accent-color:var(--blue3)"> '+v+'</label>').join('')+'</div></div>';
+    } else {
+      return '<div class="fg" style="margin-bottom:0"><label style="font-size:13px;font-weight:500;color:var(--text);margin-bottom:6px;display:block">'+(i+1)+'. '+q.klausimas+'</label><textarea class="inp" id="'+id+'" rows="2" placeholder="Jūsų atsakymas..." style="font-size:13px;resize:none"></textarea></div>';
+    }
+  }).join('');
+}
+
+async function obStep2Next(){
+  // Collect answers
+  obAnswers={};
+  obQuestions.forEach((q,i)=>{
+    const id='obq_'+i;
+    if(q.tipas==='multiselect'){
+      const checked=Array.from(document.querySelectorAll('input[name="'+id+'"]:checked')).map(el=>el.value);
+      if(checked.length)obAnswers[q.klausimas]=checked.join(', ');
+    } else {
+      const el=document.getElementById(id);
+      if(el&&el.value.trim())obAnswers[q.klausimas]=el.value.trim();
+    }
+  });
+  const company=document.getElementById('ob-company').value.trim();
+  const sector=document.getElementById('ob-sector').value;
+  obGoStep(3);
+  document.getElementById('ob-profile-preview').innerHTML='<div style="display:flex;align-items:center;gap:12px;color:var(--text2)"><div class="spin"></div><span>AI kuria jūsų profilį...</span></div>';
+  const tok=localStorage.getItem(TK);
+  try{
+    const r=await fetch(API+'/api/onboarding',{
+      method:'POST',
+      headers:{'Content-Type':'application/json','Authorization':'Bearer '+tok},
+      body:JSON.stringify({step:'profile',sector,name:company,answers:obAnswers})
+    });
+    const d=await r.json();
+    const profile=d.profile||{name:company,sector};
     if(curUser){curUser.company_profile=profile;localStorage.setItem(UK,JSON.stringify(curUser));}
-    // Save to server
-    try{
-      const tok=localStorage.getItem(TK);
-      await fetch(API+'/api/profile',{
-        method:'POST',
-        headers:{'Content-Type':'application/json','Authorization':'Bearer '+tok},
-        body:JSON.stringify({companyProfile:profile})
-      });
-    }catch(e){console.error('Profile save error:',e)}
+    const preview=document.getElementById('ob-profile-preview');
+    preview.innerHTML='<strong style="color:var(--text)">🏢 '+( profile.name||company)+'</strong><br>'+
+      '<span style="color:var(--blue3)">'+( profile.sector||sector)+'</span><br><br>'+
+      (profile.profilioSantrauka||profile.specializacija||'Profilis išsaugotas sėkmingai.')+
+      (profile.stiprybės?.length?'<br><br><strong style="color:var(--text)">Stiprybės:</strong> '+(profile.stiprybės||[]).join(', '):'');
+  }catch(e){
+    document.getElementById('ob-profile-preview').textContent='Profilis išsaugotas (baziniai duomenys).';
+    if(curUser){curUser.company_profile={name:company,sector};localStorage.setItem(UK,JSON.stringify(curUser));}
   }
-  closeOnboarding();
+}
+
+function getDefaultObQuestions(sector){
+  return [
+    {id:'dq1',klausimas:'Kiek metų dirbate '+sector+' srityje?',tipas:'select',variantai:['Mažiau nei 1 metai','1–3 metai','3–5 metai','5–10 metų','Daugiau nei 10 metų']},
+    {id:'dq2',klausimas:'Kokia metinė apyvarta?',tipas:'select',variantai:['iki 100 000 EUR','100 000–500 000 EUR','500 000–2 000 000 EUR','virš 2 000 000 EUR']},
+    {id:'dq3',klausimas:'Kiek darbuotojų?',tipas:'select',variantai:['1–9','10–49','50–249','250+']},
+    {id:'dq4',klausimas:'Kokie sertifikatai ar licencijos?',tipas:'text',variantai:[]},
+    {id:'dq5',klausimas:'Patirtis su viešaisiais pirkimais?',tipas:'select',variantai:['Pirmą kartą','Dalyvavome, bet nelaimėjome','Turime laimėtų konkursų']},
+    {id:'dq6',klausimas:'Didžiausias sutarties dydis kurį galite vykdyti?',tipas:'select',variantai:['iki 50 000 EUR','50–200 000 EUR','200 000–1 000 000 EUR','virš 1 000 000 EUR']},
+    {id:'dq7',klausimas:'Pagrindinis konkurencinis pranašumas?',tipas:'text',variantai:[]}
+  ];
 }
 
 // ── LEGAL MODALS ──
@@ -1660,7 +1774,9 @@ async function startAn(){
     const tok=localStorage.getItem(TK);
     const companyProfile=(curUser&&curUser.company_profile)||null;
     const docName=files.map(f=>f.name).join(', ');
-    const r=await fetch(API+'/api/analyze',{
+    // Use multi-agent if company profile exists
+    const endpoint=companyProfile&&companyProfile.profilioSantrauka?'/api/analyze-agents':'/api/analyze';
+    const r=await fetch(API+endpoint,{
       method:'POST',
       headers:{'Content-Type':'application/json','Authorization':'Bearer '+tok},
       body:JSON.stringify({text:combined,documentName:docName,projectId:currentProject,companyProfile})
@@ -1806,6 +1922,9 @@ function renderResult(r){
       <ul class="r-list r-list-doc">${r.butinaiIttraukti.map(d=>`<li><span>${d.dokumentas||d}</span><span style="font-size:11px;color:var(--text2)">${d.pastaba||''}</span></li>`).join('')}</ul>
     </div>`:''}
 
+    ${r.scorePaaiskinimas?`<div style="background:rgba(59,130,246,.05);border:1px solid rgba(59,130,246,.12);border-radius:12px;padding:16px 20px;margin-bottom:16px;font-size:13px;color:var(--text2);line-height:1.65"><strong style="color:var(--text)">📊 Balo pagrindimas:</strong> ${r.scorePaaiskinimas}</div>`:''}
+    ${r.prioritetiniaiZingsniai&&r.prioritetiniaiZingsniai.length?`<div class="r-card r-full-width" style="margin-bottom:16px"><h4>📋 PRIORITETINIAI ŽINGSNIAI</h4>${r.prioritetiniaiZingsniai.map(z=>'<div class="r-item"><span class="r-item-k">'+(z.terminas||'')+'</span><span class="r-item-v" style="text-align:left">'+(z.zingsnis||z)+'</span></div>').join('')}</div>`:''}
+    ${r.pasleptosNuostatos&&r.pasleptosNuostatos.length?`<div style="background:rgba(245,158,11,.05);border:1px solid rgba(245,158,11,.15);border-radius:12px;padding:14px 18px;margin-bottom:16px"><strong style="color:var(--warn);font-size:12px">⚠️ PASLĖPTOS NUOSTATOS</strong><ul style="list-style:none;margin-top:8px">${r.pasleptosNuostatos.map(n=>'<li style="font-size:13px;color:var(--text2);padding:4px 0">• '+n+'</li>').join('')}</ul></div>`:''}
     ${r.isViso?`<div class="r-summ"><h4>📝 Išvada</h4><p>${r.isViso}</p></div>`:''}
   `;
   rv.scrollIntoView({behavior:'smooth',block:'start'});
