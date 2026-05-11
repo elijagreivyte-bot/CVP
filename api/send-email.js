@@ -35,10 +35,8 @@ function buildEmailHTML(r) {
       <tr><td style="padding:8px;color:#aaa">Bendra vertė</td><td style="padding:8px;color:#7dccaa;font-weight:600">${r.bendraVerte || 'Nenurodyta'}</td></tr>
       <tr><td style="padding:8px;color:#aaa">Pasiūlymo terminas</td><td style="padding:8px;color:#e74c3c;font-weight:600">${r.terminai?.pasiulymoTerminas || '–'}</td></tr>
     </table>
-    ${opps || risks ? `<div style="display:flex;gap:16px;margin:24px 0">
-      <div style="flex:1"><h3 style="color:#7dccaa">✓ Galimybės</h3><ul style="padding-left:16px">${opps}</ul></div>
-      <div style="flex:1"><h3 style="color:#e74c3c">⚠ Rizikos</h3><ul style="padding-left:16px">${risks}</ul></div>
-    </div>` : ''}
+    ${opps ? `<div style="margin:16px 0"><h3 style="color:#7dccaa">✓ Galimybės</h3><ul style="padding-left:16px">${opps}</ul></div>` : ''}
+${risks ? `<div style="margin:16px 0"><h3 style="color:#e74c3c">⚠ Rizikos</h3><ul style="padding-left:16px">${risks}</ul></div>` : ''}
     ${criteria ? `<h3 style="color:#7dccaa">Vertinimo kriterijai</h3>
     <table style="width:100%;border-collapse:collapse;background:#111;border-radius:8px;overflow:hidden">
       <thead><tr style="background:#0d2518"><th style="padding:10px;text-align:left;color:#7dccaa">Kriterijus</th><th style="padding:10px;text-align:left;color:#7dccaa">Svoris</th><th style="padding:10px;text-align:left;color:#7dccaa">Aprašas</th></tr></thead>
