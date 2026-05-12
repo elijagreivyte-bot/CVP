@@ -1982,22 +1982,35 @@ function filterHistory(){
       const projName=a.project_name;
       const date=new Date(a.created_at).toLocaleDateString('lt-LT');
       const terminas=(a.result_json&&a.result_json.terminai&&a.result_json.terminai.pasiulymoTerminas)||'';
-      return `<div style="background:var(--card);border:1px solid var(--border);border-radius:14px;padding:18px 20px;cursor:pointer;transition:all .2s" 
-        onmouseover="this.style.borderColor='rgba(59,130,246,.35)';this.style.background='var(--card2)'" 
-        onmouseout="this.style.borderColor='var(--border)';this.style.background='var(--card)'"
+      // Check if deadline passed
+      const isExpired = terminas && terminas !== 'Nenurodyta' && (() => {
+        const d = new Date(terminas.replace(' ','T'));
+        return !isNaN(d) && d < new Date();
+      })();
+      const cardBg = isExpired ? 'rgba(255,255,255,.02)' : 'var(--card)';
+      const cardOpacity = isExpired ? '.55' : '1';
+      return `<div style="background:${cardBg};border:1px solid var(--border);border-radius:14px;padding:18px 20px;cursor:pointer;transition:all .2s;opacity:${cardOpacity}" 
+        onmouseover="this.style.opacity='1';this.style.borderColor='rgba(59,130,246,.35)'" 
+        onmouseout="this.style.opacity='${cardOpacity}';this.style.borderColor='var(--border)'"
         onclick="loadHistEntry(${i})">
         <div style="display:flex;align-items:flex-start;gap:16px;flex-wrap:wrap">
-          <div style="font-size:26px;font-weight:900;font-family:Sora,sans-serif;color:${scColor};min-width:52px;line-height:1">${sc}%</div>
+          <div style="font-size:26px;font-weight:900;font-family:Sora,sans-serif;color:${isExpired?'var(--text3)':scColor};min-width:52px;line-height:1">${sc}%</div>
           <div style="flex:1;min-width:0">
-            <div style="font-size:14px;font-weight:700;color:var(--text);margin-bottom:3px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis">${title}</div>
+            <div style="display:flex;align-items:center;gap:8px;margin-bottom:3px">
+              <div style="font-size:14px;font-weight:700;color:${isExpired?'var(--text2)':'var(--text)'};white-space:nowrap;overflow:hidden;text-overflow:ellipsis;flex:1">${title}</div>
+              ${isExpired?'<span style="font-size:10px;background:rgba(239,68,68,.1);color:var(--danger);border:1px solid rgba(239,68,68,.2);padding:2px 8px;border-radius:8px;white-space:nowrap;flex-shrink:0">Terminas pasibaigė</span>':''}
+            </div>
             <div style="font-size:12px;color:var(--text2);margin-bottom:6px">${org}</div>
             <div style="display:flex;gap:8px;flex-wrap:wrap;align-items:center">
               ${projName?`<span style="font-size:11px;background:rgba(59,130,246,.1);color:var(--blue3);border:1px solid rgba(59,130,246,.2);padding:2px 8px;border-radius:10px">📁 ${projName}</span>`:''}
               <span style="font-size:11px;color:var(--text3)">📅 ${date}</span>
-              ${terminas?`<span style="font-size:11px;color:var(--text3)">⏰ Terminas: ${terminas}</span>`:''}
+              ${terminas?`<span style="font-size:11px;color:${isExpired?'var(--danger)':'var(--text3)'}">⏰ ${terminas}</span>`:''}
             </div>
           </div>
-          <button class="btn btn-primary btn-sm" style="flex-shrink:0;white-space:nowrap" onclick="event.stopPropagation();loadHistEntry(${i})">Atidaryti analizę →</button>
+          <div style="display:flex;gap:6px;flex-shrink:0;align-items:center">
+            <button class="btn btn-primary btn-sm" style="white-space:nowrap" onclick="event.stopPropagation();loadHistEntry(${i})">Atidaryti →</button>
+            <button title="Ištrinti" onclick="event.stopPropagation();deleteAnalysis('${a.id}')" style="background:rgba(239,68,68,.1);border:1px solid rgba(239,68,68,.2);color:var(--danger);width:32px;height:32px;border-radius:8px;cursor:pointer;font-size:14px;display:flex;align-items:center;justify-content:center;flex-shrink:0">🗑</button>
+          </div>
         </div>
       </div>`;
     }).join('')+'</div>';
@@ -2038,9 +2051,15 @@ async function renderAcc(){
       <h3>🏢 Įmonės profilis</h3>
       ${ri2('Pavadinimas',cp.name||'–')}
       ${ri2('Sritis',cp.sector||'–')}
-      ${ri2('Dydis',cp.size||'–')}
-      ${ri2('Apyvarta',cp.revenue||'–')}
-      <button class="btn btn-outline btn-sm" style="margin-top:16px" onclick="openOnboardingEdit()">✏️ Redaguoti profilį</button>
+      ${cp.specializacija?ri2('Specializacija',cp.specializacija):''}
+      ${cp.finansinesStiprybe?ri2('Finansinė stiprybė',cp.finansinesStiprybe):''}
+      ${cp.patirtis?ri2('Patirtis',cp.patirtis):''}
+      ${cp.sertifikatai?ri2('Sertifikatai',cp.sertifikatai):''}
+      ${cp.stiprybės&&cp.stiprybės.length?ri2('Stiprybės',(cp.stiprybės||[]).join(', ')):''}
+      ${cp.tipinieKonkursai?ri2('Tinka konkursams',cp.tipinieKonkursai):''}
+      ${cp.profilioSantrauka?`<div style="background:rgba(16,185,129,.05);border:1px solid rgba(16,185,129,.15);border-radius:10px;padding:12px;margin-top:12px;font-size:12px;color:var(--text2);line-height:1.6"><strong style="color:var(--success)">AI profilio santrauka:</strong><br>${cp.profilioSantrauka}</div>`:''}
+      <button class="btn btn-outline btn-sm" style="margin-top:16px" onclick="openOnboardingEdit()">✏️ ${cp.profilioSantrauka?'Atnaujinti profilį':'Užpildyti profilį'}</button>
+      ${!cp.profilioSantrauka?'<p style="font-size:11px;color:var(--warn);margin-top:8px">⚠️ Profilis neužpildytas — analizės nėra personalizuotos</p>':''}
     </div>
     ${!pro?`
     <div class="acc-card" style="grid-column:1/-1;background:linear-gradient(135deg,rgba(26,86,219,.08),rgba(124,58,237,.08));border-color:rgba(59,130,246,.2)">
@@ -2766,7 +2785,7 @@ async function sendChat(){
     if(t) t.remove();
     if(!r.ok){
       if(r.status===403){
-        msgs.innerHTML += '<div class="cm cm-ai" style="color:var(--warn)">🔒 AI asistentas prieinamas tik Pro ir Komanda planams.<br><button onclick="selP('pro');goChk()" style="background:var(--grad);border:none;color:#fff;padding:6px 14px;border-radius:6px;cursor:pointer;font-size:12px;margin-top:6px">Gauti Pro →</button></div>';
+        msgs.innerHTML += '<div class="cm cm-ai" style="color:var(--warn)">🔒 AI asistentas prieinamas tik Pro ir Komanda planams.<br><button onclick="selP(&quot;pro&quot;);goChk()" style="background:var(--grad);border:none;color:#fff;padding:6px 14px;border-radius:6px;cursor:pointer;font-size:12px;margin-top:6px">Gauti Pro →</button></div>';
       } else {
         msgs.innerHTML += `<div class="cm cm-ai" style="color:var(--danger)">Klaida: ${data.error||'Nežinoma'}</div>`;
       }
@@ -2983,7 +3002,7 @@ async function sendFullChat(){
     const data = await r.json();
     const t = document.getElementById('asst-thinking'); if(t) t.remove();
     if(!r.ok){
-      if(r.status===403) msgs.innerHTML += '<div class="cm cm-ai" style="color:var(--warn)">🔒 AI asistentas prieinamas tik Pro ir Komanda planams.<button onclick="selP('pro');goChk()" style="background:var(--grad);border:none;color:#fff;padding:4px 12px;border-radius:6px;cursor:pointer;font-size:12px;margin-left:8px">Gauti Pro →</button></div>';
+      if(r.status===403) msgs.innerHTML += '<div class="cm cm-ai" style="color:var(--warn)">🔒 AI asistentas prieinamas tik Pro ir Komanda planams.<button onclick="selP(&quot;pro&quot;);goChk()" style="background:var(--grad);border:none;color:#fff;padding:4px 12px;border-radius:6px;cursor:pointer;font-size:12px;margin-left:8px">Gauti Pro →</button></div>';
       else msgs.innerHTML += `<div class="cm cm-ai" style="color:var(--danger)">Klaida: ${data.error||'Nežinoma'}</div>`;
     } else {
       const text = data.text||'';
@@ -3022,6 +3041,26 @@ function openChat(result){
   }
   if(inp) inp.style.display = pro ? 'flex' : 'none';
   initAssistant();
+}
+
+async function deleteAnalysis(id){
+  if(!id || id==='undefined') return;
+  if(!confirm('Ištrinti šią analizę? Veiksmas negrįžtamas.')) return;
+  const tok = localStorage.getItem(TK);
+  try{
+    const r = await fetch(API+'/api/history', {
+      method: 'DELETE',
+      headers: {'Content-Type':'application/json','Authorization':'Bearer '+tok},
+      body: JSON.stringify({id})
+    });
+    if(r.ok){
+      allAnalyses = allAnalyses.filter(a => a.id !== id);
+      filterHistory();
+    } else {
+      const d = await r.json();
+      alert('Klaida: '+(d.error||'Nepavyko ištrinti'));
+    }
+  } catch(e){ alert('Klaida: '+e.message); }
 }
 </script>
 
