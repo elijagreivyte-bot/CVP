@@ -2719,6 +2719,310 @@ function startFromCVP(id,title,url){
   if(tipEl)tipEl.parentNode.insertBefore(tip,tipEl);else analyzeDiv.insertBefore(tip,analyzeDiv.firstChild);
 }
 
+
+// ══════════════════════════════════
+// CHAT WIDGET
+// ══════════════════════════════════
+function toggleChat(){
+  const panel = document.getElementById('chat-panel');
+  if(!panel) return;
+  const isOpen = panel.classList.contains('show');
+  panel.classList.toggle('show', !isOpen);
+}
+
+function showChatPanel(){
+  const panel = document.getElementById('chat-panel');
+  if(panel) panel.classList.add('show');
+}
+
+async function sendChat(){
+  const inp = document.getElementById('chat-q');
+  const q = (inp?.value || '').trim();
+  if(!q) return;
+  const msgs = document.getElementById('chat-msgs');
+  const btn = document.getElementById('chat-send-btn');
+  if(!msgs) return;
+  inp.value = ''; if(btn) btn.disabled = true;
+
+  // Hide no-analysis placeholder
+  const noAn = document.getElementById('chat-no-analysis');
+  if(noAn) noAn.style.display = 'none';
+  msgs.style.display = 'flex';
+
+  chatHistory.push({role:'user', content:q});
+  msgs.innerHTML += `<div class="cm cm-user">${q.replace(/</g,'&lt;')}</div>`;
+  msgs.innerHTML += `<div class="cm cm-thinking" id="cm-thinking">⏳ Galvoju...</div>`;
+  msgs.scrollTop = msgs.scrollHeight;
+
+  const tok = localStorage.getItem(TK);
+  try{
+    const r = await fetch(API+'/api/chat',{
+      method:'POST',
+      headers:{'Content-Type':'application/json','Authorization':'Bearer '+tok},
+      body: JSON.stringify({messages: chatHistory, context: chatContext, mode:'chat'})
+    });
+    const data = await r.json();
+    const t = document.getElementById('cm-thinking');
+    if(t) t.remove();
+    if(!r.ok){
+      if(r.status===403){
+        msgs.innerHTML += '<div class="cm cm-ai" style="color:var(--warn)">🔒 AI asistentas prieinamas tik Pro ir Komanda planams.<br><button onclick="selP('pro');goChk()" style="background:var(--grad);border:none;color:#fff;padding:6px 14px;border-radius:6px;cursor:pointer;font-size:12px;margin-top:6px">Gauti Pro →</button></div>';
+      } else {
+        msgs.innerHTML += `<div class="cm cm-ai" style="color:var(--danger)">Klaida: ${data.error||'Nežinoma'}</div>`;
+      }
+    } else {
+      const text = data.text || '';
+      chatHistory.push({role:'assistant', content:text});
+      msgs.innerHTML += `<div class="cm cm-ai">${text.replace(/</g,'&lt;').replace(/\n/g,'<br>')}</div>`;
+    }
+  } catch(e){
+    const t = document.getElementById('cm-thinking');
+    if(t) t.remove();
+    msgs.innerHTML += `<div class="cm cm-ai" style="color:var(--danger)">Ryšio klaida: ${e.message}</div>`;
+  } finally {
+    if(btn) btn.disabled = false;
+    msgs.scrollTop = msgs.scrollHeight;
+  }
+}
+
+// ══════════════════════════════════
+// CVP.lt SEARCH
+// ══════════════════════════════════
+let cvpPage = 1;
+async function searchCVP(p){
+  cvpPage = p || 1;
+  const q = (document.getElementById('cvp-q')?.value||'').trim();
+  const cpv = (document.getElementById('cvp-cpv')?.value||'').trim();
+  const min = document.getElementById('cvp-min')?.value||'';
+  const max = document.getElementById('cvp-max')?.value||'';
+  const res = document.getElementById('cvp-results');
+  if(!res) return;
+  res.innerHTML = '<div style="display:flex;align-items:center;gap:12px;padding:32px;color:var(--text2)"><div class="spin"></div><span>Ieškoma CVP.lt...</span></div>';
+  const tok = localStorage.getItem(TK);
+  try{
+    const params = new URLSearchParams({q, cpv, min, max, page: cvpPage});
+    const r = await fetch(API+'/api/cvp-search?'+params, {headers:{'Authorization':'Bearer '+tok}});
+    const d = await r.json();
+    if(!r.ok){ res.innerHTML = '<p style="color:var(--danger);padding:24px">'+(d.error||'Klaida')+'</p>'; return; }
+    const items = d.procurements || [];
+    if(!items.length){
+      res.innerHTML = '<div style="text-align:center;padding:48px;color:var(--text2)"><div style="font-size:32px;margin-bottom:12px">🔍</div><p>Nieko nerasta pagal "'+q+'". Bandykite kitu raktažodžiu.</p></div>';
+      return;
+    }
+    const mockBanner = d.mock ? '<div style="background:rgba(245,158,11,.08);border:1px solid rgba(245,158,11,.2);border-radius:8px;padding:10px 14px;font-size:12px;color:var(--warn);margin-bottom:12px">⚠️ CVP.lt šiuo metu nepasiekiamas — rodomi pavyzdiniai duomenys. Patikrinkite ar <code>api/cvp-search.js</code> įdėtas į Vercel.</div>' : '';
+    res.innerHTML = mockBanner + '<div style="display:flex;flex-direction:column;gap:10px">' +
+      items.map(p => `<div style="background:var(--card);border:1px solid var(--border);border-radius:14px;padding:18px 20px">
+        <div style="display:flex;align-items:flex-start;gap:12px;flex-wrap:wrap">
+          <div style="flex:1;min-width:0">
+            <div style="font-size:14px;font-weight:700;color:var(--text);margin-bottom:4px">${p.title}</div>
+            <div style="font-size:12px;color:var(--text2);margin-bottom:8px">${p.buyer}</div>
+            <div style="display:flex;gap:8px;flex-wrap:wrap">
+              ${p.value!=='–'?`<span class="badge badge-blue">${p.value}</span>`:''}
+              ${p.cpv!=='–'?`<span class="badge badge-purple">CPV: ${p.cpv}</span>`:''}
+              ${p.type!=='–'?`<span class="badge badge-green">${p.type}</span>`:''}
+              ${p.deadline!=='–'?`<span class="badge badge-yellow">⏰ ${p.deadline}</span>`:''}
+            </div>
+          </div>
+          <div style="display:flex;flex-direction:column;gap:6px;flex-shrink:0">
+            <button class="btn btn-primary btn-sm" onclick="startFromCVP('${p.id}','${(p.title||'').replace(/'/g,"\\'")}','${p.url||''}')">🔍 Analizuoti</button>
+            <a href="${p.url||'#'}" target="_blank" rel="noopener" class="btn btn-outline btn-sm" style="text-align:center;text-decoration:none">🔗 CVP.lt</a>
+          </div>
+        </div>
+      </div>`).join('') + '</div>';
+    const pag = document.getElementById('cvp-pagination');
+    if(pag && d.total > 20){
+      const pages = Math.min(Math.ceil(d.total/20), 5);
+      pag.innerHTML = Array.from({length:pages},(_,i)=>`<button onclick="searchCVP(${i+1})" class="btn ${i+1===cvpPage?'btn-primary':'btn-outline'} btn-sm">${i+1}</button>`).join('');
+    }
+  } catch(e){
+    res.innerHTML = '<p style="color:var(--danger);padding:24px">Klaida: '+e.message+'</p>';
+  }
+}
+
+// ══════════════════════════════════
+// DEMO
+// ══════════════════════════════════
+function runDemo(){
+  const demo = {
+    pavadinimas:'IT infrastruktūros modernizavimas (Vilniaus m. savivaldybė)',
+    score:72, scoreLabel:'Geros galimybės',
+    scorePaaiskinimas:'Kaina sudaro 60% — pagrindinis veiksnys. Techninės kokybės dalis (30%) suteikia galimybę išsiskirti.',
+    perkanciojiOrganizacija:'Vilniaus miesto savivaldybės administracija',
+    pirkimoTipas:'Atviras konkursas', bendraVerte:'285 000 EUR be PVM', cpt:'30200000-1',
+    terminai:{pasiulymoTerminas:'2026-06-15 10:00', klausimaiIki:'2026-06-05', vykdymoTerminas:'12 mėnesių', garantija:'24 mėnesiai'},
+    kainuStrategija:'Kaina sudaro 60% vertinimo — rekomenduojama pateikti kuo konkurencingesnę kainą. Techninės kokybės dalis (30%) leidžia kompensuoti šiek tiek aukštesnę kainą, jei pasiūlymas techniškai stipresnis.',
+    atitikimasKvalifikacijai:'Privaloma patikrinti: (1) ar apyvarta viršija 200 000 EUR per 3 metus; (2) ar turimas ISO 27001 sertifikatas; (3) ar yra dokumentuotos IT diegimo patirties referensai.',
+    kvalifikacija:{apyvarta:'min. 200 000 EUR / 3 metai', darbuotojai:'min. 5', patirtis:'min. 3 m. IT diegimo', sertifikatai:'ISO 27001 arba lygiavertis', finansinis:'Nėra bankroto procedūros'},
+    vertinimoKriterijai:[{kriterijus:'Kaina',svoris:'60%',aprasas:'Mažesnė kaina = daugiau taškų'},{kriterijus:'Techninė kokybė',svoris:'30%',aprasas:'Pagal techninį pasiūlymą'},{kriterijus:'Garantija',svoris:'10%',aprasas:'Ilgesnė = daugiau taškų'}],
+    finansinesSalygos:{avansas:'20% po pasirašymo', apmokejimas:'80% po priėmimo', baudos:'0.02%/d', garantinis:'24 mėn.'},
+    rizikos:['ISO 27001 sertifikato trūkumas eliminuoja iš konkurso','24/7 pagalbos reikalavimas didina einamąsias sąnaudas','Techniniai reikalavimai gali didinti kaštus'],
+    galimybes:['60% kainodara leidžia konkuruoti su nedidele marža','Referensai iš viešojo sektoriaus didina pasitikėjimą','Galima subtiekėjų pagalba sertifikatams'],
+    strategija:'Pagrindinis tikslas — konkurencinga kaina. Techninėje dalyje akcentuokite: praeities sėkmingus projektus viešajame sektoriuje, 24/7 reagavimo procedūras, detalų diegimo planą.',
+    prioritetiniaiZingsniai:[{zingsnis:'1. Patikrinti ISO 27001 sertifikato galiojimą',terminas:'Nedelsiant'},{zingsnis:'2. Parengti 3 referensus iš IT projektų',terminas:'Per 3 dienas'},{zingsnis:'3. Apskaičiuoti minimalią pelningą kainą',terminas:'Prieš terminą'}],
+    butinaiIttraukti:[{dokumentas:'ISO 27001 sertifikatas',pastaba:'Būtina kvalifikacinė sąlyga'},{dokumentas:'3 referensai (paskutiniai 5 metai)',pastaba:'IT infrastruktūros projektai'}],
+    dazniausiasKlaidos:['Neįtraukiamos visos papildomos sąnaudos','Referensų datos neatitinka reikalaujamo laikotarpio'],
+    klausimaiPerkanciajai:['Ar lygiavertis sertifikatas priimamas vietoj ISO 27001?','Ar 24/7 SLA detalizuotas techninėje specifikacijoje?'],
+    isViso:'Konkursas tinkamas įmonėms su tvirtomis IT kompetencijomis ir ISO 27001 sertifikatu. 60% kainodara reiškia, kad agresyvi kainodara yra raktas. Prieš teikiant — patikrinti apyvartos atitikimą ir sertifikatų galiojimą.'
+  };
+  curResult = demo;
+  document.getElementById('landing').style.display = 'none';
+  document.getElementById('app').classList.add('open');
+  updSB(); setTimeout(initMobile, 100);
+  pg('analyze');
+  setTimeout(()=>{ renderResult(demo); }, 200);
+}
+
+// ══════════════════════════════════
+// ELIGIBILITY CHECK
+// ══════════════════════════════════
+function openEligCheck(){
+  if(!curResult){ alert('Pirmiausia atlikite analizę'); return; }
+  document.getElementById('elig-form').style.display = 'block';
+  document.getElementById('elig-result').style.display = 'none';
+  document.getElementById('elig-modal').style.display = 'flex';
+}
+
+async function checkEligibility(){
+  if(!curResult) return;
+  const revenue = parseInt(document.getElementById('elig-revenue')?.value)||0;
+  const employees = parseInt(document.getElementById('elig-employees')?.value)||0;
+  const exp = parseInt(document.getElementById('elig-exp')?.value)||0;
+  const certs = (document.getElementById('elig-certs')?.value||'').trim();
+  if(!revenue && !employees){ alert('Įveskite bent apyvartos duomenis'); return; }
+  document.getElementById('elig-form').style.display = 'none';
+  const res = document.getElementById('elig-result');
+  res.style.display = 'block';
+  res.innerHTML = '<div style="display:flex;align-items:center;gap:12px;color:var(--text2)"><div class="spin"></div><span>Tikrinama...</span></div>';
+  const kv = curResult.kvalifikacija||{};
+  const tok = localStorage.getItem(TK);
+  const prompt = `Ar ši įmonė atitinka šio konkurso kvalifikacijos reikalavimus?
+
+KONKURSO REIKALAVIMAI:
+- Apyvarta: ${kv.apyvarta||'nenurodyta'}
+- Darbuotojai: ${kv.darbuotojai||'nenurodyta'}
+- Patirtis: ${kv.patirtis||'nenurodyta'}
+- Sertifikatai: ${kv.sertifikatai||'nenurodyta'}
+
+ĮMONĖS DUOMENYS:
+- Metinė apyvarta: ${revenue.toLocaleString()} EUR
+- Darbuotojai: ${employees}
+- Patirtis: ${exp} metai
+- Sertifikatai: ${certs||'nenurodyta'}
+
+Atsakyk: TINKA ✅ / NETINKA ❌ / ABEJOTINA ⚠️ — po vieną sakinį kiekvienam reikalavimui.`;
+  try{
+    const r = await fetch(API+'/api/chat',{method:'POST',headers:{'Content-Type':'application/json','Authorization':'Bearer '+tok},body:JSON.stringify({messages:[{role:'user',content:prompt}],mode:'chat'})});
+    const data = await r.json();
+    const text = data.text||'Klaida';
+    res.innerHTML = `<div style="background:rgba(0,0,0,.2);border-radius:10px;padding:16px;font-size:13px;color:var(--text);line-height:1.7;white-space:pre-wrap">${text.replace(/</g,'&lt;')}</div>
+      <div style="display:flex;gap:10px;margin-top:16px">
+        <button onclick="document.getElementById('elig-form').style.display='block';document.getElementById('elig-result').style.display='none'" class="btn btn-outline btn-sm">← Keisti</button>
+        <button onclick="document.getElementById('elig-modal').style.display='none'" class="btn btn-ghost btn-sm">Uždaryti</button>
+      </div>`;
+  } catch(e){
+    res.innerHTML = '<p style="color:var(--danger)">Klaida: '+e.message+'</p>';
+  }
+}
+
+// ══════════════════════════════════
+// REMINDER
+// ══════════════════════════════════
+async function setReminderFromResult(){
+  if(!curResult) return;
+  const deadline = curResult.terminai?.pasiulymoTerminas;
+  if(!deadline){ alert('Terminas nerastas analizėje'); return; }
+  const tok = localStorage.getItem(TK);
+  try{
+    const r = await fetch(API+'/api/reminders',{method:'POST',headers:{'Content-Type':'application/json','Authorization':'Bearer '+tok},body:JSON.stringify({deadline, title:curResult.pavadinimas||'Konkursas'})});
+    const d = await r.json();
+    if(r.ok) alert('✅ Priminimai nustatyti! Gausite el. laišką 7 d. ir 1 d. prieš terminą ('+deadline+')');
+    else alert('Klaida: '+(d.error||'Nepavyko'));
+  } catch(e){ alert('Klaida: '+e.message); }
+}
+
+// ══════════════════════════════════
+// ASSISTANT PAGE
+// ══════════════════════════════════
+function initAssistant(){
+  const noResult = document.getElementById('assistant-no-result');
+  const chatFull = document.getElementById('assistant-chat-full');
+  if(!curResult){ if(noResult)noResult.style.display='block'; if(chatFull)chatFull.style.display='none'; return; }
+  if(noResult) noResult.style.display='none';
+  if(chatFull) chatFull.style.display='block';
+  const lbl = document.getElementById('asst-ctx-label');
+  if(lbl) lbl.textContent = (curResult.pavadinimas||'Dabartinė analizė').slice(0,60);
+  const msgs = document.getElementById('asst-msgs');
+  if(msgs && chatHistory.length > 0){
+    msgs.innerHTML = chatHistory.map(m=>`<div class="cm ${m.role==='user'?'cm-user':'cm-ai'}">${m.content.replace(/</g,'&lt;').replace(/\n/g,'<br>')}</div>`).join('');
+    msgs.scrollTop = msgs.scrollHeight;
+  }
+}
+
+function quickAsk(q){
+  const inp = document.getElementById('asst-q');
+  if(inp) inp.value = q;
+  sendFullChat();
+}
+
+async function sendFullChat(){
+  const inp = document.getElementById('asst-q');
+  const q = (inp?.value||'').trim();
+  if(!q) return;
+  const msgs = document.getElementById('asst-msgs');
+  const btn = document.getElementById('asst-send');
+  if(!msgs) return;
+  inp.value = ''; if(btn) btn.disabled = true;
+  chatContext = curResult;
+  chatHistory.push({role:'user', content:q});
+  msgs.innerHTML += `<div class="cm cm-user">${q.replace(/</g,'&lt;')}</div>`;
+  msgs.innerHTML += `<div class="cm cm-ai" id="asst-thinking" style="color:var(--text2);font-style:italic">⏳ Galvoju...</div>`;
+  msgs.scrollTop = msgs.scrollHeight;
+  const tok = localStorage.getItem(TK);
+  try{
+    const r = await fetch(API+'/api/chat',{method:'POST',headers:{'Content-Type':'application/json','Authorization':'Bearer '+tok},body:JSON.stringify({messages:chatHistory,context:chatContext,mode:'chat'})});
+    const data = await r.json();
+    const t = document.getElementById('asst-thinking'); if(t) t.remove();
+    if(!r.ok){
+      if(r.status===403) msgs.innerHTML += '<div class="cm cm-ai" style="color:var(--warn)">🔒 AI asistentas prieinamas tik Pro ir Komanda planams.<button onclick="selP('pro');goChk()" style="background:var(--grad);border:none;color:#fff;padding:4px 12px;border-radius:6px;cursor:pointer;font-size:12px;margin-left:8px">Gauti Pro →</button></div>';
+      else msgs.innerHTML += `<div class="cm cm-ai" style="color:var(--danger)">Klaida: ${data.error||'Nežinoma'}</div>`;
+    } else {
+      const text = data.text||'';
+      chatHistory.push({role:'assistant',content:text});
+      msgs.innerHTML += `<div class="cm cm-ai">${text.replace(/</g,'&lt;').replace(/\n/g,'<br>')}</div>`;
+    }
+  } catch(e){
+    const t = document.getElementById('asst-thinking'); if(t) t.remove();
+    msgs.innerHTML += `<div class="cm cm-ai" style="color:var(--danger)">Ryšio klaida</div>`;
+  } finally {
+    if(btn) btn.disabled = false;
+    msgs.scrollTop = msgs.scrollHeight;
+  }
+}
+
+
+// ══════════════════════════════════
+// OPEN CHAT WITH CONTEXT
+// ══════════════════════════════════
+function openChat(result){
+  chatContext = result;
+  chatHistory = [];
+  const pro = (curUser && (curUser.plan==='pro' || curUser.plan==='team'));
+  const msgs = document.getElementById('chat-msgs');
+  const label = document.getElementById('chat-context-label');
+  const noAn = document.getElementById('chat-no-analysis');
+  const wall = document.getElementById('chat-pro-wall');
+  const inp = document.getElementById('chat-input-area');
+
+  if(label) label.textContent = (result.pavadinimas||'Konkursas').slice(0,40);
+  if(noAn) noAn.style.display = 'none';
+  if(wall) wall.classList.toggle('hidden', pro);
+  if(msgs){
+    msgs.style.display = pro ? 'flex' : 'none';
+    if(pro) msgs.innerHTML = '<div class="cm cm-ai">Išanalizavau <strong>'+(result.pavadinimas||'šį konkursą')+'</strong>. Kuo galiu padėti?</div>';
+  }
+  if(inp) inp.style.display = pro ? 'flex' : 'none';
+  initAssistant();
+}
 </script>
 
 <!-- AI CHAT WIDGET -->
