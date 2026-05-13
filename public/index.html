@@ -2839,30 +2839,26 @@ function initCVPPage(){
 
 function openCVP(){
   const q = (document.getElementById('cvp-q')?.value||'').trim();
-  // Save to recent
   if(q){
     const recent = JSON.parse(localStorage.getItem('cvp_recent')||'[]');
     const updated = [q, ...recent.filter(r=>r!==q)].slice(0,10);
     localStorage.setItem('cvp_recent', JSON.stringify(updated));
   }
-  // Nauja CVP IS (aktuali nuo 2024-12-01)
-  // Senoji sistema (viesiejipirkimai.lt/epps) išjungta 2024-11-29
-  const newCVP = 'https://viesiejipirkimai.lt';
-  window.open(newCVP, '_blank', 'noopener');
-  // Show search hint
+  // Veikiantis Lietuvos viešųjų pirkimų portalas (CVPP)
+  const url = 'https://cvpp.eviesiejipirkimai.lt/';
+  window.open(url, '_blank', 'noopener');
   if(q){
     const tip = document.createElement('div');
-    tip.style.cssText='position:fixed;top:80px;right:24px;background:#1a56db;color:#fff;padding:14px 18px;border-radius:12px;font-size:13px;z-index:999;box-shadow:0 4px 20px rgba(0,0,0,.4);max-width:320px;line-height:1.6';
-    tip.innerHTML='🔍 Atidarytas CVP IS portalas.<br>Paieškos laukelyje įveskite:<br><strong style="font-size:14px">'+q+'</strong><br><span style="opacity:.8;font-size:11px;margin-top:4px;display:block">Spauskite „Ieškoti" portale</span>';
+    tip.style.cssText = 'position:fixed;top:80px;right:24px;background:#1a56db;color:#fff;padding:14px 18px;border-radius:12px;font-size:13px;z-index:999;box-shadow:0 4px 20px rgba(0,0,0,.4);max-width:340px;line-height:1.6';
+    tip.innerHTML = '🔍 Atidarytas CVPP portalas.<br>Paieškos laukelyje (viršuje) įveskite:<br><strong style="font-size:14px;background:rgba(255,255,255,.2);padding:2px 8px;border-radius:6px">' + q + '</strong><br><span style="opacity:.85;font-size:11px;margin-top:6px;display:block">Tada spauskite „Ieškoti" portalo viduje</span>';
     const close = document.createElement('button');
-    close.style.cssText='position:absolute;top:8px;right:10px;background:none;border:none;color:#fff;cursor:pointer;font-size:16px';
-    close.textContent='×'; close.onclick=()=>tip.remove();
-    tip.appendChild(close); document.body.appendChild(tip);
-    setTimeout(()=>tip&&tip.remove(), 8000);
+    close.style.cssText = 'position:absolute;top:8px;right:10px;background:none;border:none;color:#fff;cursor:pointer;font-size:18px';
+    close.textContent = '×';
+    close.onclick = () => tip.remove();
+    tip.appendChild(close);
+    document.body.appendChild(tip);
+    setTimeout(() => tip && tip.remove(), 10000);
   }
-  // Also update page with hint
-  const wrap = document.getElementById('cvp-recent-wrap');
-  if(q) initCVPPage();
 }
 
 
