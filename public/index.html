@@ -677,7 +677,7 @@ footer{background:var(--navy2);border-top:1px solid var(--border);padding:48px 3
       <div class="footer-brand">
         <div class="footer-brand-name">Bidwise <span class="grad-text">AI</span> <span style="font-size:11px;background:rgba(245,158,11,.15);color:#fbbf24;border-radius:6px;padding:2px 8px;vertical-align:middle">BETA</span></div>
         <p>Išmani CVP konkursų analizė Lietuvos įmonėms. Sutaupykite laiko ir geriau supraskite konkursus.</p>
-        <p style="font-size:11px;color:var(--text3);margin-top:8px">Valdytoja: Elija Greivytė · aibidwise@gmail.com</p>
+
       </div>
       <div class="footer-links">
         <div class="footer-col">
@@ -695,10 +695,7 @@ footer{background:var(--navy2);border-top:1px solid var(--border);padding:48px 3
       </div>
     </div>
     <div class="footer-bottom">
-      <div>
-        <p style="margin-bottom:4px">© 2025 Bidwise AI · Beta versija</p>
-        <p style="font-size:11px;color:var(--text3)">Projekto valdytoja: Elija Greivytė · <a href="mailto:aibidwise@gmail.com" style="color:var(--text3);text-decoration:none">aibidwise@gmail.com</a></p>
-      </div>
+      <p>© 2025 Bidwise AI · Beta versija</p>
       <div class="footer-legal">
         <a onclick="openPrivacy()">Privatumo politika</a>
         <a onclick="openTerms()">Paslaugų sąlygos</a>
@@ -836,8 +833,8 @@ footer{background:var(--navy2);border-top:1px solid var(--border);padding:48px 3
     </div>
     <div class="legal-body">
       <h3>1. Duomenų valdytojas</h3>
-      <p>Jūsų asmens duomenų valdytojas yra <strong>Elija Greivytė</strong>, Bidwise AI projekto valdytoja (toliau – „mes", „mūsų").</p>
-      <p>El. paštas: <strong>aibidwise@gmail.com</strong></p>
+      <p>Jūsų asmens duomenų valdytojas yra Bidwise AI projekto valdytojas (toliau – „mes", „mūsų").</p>
+      <p>Kontaktinis el. paštas: <strong>aibidwise@gmail.com</strong></p>
       <div style="background:rgba(245,158,11,.08);border:1px solid rgba(245,158,11,.2);border-radius:8px;padding:10px 14px;margin-top:10px;font-size:12px;color:var(--text2)">⚠️ Bidwise AI šiuo metu yra <strong>beta versija</strong>. Paslauga teikiama testavimo tikslais. Komercinė veikla pradedama registravus verslą.</div>
 
       <h3>2. Kokie duomenys renkami</h3>
@@ -2461,22 +2458,26 @@ function exportPDF(){
 
       <!-- FOOTER -->
       <div style="border-top:1px solid #e2e8f0;padding-top:12px;margin-top:16px;text-align:center;color:#94a3b8;font-size:10px">
-        Bidwise AI · Išmani CVP analizė · bidwise.lt · Sugeneruota: ${new Date().toLocaleString('lt-LT')}
+        Bidwise AI · bidwiseai.vercel.app · Sugeneruota: ${new Date().toLocaleString('lt-LT')}
       </div>
     </div>
   </body></html>`;
 
+  // Tiesioginis atsisiuntimas — be blob URL naujame lange
   const blob = new Blob([html], {type:'text/html;charset=utf-8'});
   const url = URL.createObjectURL(blob);
-  const win = window.open(url, '_blank');
-  if(win) {
-    win.onload = () => { setTimeout(() => { win.focus(); }, 500); };
-  } else {
-    // Fallback: download as HTML
-    const a = document.createElement('a');
-    a.href = url; a.download = 'Bidwise_analize_'+Date.now()+'.html'; a.click();
-  }
-  setTimeout(() => URL.revokeObjectURL(url), 10000);
+  const fname = 'Bidwise_' + (r.pavadinimas||'analize').replace(/[^a-zA-Z0-9\u0100-\u017e]/g,'_').slice(0,40) + '.html';
+  const a = document.createElement('a');
+  a.href = url; a.download = fname; a.style.display='none';
+  document.body.appendChild(a); a.click();
+  document.body.removeChild(a);
+  setTimeout(() => URL.revokeObjectURL(url), 5000);
+  // Show tip
+  const tip = document.createElement('div');
+  tip.style.cssText='position:fixed;bottom:90px;right:24px;background:#10b981;color:#fff;padding:12px 18px;border-radius:10px;font-size:13px;z-index:999;box-shadow:0 4px 20px rgba(0,0,0,.3)';
+  tip.innerHTML='✅ Atsisiųsta! Atidarykite failą ir spauskite Ctrl+P → Išsaugoti kaip PDF';
+  document.body.appendChild(tip);
+  setTimeout(()=>tip.remove(), 5000);
 }
 
 
@@ -2844,14 +2845,11 @@ function openCVP(){
     const updated = [q, ...recent.filter(r=>r!==q)].slice(0,10);
     localStorage.setItem('cvp_recent', JSON.stringify(updated));
   }
-  // Build CVP.lt URL — oficialus Lietuvos viešųjų pirkimų portalas
+  // CVP IS paieška — oficialus Lietuvos viešųjų pirkimų portalas
   const baseUrl = 'https://viesiejipirkimai.lt/epps/searchNotices.do';
-  const params = new URLSearchParams();
-  if(q) params.set('searchText', q);
-  params.set('noticeType', 'CONTRACT_NOTICE');
-  params.set('orderBy', 'PUBLISH_DATE');
-  params.set('orderDir', 'DESC');
-  const url = baseUrl+'?'+params.toString();
+  const url = q
+    ? baseUrl + '?searchText=' + encodeURIComponent(q)
+    : 'https://viesiejipirkimai.lt/epps/searchNotices.do';
   window.open(url, '_blank', 'noopener');
   // Also update page with hint
   const wrap = document.getElementById('cvp-recent-wrap');
