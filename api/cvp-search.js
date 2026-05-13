@@ -18,93 +18,56 @@ module.exports = async (req, res) => {
   if (!user) return res.status(401).json({ error: 'Neprisijungta' });
 
   const { q = '', cpv = '', min = '', max = '', page = '1' } = req.query;
+  const pageNum = Math.max(1, parseInt(page)) - 1;
+  const searchUrl = `https://viesiejipirkimai.lt/epps/searchNotices.do?searchText=${encodeURIComponent(q)}&noticeType=CONTRACT_NOTICE`;
 
-  try {
-    // CVP.lt public API (eviesiejipirkimai.lt open data)
-    const params = new URLSearchParams({
-      pageSize: '20',
-      pageNumber: String(parseInt(page) - 1),
-      ...(q && { description: q }),
-      ...(cpv && { cpvCode: cpv }),
-      ...(min && { estimatedValueFrom: min }),
-      ...(max && { estimatedValueTo: max }),
-      status: 'ACTIVE',
-      sortField: 'publishDate',
-      sortDirection: 'DESC',
-    });
+  const endpoints = [
+    `https://cvpp.eviesiejipirkimai.lt/api/public/procurements?page=${pageNum}&size=20&sort=publishedDate,desc&status=PUBLISHED${q?'&title='+encodeURIComponent(q):''}${cpv?'&cpvCode='+cpv:''}`,
+    `https://cvpp.eviesiejipirkimai.lt/api/procurements?pageNo=${pageNum}&pageSize=20&orderBy=publishDate&orderDir=DESC&status=ACTIVE${q?'&searchText='+encodeURIComponent(q):''}`,
+  ];
 
-    const url = `https://cvpp.eviesiejipirkimai.lt/api/procurements?${params}`;
-    const r = await fetch(url, {
-      headers: {
-        'Accept': 'application/json',
-        'User-Agent': 'BidwiseAI/1.0'
-      },
-      signal: AbortSignal.timeout(10000)
-    });
+  for (const url of endpoints) {
+    try {
+      const r = await fetch(url, {
+        headers: { 'Accept': 'application/json', 'User-Agent': 'BidwiseAI/1.0' },
+        signal: AbortSignal.timeout(8000)
+      });
+      if (!r.ok) continue;
+      const data = await r.json();
+      const items = data.content || data.procurements || data.data || data.items || [];
+      if (!Array.isArray(items) || !items.length) continue;
 
-    if (!r.ok) {
-      // Fallback: return mock data so UI works even if CVP.lt is down
-      return res.status(200).json({ procurements: getMockData(q), total: 3, mock: true });
-    }
+      const mapped = items.map(p => ({
+        id: p.id || p.procurementId,
+        title: p.name || p.title || p.procurementName || 'Nenurodyta',
+        buyer: p.contractingAuthority?.name || p.buyerName || p.organizationName || '–',
+        value: p.estimatedValue ? Number(p.estimatedValue).toLocaleString('lt-LT') + ' EUR' : '–',
+        cpv: p.cpvCode || p.mainCpvCode || '–',
+        deadline: fmt(p.submissionDeadline || p.tenderDeadline),
+        published: fmt(p.publishedDate || p.publishDate),
+        url: p.url || `https://cvpp.eviesiejipirkimai.lt/procurement/${p.id}`,
+        type: p.procedureType || p.procurementType || '–'
+      }));
 
-    const data = await r.json();
-    const items = (data.content || data.procurements || data.data || []).map(p => ({
-      id: p.id || p.procurementId,
-      title: p.name || p.description || p.title || 'Nenurodyta',
-      buyer: p.contractingAuthority?.name || p.buyerName || '–',
-      value: p.estimatedValue ? `${Number(p.estimatedValue).toLocaleString('lt-LT')} EUR` : '–',
-      cpv: p.cpvCode || p.mainCpvCode || '–',
-      deadline: p.tenderDeadline || p.submissionDeadline || '–',
-      published: p.publishDate || p.publicationDate || '–',
-      url: p.url || `https://cvpp.eviesiejipirkimai.lt/procurement/${p.id}`,
-      type: p.procedureType || p.procurementType || '–'
-    }));
-
-    return res.status(200).json({
-      procurements: items,
-      total: data.totalElements || data.total || items.length,
-      page: parseInt(page)
-    });
-  } catch (e) {
-    console.error('CVP search error:', e.message);
-    return res.status(200).json({ procurements: getMockData(q), total: 3, mock: true });
+      return res.status(200).json({
+        procurements: mapped,
+        total: data.totalElements || data.total || mapped.length,
+        page: pageNum + 1
+      });
+    } catch (e) { console.warn('CVP endpoint failed:', e.message); }
   }
+
+  // API unavailable — return link to portal
+  return res.status(200).json({
+    procurements: [], total: 0, apiUnavailable: true, searchUrl
+  });
 };
 
-function getMockData(q) {
-  return [
-    {
-      id: 'demo-1',
-      title: q ? `${q} — pavyzdinis konkursas` : 'IT infrastruktūros atnaujinimas',
-      buyer: 'Vilniaus miesto savivaldybė',
-      value: '150 000 EUR',
-      cpv: '30200000-1',
-      deadline: new Date(Date.now() + 14 * 86400000).toLocaleDateString('lt-LT'),
-      published: new Date().toLocaleDateString('lt-LT'),
-      url: 'https://cvpp.eviesiejipirkimai.lt',
-      type: 'Atviras konkursas'
-    },
-    {
-      id: 'demo-2',
-      title: 'Valymo paslaugų pirkimas biuro patalpoms',
-      buyer: 'Lietuvos nacionalinis muziejus',
-      value: '48 000 EUR',
-      cpv: '90910000-9',
-      deadline: new Date(Date.now() + 10 * 86400000).toLocaleDateString('lt-LT'),
-      published: new Date(Date.now() - 2 * 86400000).toLocaleDateString('lt-LT'),
-      url: 'https://cvpp.eviesiejipirkimai.lt',
-      type: 'Skelbiama apklausa'
-    },
-    {
-      id: 'demo-3',
-      title: 'Mokymo paslaugų pirkimas darbuotojams',
-      buyer: 'Valstybinė mokesčių inspekcija',
-      value: '62 000 EUR',
-      cpv: '80500000-9',
-      deadline: new Date(Date.now() + 21 * 86400000).toLocaleDateString('lt-LT'),
-      published: new Date(Date.now() - 1 * 86400000).toLocaleDateString('lt-LT'),
-      url: 'https://cvpp.eviesiejipirkimai.lt',
-      type: 'Atviras konkursas'
-    }
-  ];
+function fmt(d) {
+  if (!d) return '–';
+  try {
+    const dt = new Date(d);
+    if (isNaN(dt)) return String(d).slice(0, 10);
+    return dt.toLocaleDateString('lt-LT') + (dt.getHours() ? ' ' + dt.toLocaleTimeString('lt-LT', {hour:'2-digit',minute:'2-digit'}) : '');
+  } catch { return String(d).slice(0, 10); }
 }
