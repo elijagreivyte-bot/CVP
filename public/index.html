@@ -1159,21 +1159,51 @@ footer{background:var(--navy2);border-top:1px solid var(--border);padding:48px 3
   <!-- CVP.lt SEARCH PAGE -->
   <div id="pg-cvp" class="hidden">
     <h1 class="pg-h">🇱🇹 CVP.lt konkursų paieška</h1>
-    <p class="pg-sub">Ieškokite aktyvių viešųjų pirkimų ir vienų paspaudimu pradėkite analizę</p>
-    <div style="display:flex;gap:10px;flex-wrap:wrap;margin-bottom:20px">
-      <input id="cvp-q" class="inp" placeholder="🔍 Pavadinimas, raktažodis..." style="flex:2;min-width:180px" onkeydown="if(event.key==='Enter')searchCVP()">
-      <input id="cvp-cpv" class="inp" placeholder="CPV kodas (nebūtina)" style="flex:1;min-width:130px">
-      <input id="cvp-min" class="inp" placeholder="Min. vertė EUR" style="width:130px" type="number">
-      <input id="cvp-max" class="inp" placeholder="Maks. vertė EUR" style="width:130px" type="number">
-      <button class="btn btn-primary" onclick="searchCVP()">Ieškoti</button>
+    <p class="pg-sub">Raskite aktyvius konkursus ir vienų paspaudimu pradėkite analizę</p>
+
+    <!-- SEARCH BAR → opens CVP.lt with pre-filled search -->
+    <div style="display:flex;gap:10px;flex-wrap:wrap;margin-bottom:24px">
+      <input id="cvp-q" class="inp" placeholder="🔍 Raktažodis (pvz. įranga, valymas, IT...)" style="flex:1;min-width:220px" onkeydown="if(event.key==='Enter')openCVP()">
+      <select id="cvp-type" class="inp" style="width:200px">
+        <option value="">Visi pirkimai</option>
+        <option value="OPEN">Atviras konkursas</option>
+        <option value="SIMPLIFIED">Supaprastintas</option>
+        <option value="SMALL">Mažos vertės</option>
+      </select>
+      <button class="btn btn-primary" onclick="openCVP()">🔗 Ieškoti CVP.lt →</button>
     </div>
-    <div id="cvp-results">
-      <div style="text-align:center;padding:48px;color:var(--text2)">
-        <div style="font-size:40px;margin-bottom:12px">🔍</div>
-        <p>Įveskite paieškos žodį arba palikite tuščią ir spauskite „Ieškoti" — pamatysite aktyvius konkursus</p>
+
+    <!-- HOW IT WORKS STEPS -->
+    <div style="display:grid;grid-template-columns:repeat(3,1fr);gap:16px;margin-bottom:32px">
+      <div style="background:var(--card);border:1px solid var(--border);border-radius:14px;padding:20px;text-align:center">
+        <div style="font-size:32px;margin-bottom:10px">1️⃣</div>
+        <div style="font-family:Sora,sans-serif;font-size:14px;font-weight:700;margin-bottom:6px">Ieškokite CVP.lt</div>
+        <p style="font-size:12px;color:var(--text2);line-height:1.6">Įveskite raktažodį ir spauskite „Ieškoti CVP.lt" — atidaromas portalas su paruošta paieška</p>
+      </div>
+      <div style="background:var(--card);border:1px solid var(--border);border-radius:14px;padding:20px;text-align:center">
+        <div style="font-size:32px;margin-bottom:10px">2️⃣</div>
+        <div style="font-family:Sora,sans-serif;font-size:14px;font-weight:700;margin-bottom:6px">Atsisiųskite dokumentus</div>
+        <p style="font-size:12px;color:var(--text2);line-height:1.6">Suradę įdomų konkursą — atsisiųskite ZIP archyvą su pirkimo dokumentais</p>
+      </div>
+      <div style="background:linear-gradient(135deg,rgba(26,86,219,.08),rgba(124,58,237,.08));border:1px solid rgba(59,130,246,.2);border-radius:14px;padding:20px;text-align:center">
+        <div style="font-size:32px;margin-bottom:10px">3️⃣</div>
+        <div style="font-family:Sora,sans-serif;font-size:14px;font-weight:700;margin-bottom:6px">Analizuokite čia</div>
+        <p style="font-size:12px;color:var(--text2);line-height:1.6">Grįžkite ir įkelkite ZIP — AI per 30 sekundžių išanalizuoja viską</p>
+        <button class="btn btn-primary btn-sm" style="margin-top:10px" onclick="pg('analyze')">→ Pradėti analizę</button>
       </div>
     </div>
-    <div id="cvp-pagination" style="display:flex;justify-content:center;gap:10px;margin-top:16px"></div>
+
+    <!-- QUICK LINKS to CVP.lt categories -->
+    <div style="margin-bottom:24px">
+      <p style="font-size:12px;font-weight:700;color:var(--text2);letter-spacing:1px;text-transform:uppercase;margin-bottom:12px">Greitos nuorodos pagal kategoriją</p>
+      <div style="display:flex;flex-wrap:wrap;gap:8px" id="cvp-quicklinks"></div>
+    </div>
+
+    <!-- RECENT — stored from previous sessions -->
+    <div id="cvp-recent-wrap" style="display:none">
+      <p style="font-size:12px;font-weight:700;color:var(--text2);letter-spacing:1px;text-transform:uppercase;margin-bottom:12px">Paskutinės paieškos</p>
+      <div id="cvp-recent"></div>
+    </div>
   </div>
 
   <!-- AI ASSISTANT PAGE -->
@@ -1393,7 +1423,7 @@ function pg(n){
   if(n==='account')renderAcc();
   if(n==='projects')renderProjects();
   if(n==='assistant')initAssistant();
-  if(n==='cvp'){setTimeout(()=>document.getElementById('cvp-q')?.focus(),100);}
+  if(n==='cvp'){initCVPPage();setTimeout(()=>document.getElementById('cvp-q')?.focus(),100);}
 }
 
 function updSB(){
@@ -2758,69 +2788,66 @@ async function sendChat(){
   }
 }
 
+
 // ══════════════════════════════════
-// CVP.lt SEARCH
+// CVP.lt GATEWAY
 // ══════════════════════════════════
-let cvpPage = 1;
-async function searchCVP(p){
-  cvpPage = p || 1;
-  const q = (document.getElementById('cvp-q')?.value||'').trim();
-  const cpv = (document.getElementById('cvp-cpv')?.value||'').trim();
-  const min = document.getElementById('cvp-min')?.value||'';
-  const max = document.getElementById('cvp-max')?.value||'';
-  const res = document.getElementById('cvp-results');
-  if(!res) return;
-  res.innerHTML = '<div style="display:flex;align-items:center;gap:12px;padding:32px;color:var(--text2)"><div class="spin"></div><span>Ieškoma CVP.lt...</span></div>';
-  const tok = localStorage.getItem(TK);
-  try{
-    const params = new URLSearchParams({q, cpv, min, max, page: cvpPage});
-    const r = await fetch(API+'/api/cvp-search?'+params, {headers:{'Authorization':'Bearer '+tok}});
-    const d = await r.json();
-    if(!r.ok){ res.innerHTML = '<p style="color:var(--danger);padding:24px">'+(d.error||'Klaida')+'</p>'; return; }
-    const items = d.procurements || [];
-    if(!items.length){
-      const searchUrl = d.searchUrl || 'https://viesiejipirkimai.lt/epps/searchNotices.do';
-      if(d.apiUnavailable){
-        res.innerHTML = `<div style="background:rgba(245,158,11,.06);border:1px solid rgba(245,158,11,.2);border-radius:12px;padding:24px;text-align:center">
-          <div style="font-size:32px;margin-bottom:12px">🔗</div>
-          <p style="font-weight:700;color:var(--text);margin-bottom:8px">CVP.lt API šiuo metu nepasiekiamas</p>
-          <p style="font-size:13px;color:var(--text2);margin-bottom:16px">Ieškokite konkursų tiesiogiai CVP portale, tada grįžkite ir įkelkite dokumentus analizei.</p>
-          <a href="${searchUrl}" target="_blank" rel="noopener" class="btn btn-primary btn-sm" style="text-decoration:none;display:inline-flex">🔗 Atidaryti CVP.lt paiešką →</a>
-        </div>`;
-      } else {
-        res.innerHTML = '<div style="text-align:center;padding:48px;color:var(--text2)"><div style="font-size:32px;margin-bottom:12px">🔍</div><p>Nieko nerasta pagal &ldquo;'+q+'&rdquo;. Bandykite kitu raktažodžiu.</p></div>';
-      }
-      return;
-    }
-    const mockBanner = d.mock ? '<div style="background:rgba(245,158,11,.08);border:1px solid rgba(245,158,11,.2);border-radius:8px;padding:10px 14px;font-size:12px;color:var(--warn);margin-bottom:12px">⚠️ CVP.lt šiuo metu nepasiekiamas — rodomi pavyzdiniai duomenys. Patikrinkite ar <code>api/cvp-search.js</code> įdėtas į Vercel.</div>' : '';
-    res.innerHTML = mockBanner + '<div style="display:flex;flex-direction:column;gap:10px">' +
-      items.map(p => `<div style="background:var(--card);border:1px solid var(--border);border-radius:14px;padding:18px 20px">
-        <div style="display:flex;align-items:flex-start;gap:12px;flex-wrap:wrap">
-          <div style="flex:1;min-width:0">
-            <div style="font-size:14px;font-weight:700;color:var(--text);margin-bottom:4px">${p.title}</div>
-            <div style="font-size:12px;color:var(--text2);margin-bottom:8px">${p.buyer}</div>
-            <div style="display:flex;gap:8px;flex-wrap:wrap">
-              ${p.value!=='–'?`<span class="badge badge-blue">${p.value}</span>`:''}
-              ${p.cpv!=='–'?`<span class="badge badge-purple">CPV: ${p.cpv}</span>`:''}
-              ${p.type!=='–'?`<span class="badge badge-green">${p.type}</span>`:''}
-              ${p.deadline!=='–'?`<span class="badge badge-yellow">⏰ ${p.deadline}</span>`:''}
-            </div>
-          </div>
-          <div style="display:flex;flex-direction:column;gap:6px;flex-shrink:0">
-            <button class="btn btn-primary btn-sm" onclick="startFromCVP('${p.id}','${(p.title||'').replace(/'/g,"\\'")}','${p.url||''}')">🔍 Analizuoti</button>
-            <a href="${p.url||'#'}" target="_blank" rel="noopener" class="btn btn-outline btn-sm" style="text-align:center;text-decoration:none">🔗 CVP.lt</a>
-          </div>
-        </div>
-      </div>`).join('') + '</div>';
-    const pag = document.getElementById('cvp-pagination');
-    if(pag && d.total > 20){
-      const pages = Math.min(Math.ceil(d.total/20), 5);
-      pag.innerHTML = Array.from({length:pages},(_,i)=>`<button onclick="searchCVP(${i+1})" class="btn ${i+1===cvpPage?'btn-primary':'btn-outline'} btn-sm">${i+1}</button>`).join('');
-    }
-  } catch(e){
-    res.innerHTML = '<p style="color:var(--danger);padding:24px">Klaida: '+e.message+'</p>';
+const CVP_CATEGORIES = [
+  {label:'🏗️ Statybos', q:'statybos darbai'},
+  {label:'💻 IT ir programinė įranga', q:'informacinių technologijų'},
+  {label:'🧹 Valymo paslaugos', q:'valymo paslaugos'},
+  {label:'🍽️ Maisto tiekimas', q:'maisto produktų tiekimas'},
+  {label:'🚌 Transportas', q:'transporto paslaugos'},
+  {label:'🏥 Medicinos įranga', q:'medicinos įranga'},
+  {label:'📚 Mokymai', q:'mokymo paslaugos'},
+  {label:'⚙️ Įranga ir technika', q:'įrangos tiekimas'},
+  {label:'🌿 Aplinkosauga', q:'aplinkosaugos paslaugos'},
+  {label:'🔒 Apsauga', q:'apsaugos paslaugos'},
+];
+
+function initCVPPage(){
+  // Render quick links
+  const ql = document.getElementById('cvp-quicklinks');
+  if(ql) ql.innerHTML = CVP_CATEGORIES.map(c =>
+    `<button onclick="document.getElementById('cvp-q').value='${c.q}';openCVP()" 
+      style="background:var(--card);border:1px solid var(--border);border-radius:20px;padding:7px 14px;cursor:pointer;font-size:12px;color:var(--text2);font-family:Inter,sans-serif;transition:all .2s"
+      onmouseover="this.style.borderColor='var(--blue3)';this.style.color='var(--text)'"
+      onmouseout="this.style.borderColor='var(--border)';this.style.color='var(--text2)'">${c.label}</button>`
+  ).join('');
+
+  // Show recent searches
+  const recent = JSON.parse(localStorage.getItem('cvp_recent')||'[]');
+  const rw = document.getElementById('cvp-recent-wrap');
+  const rc = document.getElementById('cvp-recent');
+  if(recent.length && rw && rc){
+    rw.style.display='block';
+    rc.innerHTML = recent.slice(0,5).map(r =>
+      `<button onclick="document.getElementById('cvp-q').value='${r}';openCVP()"
+        style="background:var(--card);border:1px solid var(--border);border-radius:8px;padding:8px 16px;cursor:pointer;font-size:13px;color:var(--text2);font-family:Inter,sans-serif;margin:0 6px 6px 0;display:inline-flex;align-items:center;gap:6px">
+        🕐 ${r}</button>`
+    ).join('');
   }
 }
+
+function openCVP(){
+  const q = (document.getElementById('cvp-q')?.value||'').trim();
+  // Save to recent
+  if(q){
+    const recent = JSON.parse(localStorage.getItem('cvp_recent')||'[]');
+    const updated = [q, ...recent.filter(r=>r!==q)].slice(0,10);
+    localStorage.setItem('cvp_recent', JSON.stringify(updated));
+  }
+  // Build CVP.lt URL
+  const baseUrl = 'https://pirkimai.eviesiejipirkimai.lt/app/rfq/publicList.html';
+  const params = new URLSearchParams();
+  if(q) params.set('searchText', q);
+  const url = q ? baseUrl+'?'+params.toString() : baseUrl;
+  window.open(url, '_blank', 'noopener');
+  // Also update page with hint
+  const wrap = document.getElementById('cvp-recent-wrap');
+  if(q) initCVPPage();
+}
+
 
 // ══════════════════════════════════
 // DEMO
