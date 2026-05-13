@@ -2837,11 +2837,14 @@ function openCVP(){
     const updated = [q, ...recent.filter(r=>r!==q)].slice(0,10);
     localStorage.setItem('cvp_recent', JSON.stringify(updated));
   }
-  // Build CVP.lt URL
-  const baseUrl = 'https://pirkimai.eviesiejipirkimai.lt/app/rfq/publicList.html';
+  // Build CVP.lt URL — oficialus Lietuvos viešųjų pirkimų portalas
+  const baseUrl = 'https://viesiejipirkimai.lt/epps/searchNotices.do';
   const params = new URLSearchParams();
   if(q) params.set('searchText', q);
-  const url = q ? baseUrl+'?'+params.toString() : baseUrl;
+  params.set('noticeType', 'CONTRACT_NOTICE');
+  params.set('orderBy', 'PUBLISH_DATE');
+  params.set('orderDir', 'DESC');
+  const url = baseUrl+'?'+params.toString();
   window.open(url, '_blank', 'noopener');
   // Also update page with hint
   const wrap = document.getElementById('cvp-recent-wrap');
