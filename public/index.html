@@ -2339,7 +2339,7 @@ async function sendEmail(){
   if(!curResult){ee.textContent='Nėra analizės rezultato';ee.classList.add('show');return;}
   const tok=localStorage.getItem(TK);
   try{
-    const r=await fetch(API+'/api/email',{method:'POST',headers:{'Content-Type':'application/json','Authorization':'Bearer '+tok},body:JSON.stringify({to,result:curResult})});
+    const r=await fetch(API+'/api/send-email',{method:'POST',headers:{'Content-Type':'application/json','Authorization':'Bearer '+tok},body:JSON.stringify({to,result:curResult})});
     if(r.ok){eo.classList.add('show');}
     else{const d=await r.json();ee.textContent=d.error||'Klaida';ee.classList.add('show');}
   }catch(e){ee.textContent='Klaida: '+e.message+'. Patikrinkite ar RESEND_API_KEY pridėtas į Vercel.';ee.classList.add('show')}
