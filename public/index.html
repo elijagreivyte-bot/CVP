@@ -482,6 +482,7 @@ footer{background:var(--navy2);border-top:1px solid var(--border);padding:48px 3
   <div class="nav-right" id="nav-right">
     <a class="btn-ghost" onclick="landingScroll('kaip-veikia')">Kaip veikia</a>
     <a class="btn-ghost" onclick="landingScroll('kainos')">Kainos</a>
+    <a class="btn-ghost" onclick="landingScroll('faq')">DUK</a>
     <button class="btn-ghost" onclick="openAuth('login')">Prisijungti</button>
     <button class="btn btn-primary btn-sm" onclick="openAuth('register')">Pradėti nemokamai →</button>
   </div>
@@ -496,18 +497,18 @@ footer{background:var(--navy2);border-top:1px solid var(--border);padding:48px 3
 
 <!-- HERO -->
 <div class="hero">
-  <div class="hero-pill au">🇱🇹 &nbsp;Viešieji pirkimai · Lietuva</div>
-  <h1 class="au d1">Supraskite<br><span class="grad-text">CVP konkursus</span><br>giliau ir greičiau</h1>
-  <p class="hero-sub au d2">Įkelkite konkurso dokumentus — AI per 30 sekundžių išanalizuoja reikalavimus, kainų kriterijus, terminus ir parodo ar atitinkate kvalifikaciją.</p>
+  <div class="hero-pill au">🎯 &nbsp;AI patarėjas viešųjų pirkimų laimėtojams</div>
+  <h1 class="au d1">Niekada nedalyvaukite<br>konkurse <span class="grad-text">kuriame negalite laimėti</span></h1>
+  <p class="hero-sub au d2">Įkelkite CVP konkurso dokumentus — AI per 30 sek. pasako <strong>TINKATE/NETINKATE</strong>, identifikuoja rizikas ir parengia <strong>konkrečią laimėjimo strategiją</strong> pagal jūsų įmonės profilį. Ne monitoringas — patarėjas.</p>
   <div class="hero-cta au d3">
     <button class="btn btn-primary" style="padding:16px 36px;font-size:15px" onclick="openAuth('register')">🚀 Pradėti nemokamai</button>
     <button class="btn btn-outline" style="padding:16px 28px;font-size:15px" onclick="runDemo()">▶ Išbandyti demo</button>
   </div>
   <div class="hero-trust au d4">
-    <div class="hero-trust-item"><span>✓</span> 3 analizės nemokamai</div>
-    <div class="hero-trust-item"><span>✓</span> Registracija per 30 sek.</div>
-    <div class="hero-trust-item"><span>✓</span> Tikrina kvalifikacijos atitikimą</div>
-    <div class="hero-trust-item"><span>✓</span> Veikia su CVP.lt dokumentais</div>
+    <div class="hero-trust-item"><span>✓</span> 3 analizės nemokamai · be kortelės</div>
+    <div class="hero-trust-item"><span>✓</span> 5-agent AI sistema</div>
+    <div class="hero-trust-item"><span>✓</span> Personalizuota pagal jūsų įmonę</div>
+    <div class="hero-trust-item"><span>✓</span> BDAR atitinka</div>
   </div>
 </div>
 
@@ -533,6 +534,44 @@ footer{background:var(--navy2);border-top:1px solid var(--border);padding:48px 3
   <div class="stat"><div class="stat-num">20+</div><div class="stat-label">Analizuojamų parametrų</div></div>
   <div class="stat"><div class="stat-num">3x</div><div class="stat-label">Greičiau nei rankiniu būdu</div></div>
   <div class="stat"><div class="stat-num">100%</div><div class="stat-label">Lietuviškas turinys</div></div>
+</div>
+
+<!-- KUO SKIRIAMĖS NUO MONITORING ĮRANKIŲ -->
+<div class="section" style="padding-top:64px;padding-bottom:64px">
+  <div class="container">
+    <div style="text-align:center;margin-bottom:48px">
+      <span class="section-label">Kuo skiriamės</span>
+      <h2 class="section-title">Kiti rodo duomenis.<br><span class="grad-text">Mes pasakome ką daryti.</span></h2>
+    </div>
+    <div style="display:grid;grid-template-columns:1fr 1fr;gap:24px;max-width:900px;margin:0 auto">
+      <div style="background:var(--card);border:1px solid var(--border);border-radius:18px;padding:28px;opacity:.7">
+        <div style="font-size:11px;font-weight:700;letter-spacing:1px;text-transform:uppercase;color:var(--text2);margin-bottom:8px">Konkursų stebėjimo įrankiai</div>
+        <h3 style="font-family:Sora,sans-serif;font-size:18px;font-weight:700;margin-bottom:16px">Randa konkursus</h3>
+        <ul style="list-style:none;display:flex;flex-direction:column;gap:8px">
+          <li style="font-size:13px;color:var(--text2);padding-left:24px;position:relative"><span style="position:absolute;left:0;color:var(--text3)">○</span>Kasdieniniai el. pašto pranešimai</li>
+          <li style="font-size:13px;color:var(--text2);padding-left:24px;position:relative"><span style="position:absolute;left:0;color:var(--text3)">○</span>Filtravimas pagal BVPŽ kodus</li>
+          <li style="font-size:13px;color:var(--text2);padding-left:24px;position:relative"><span style="position:absolute;left:0;color:var(--text3)">○</span>Konkursų sąrašas</li>
+          <li style="font-size:13px;color:var(--text2);padding-left:24px;position:relative;text-decoration:line-through"><span style="position:absolute;left:0;color:var(--danger)">✗</span>AI analizė</li>
+          <li style="font-size:13px;color:var(--text2);padding-left:24px;position:relative;text-decoration:line-through"><span style="position:absolute;left:0;color:var(--danger)">✗</span>Atitikimo įvertinimas</li>
+          <li style="font-size:13px;color:var(--text2);padding-left:24px;position:relative;text-decoration:line-through"><span style="position:absolute;left:0;color:var(--danger)">✗</span>Strategijos rekomendacijos</li>
+        </ul>
+      </div>
+      <div style="background:linear-gradient(135deg,rgba(26,86,219,.08),rgba(124,58,237,.08));border:1px solid rgba(59,130,246,.3);border-radius:18px;padding:28px;position:relative">
+        <div style="position:absolute;top:-12px;left:24px;background:var(--grad);color:#fff;font-size:10px;font-weight:700;letter-spacing:1px;padding:4px 12px;border-radius:20px">BIDWISE AI</div>
+        <div style="font-size:11px;font-weight:700;letter-spacing:1px;text-transform:uppercase;color:var(--blue3);margin-bottom:8px;margin-top:8px">AI analizė</div>
+        <h3 style="font-family:Sora,sans-serif;font-size:18px;font-weight:700;margin-bottom:16px">Padeda priimti sprendimą</h3>
+        <ul style="list-style:none;display:flex;flex-direction:column;gap:8px">
+          <li style="font-size:13px;color:var(--text);padding-left:24px;position:relative"><span style="position:absolute;left:0;color:var(--success)">✓</span><strong>5-agent AI analizė</strong> (gilumas, ne plotis)</li>
+          <li style="font-size:13px;color:var(--text);padding-left:24px;position:relative"><span style="position:absolute;left:0;color:var(--success)">✓</span><strong>TINKATE/NETINKATE</strong> verdiktas</li>
+          <li style="font-size:13px;color:var(--text);padding-left:24px;position:relative"><span style="position:absolute;left:0;color:var(--success)">✓</span>Kainos strategija pagal vertinimo kriterijus</li>
+          <li style="font-size:13px;color:var(--text);padding-left:24px;position:relative"><span style="position:absolute;left:0;color:var(--success)">✓</span>Klausimų rašto generavimas perkančiajai</li>
+          <li style="font-size:13px;color:var(--text);padding-left:24px;position:relative"><span style="position:absolute;left:0;color:var(--success)">✓</span>AI asistentas — paklauskite ko nesuprantate</li>
+          <li style="font-size:13px;color:var(--text);padding-left:24px;position:relative"><span style="position:absolute;left:0;color:var(--success)">✓</span>Personalizuota pagal jūsų įmonės profilį</li>
+        </ul>
+      </div>
+    </div>
+    <p style="text-align:center;margin-top:32px;font-size:14px;color:var(--text2);max-width:600px;margin-left:auto;margin-right:auto;line-height:1.7">💡 <strong>Mes nesivaržome su monitoringo įrankiais</strong> — naudokitės jais konkursams rasti. Pas mus ateikite kai reikia <strong>giliai išanalizuoti konkretų konkursą ir suprasti ar verta jame dalyvauti</strong>.</p>
+  </div>
 </div>
 
 <!-- HOW IT WORKS -->
@@ -602,6 +641,46 @@ footer{background:var(--navy2);border-top:1px solid var(--border);padding:48px 3
   </div>
 </div>
 
+<!-- ROI / VALUE -->
+<div class="section" style="background:linear-gradient(135deg,rgba(26,86,219,.04),rgba(124,58,237,.04));padding-top:72px;padding-bottom:72px">
+  <div class="container">
+    <div style="text-align:center;margin-bottom:48px">
+      <span class="section-label">Vertė skaičiais</span>
+      <h2 class="section-title">Kiek <span class="grad-text">sutaupote</span> kiekvieną konkursą</h2>
+      <p class="section-sub" style="max-width:560px;margin:0 auto">Sutaupote <strong>3 valandas</strong> kiekvienai analizei. Ne todėl, kad mes greitesni, o todėl, kad <strong>žinote ką daryti</strong> iš karto.</p>
+    </div>
+
+    <div style="display:grid;grid-template-columns:repeat(auto-fit,minmax(220px,1fr));gap:20px;max-width:1000px;margin:0 auto 32px">
+      <div style="background:var(--card);border:1px solid var(--border);border-radius:18px;padding:28px 24px;text-align:center">
+        <div style="font-size:42px;font-weight:900;color:var(--blue3);font-family:Sora,sans-serif;line-height:1;margin-bottom:8px">3 val.</div>
+        <div style="font-size:13px;color:var(--text2);line-height:1.6">Tradicinis konkurso analizės laikas — perskaityti, suprasti, ištraukti reikalavimus</div>
+      </div>
+      <div style="background:var(--card);border:1px solid var(--border);border-radius:18px;padding:28px 24px;text-align:center">
+        <div style="font-size:42px;font-weight:900;color:var(--purple2);font-family:Sora,sans-serif;line-height:1;margin-bottom:8px">30 sek.</div>
+        <div style="font-size:13px;color:var(--text2);line-height:1.6">Bidwise AI analizė — viskas struktūruota ir paaiškinta su konkrečia strategija</div>
+      </div>
+      <div style="background:var(--card);border:1px solid var(--border);border-radius:18px;padding:28px 24px;text-align:center">
+        <div style="font-size:42px;font-weight:900;color:var(--success);font-family:Sora,sans-serif;line-height:1;margin-bottom:8px">~50€</div>
+        <div style="font-size:13px;color:var(--text2);line-height:1.6">Vidutinė valandinė analitiko kaina — 3 val. = 150€ vienam konkursui</div>
+      </div>
+      <div style="background:linear-gradient(135deg,rgba(26,86,219,.1),rgba(124,58,237,.1));border:1px solid rgba(59,130,246,.3);border-radius:18px;padding:28px 24px;text-align:center">
+        <div style="font-size:42px;font-weight:900;background:var(--grad);-webkit-background-clip:text;-webkit-text-fill-color:transparent;font-family:Sora,sans-serif;line-height:1;margin-bottom:8px">2.4€</div>
+        <div style="font-size:13px;color:var(--text2);line-height:1.6"><strong style="color:var(--text)">Pro plane</strong> — viena analizė kainuoja kaip kava (~20 analizių/mėn)</div>
+      </div>
+    </div>
+
+    <div style="background:var(--card);border:1px solid var(--border);border-radius:18px;padding:32px;max-width:720px;margin:0 auto;text-align:center">
+      <p style="font-size:15px;line-height:1.8;color:var(--text);margin-bottom:12px">
+        💡 Vidutinis tiekėjas analizuoja <strong>5–10 konkursų per mėnesį.</strong>
+      </p>
+      <p style="font-size:13px;color:var(--text2);line-height:1.7">
+        Tradiciškai tai užima <strong>15–30 valandų darbo</strong> (~750–1500€ vertės laiko).<br>
+        Bidwise AI Pro plane viskas atliekama už <strong>49€/mėn.</strong> — sutaupote <strong>700€+ kas mėnesį</strong> ir laimite daugiau konkursų dėl gilesnės analizės.
+      </p>
+    </div>
+  </div>
+</div>
+
 <!-- PRICING -->
 <div class="section" id="kainos">
   <div class="container" style="text-align:center">
@@ -667,6 +746,81 @@ footer{background:var(--navy2);border-top:1px solid var(--border);padding:48px 3
     <h2>Pradėkite analizuoti<br><span class="grad-text">jau šiandien</span></h2>
     <p>3 analizės nemokamai. Jokių kreditinių kortelių.<br>Registracija trunka 30 sekundžių.</p>
     <button class="btn btn-primary" onclick="openAuth('register')">🚀 Pradėti nemokamai</button>
+  </div>
+</div>
+
+<!-- FAQ -->
+<div class="section" id="faq" style="padding-top:72px;padding-bottom:72px">
+  <div class="container">
+    <div style="text-align:center;margin-bottom:48px">
+      <span class="section-label">Dažni klausimai</span>
+      <h2 class="section-title">Jūs <span class="grad-text">galite klausti</span></h2>
+    </div>
+    <div style="max-width:780px;margin:0 auto;display:flex;flex-direction:column;gap:12px">
+      <details style="background:var(--card);border:1px solid var(--border);border-radius:14px;padding:18px 22px">
+        <summary style="font-size:15px;font-weight:700;color:var(--text);cursor:pointer;font-family:Sora,sans-serif;list-style:none;display:flex;justify-content:space-between;align-items:center">
+          <span>Kokius dokumentus galiu įkelti analizei?</span>
+          <span style="color:var(--blue3);font-size:20px;font-weight:300">+</span>
+        </summary>
+        <p style="margin-top:14px;font-size:13px;color:var(--text2);line-height:1.7">Galite įkelti CVP.lt konkurso ZIP archyvą su visais dokumentais. Sistema atpažįsta PDF, DOCX, DOC ir TXT failus. Iki 50 MB vienai analizei. Veikia su skenuotais PDF (OCR).</p>
+      </details>
+      <details style="background:var(--card);border:1px solid var(--border);border-radius:14px;padding:18px 22px">
+        <summary style="font-size:15px;font-weight:700;color:var(--text);cursor:pointer;font-family:Sora,sans-serif;list-style:none;display:flex;justify-content:space-between;align-items:center">
+          <span>Kuo skiriasi nuo Tedas.lt, eTenders.lt ar Mercell?</span>
+          <span style="color:var(--blue3);font-size:20px;font-weight:300">+</span>
+        </summary>
+        <p style="margin-top:14px;font-size:13px;color:var(--text2);line-height:1.7">Tie įrankiai padeda <strong>RASTI</strong> konkursus ir parodyti istorinius duomenis. Bidwise AI padeda <strong>PRIIMTI SPRENDIMĄ</strong>: ar atitinkate, kokia strategija, kokios rizikos, kaip formuoti kainą. Pas mus ateikite <em>po to</em>, kai jau radote konkursą — gilesnė analizė ir konkretūs veiksmai laimėti.</p>
+      </details>
+      <details style="background:var(--card);border:1px solid var(--border);border-radius:14px;padding:18px 22px">
+        <summary style="font-size:15px;font-weight:700;color:var(--text);cursor:pointer;font-family:Sora,sans-serif;list-style:none;display:flex;justify-content:space-between;align-items:center">
+          <span>Ar galiu pasitikėti AI rekomendacijomis?</span>
+          <span style="color:var(--blue3);font-size:20px;font-weight:300">+</span>
+        </summary>
+        <p style="margin-top:14px;font-size:13px;color:var(--text2);line-height:1.7">Bidwise AI yra <strong>pagalbinis įrankis</strong>, ne sprendimų priimėjas. Naudojame Claude Sonnet AI iš Anthropic — vieną tiksliausių rinkoje. Multi-agent sistema: 5 specializuoti agentai analizuoja skirtingus aspektus. Visada patikrinkite originalius dokumentus prieš pateikdami pasiūlymą.</p>
+      </details>
+      <details style="background:var(--card);border:1px solid var(--border);border-radius:14px;padding:18px 22px">
+        <summary style="font-size:15px;font-weight:700;color:var(--text);cursor:pointer;font-family:Sora,sans-serif;list-style:none;display:flex;justify-content:space-between;align-items:center">
+          <span>Ar mano duomenys saugūs?</span>
+          <span style="color:var(--blue3);font-size:20px;font-weight:300">+</span>
+        </summary>
+        <p style="margin-top:14px;font-size:13px;color:var(--text2);line-height:1.7">Taip. Sistema atitinka BDAR reikalavimus. Visa komunikacija šifruojama (HTTPS), slaptažodžiai bcrypt hashinami. Įkelti dokumentai nesaugomi ilgam — tik analizės rezultatai. Galite ištrinti visus duomenis bet kada iš paskyros nustatymų.</p>
+      </details>
+      <details style="background:var(--card);border:1px solid var(--border);border-radius:14px;padding:18px 22px">
+        <summary style="font-size:15px;font-weight:700;color:var(--text);cursor:pointer;font-family:Sora,sans-serif;list-style:none;display:flex;justify-content:space-between;align-items:center">
+          <span>Kas atsitinka jei išnaudoju nemokamas 3 analizes?</span>
+          <span style="color:var(--blue3);font-size:20px;font-weight:300">+</span>
+        </summary>
+        <p style="margin-top:14px;font-size:13px;color:var(--text2);line-height:1.7">Galėsite peržiūrėti senas analizes nemokamai, bet naujų — ne. Pereiti į Pro planą (49€/mėn) galite bet kada — gausite neribotas analizes, AI asistentą, PDF eksportą, klausimų raštus ir prioritetinį palaikymą.</p>
+      </details>
+      <details style="background:var(--card);border:1px solid var(--border);border-radius:14px;padding:18px 22px">
+        <summary style="font-size:15px;font-weight:700;color:var(--text);cursor:pointer;font-family:Sora,sans-serif;list-style:none;display:flex;justify-content:space-between;align-items:center">
+          <span>Ar reikia įrašyti banko kortelę registracijai?</span>
+          <span style="color:var(--blue3);font-size:20px;font-weight:300">+</span>
+        </summary>
+        <p style="margin-top:14px;font-size:13px;color:var(--text2);line-height:1.7">Ne. Registracija ir 3 nemokamos analizės — be jokios mokėjimo informacijos. Kortelės reikės tik tada, kai norėsite pereiti į Pro arba Komanda planą.</p>
+      </details>
+      <details style="background:var(--card);border:1px solid var(--border);border-radius:14px;padding:18px 22px">
+        <summary style="font-size:15px;font-weight:700;color:var(--text);cursor:pointer;font-family:Sora,sans-serif;list-style:none;display:flex;justify-content:space-between;align-items:center">
+          <span>Ar palaikote lietuvių kalbą su visomis raidėmis?</span>
+          <span style="color:var(--blue3);font-size:20px;font-weight:300">+</span>
+        </summary>
+        <p style="margin-top:14px;font-size:13px;color:var(--text2);line-height:1.7">Taip — visa sistema veikia lietuviškai. AI analizuoja dokumentus lietuvių kalba, rezultatus pateikia lietuvių kalba, eksportuoti dokumentai (PDF, Word) išsaugo visus lietuviškus simbolius (ė, š, ž, ū, č, ą, į).</p>
+      </details>
+    </div>
+  </div>
+</div>
+
+<!-- CTA FINAL -->
+<div class="section" style="padding-top:72px;padding-bottom:72px">
+  <div class="container" style="text-align:center">
+    <div style="background:linear-gradient(135deg,rgba(26,86,219,.08),rgba(124,58,237,.08));border:1px solid rgba(59,130,246,.2);border-radius:24px;padding:56px 32px;max-width:780px;margin:0 auto">
+      <h2 style="font-family:Sora,sans-serif;font-size:32px;font-weight:900;line-height:1.2;margin-bottom:16px">Pirmas konkursas — <span class="grad-text">analizė nemokama</span></h2>
+      <p style="font-size:15px;color:var(--text2);line-height:1.7;margin-bottom:28px;max-width:520px;margin-left:auto;margin-right:auto">3 nemokamos analizės · Registracija per 30 sek. · Be kreditinės kortelės<br><strong style="color:var(--text)">Sužinokite ar verta dalyvauti dar prieš pradedant ruošti pasiūlymą.</strong></p>
+      <div style="display:flex;gap:12px;justify-content:center;flex-wrap:wrap">
+        <button class="btn btn-primary" style="padding:16px 36px;font-size:15px" onclick="openAuth('register')">🚀 Pradėti nemokamai</button>
+        <button class="btn btn-outline" style="padding:16px 28px;font-size:15px" onclick="runDemo()">▶ Žiūrėti demo</button>
+      </div>
+    </div>
   </div>
 </div>
 
@@ -2456,7 +2610,82 @@ function exportPDF(){
 
       ${section('📝','IŠVADA',r.isViso,'#f0fdf4','#bbf7d0')}
 
-      <!-- FOOTER -->
+      <!-- FAQ -->
+<div class="section" id="faq" style="padding-top:72px;padding-bottom:72px">
+  <div class="container">
+    <div style="text-align:center;margin-bottom:48px">
+      <span class="section-label">Dažni klausimai</span>
+      <h2 class="section-title">Jūs <span class="grad-text">galite klausti</span></h2>
+    </div>
+    <div style="max-width:780px;margin:0 auto;display:flex;flex-direction:column;gap:12px">
+      <details style="background:var(--card);border:1px solid var(--border);border-radius:14px;padding:18px 22px">
+        <summary style="font-size:15px;font-weight:700;color:var(--text);cursor:pointer;font-family:Sora,sans-serif;list-style:none;display:flex;justify-content:space-between;align-items:center">
+          <span>Kokius dokumentus galiu įkelti analizei?</span>
+          <span style="color:var(--blue3);font-size:20px;font-weight:300">+</span>
+        </summary>
+        <p style="margin-top:14px;font-size:13px;color:var(--text2);line-height:1.7">Galite įkelti CVP.lt konkurso ZIP archyvą su visais dokumentais. Sistema atpažįsta PDF, DOCX, DOC ir TXT failus. Iki 50 MB vienai analizei. Veikia su skenuotais PDF (OCR).</p>
+      </details>
+      <details style="background:var(--card);border:1px solid var(--border);border-radius:14px;padding:18px 22px">
+        <summary style="font-size:15px;font-weight:700;color:var(--text);cursor:pointer;font-family:Sora,sans-serif;list-style:none;display:flex;justify-content:space-between;align-items:center">
+          <span>Kuo skiriasi nuo Tedas.lt, eTenders.lt ar Mercell?</span>
+          <span style="color:var(--blue3);font-size:20px;font-weight:300">+</span>
+        </summary>
+        <p style="margin-top:14px;font-size:13px;color:var(--text2);line-height:1.7">Tie įrankiai padeda <strong>RASTI</strong> konkursus ir parodyti istorinius duomenis. Bidwise AI padeda <strong>PRIIMTI SPRENDIMĄ</strong>: ar atitinkate, kokia strategija, kokios rizikos, kaip formuoti kainą. Pas mus ateikite <em>po to</em>, kai jau radote konkursą — gilesnė analizė ir konkretūs veiksmai laimėti.</p>
+      </details>
+      <details style="background:var(--card);border:1px solid var(--border);border-radius:14px;padding:18px 22px">
+        <summary style="font-size:15px;font-weight:700;color:var(--text);cursor:pointer;font-family:Sora,sans-serif;list-style:none;display:flex;justify-content:space-between;align-items:center">
+          <span>Ar galiu pasitikėti AI rekomendacijomis?</span>
+          <span style="color:var(--blue3);font-size:20px;font-weight:300">+</span>
+        </summary>
+        <p style="margin-top:14px;font-size:13px;color:var(--text2);line-height:1.7">Bidwise AI yra <strong>pagalbinis įrankis</strong>, ne sprendimų priimėjas. Naudojame Claude Sonnet AI iš Anthropic — vieną tiksliausių rinkoje. Multi-agent sistema: 5 specializuoti agentai analizuoja skirtingus aspektus. Visada patikrinkite originalius dokumentus prieš pateikdami pasiūlymą.</p>
+      </details>
+      <details style="background:var(--card);border:1px solid var(--border);border-radius:14px;padding:18px 22px">
+        <summary style="font-size:15px;font-weight:700;color:var(--text);cursor:pointer;font-family:Sora,sans-serif;list-style:none;display:flex;justify-content:space-between;align-items:center">
+          <span>Ar mano duomenys saugūs?</span>
+          <span style="color:var(--blue3);font-size:20px;font-weight:300">+</span>
+        </summary>
+        <p style="margin-top:14px;font-size:13px;color:var(--text2);line-height:1.7">Taip. Sistema atitinka BDAR reikalavimus. Visa komunikacija šifruojama (HTTPS), slaptažodžiai bcrypt hashinami. Įkelti dokumentai nesaugomi ilgam — tik analizės rezultatai. Galite ištrinti visus duomenis bet kada iš paskyros nustatymų.</p>
+      </details>
+      <details style="background:var(--card);border:1px solid var(--border);border-radius:14px;padding:18px 22px">
+        <summary style="font-size:15px;font-weight:700;color:var(--text);cursor:pointer;font-family:Sora,sans-serif;list-style:none;display:flex;justify-content:space-between;align-items:center">
+          <span>Kas atsitinka jei išnaudoju nemokamas 3 analizes?</span>
+          <span style="color:var(--blue3);font-size:20px;font-weight:300">+</span>
+        </summary>
+        <p style="margin-top:14px;font-size:13px;color:var(--text2);line-height:1.7">Galėsite peržiūrėti senas analizes nemokamai, bet naujų — ne. Pereiti į Pro planą (49€/mėn) galite bet kada — gausite neribotas analizes, AI asistentą, PDF eksportą, klausimų raštus ir prioritetinį palaikymą.</p>
+      </details>
+      <details style="background:var(--card);border:1px solid var(--border);border-radius:14px;padding:18px 22px">
+        <summary style="font-size:15px;font-weight:700;color:var(--text);cursor:pointer;font-family:Sora,sans-serif;list-style:none;display:flex;justify-content:space-between;align-items:center">
+          <span>Ar reikia įrašyti banko kortelę registracijai?</span>
+          <span style="color:var(--blue3);font-size:20px;font-weight:300">+</span>
+        </summary>
+        <p style="margin-top:14px;font-size:13px;color:var(--text2);line-height:1.7">Ne. Registracija ir 3 nemokamos analizės — be jokios mokėjimo informacijos. Kortelės reikės tik tada, kai norėsite pereiti į Pro arba Komanda planą.</p>
+      </details>
+      <details style="background:var(--card);border:1px solid var(--border);border-radius:14px;padding:18px 22px">
+        <summary style="font-size:15px;font-weight:700;color:var(--text);cursor:pointer;font-family:Sora,sans-serif;list-style:none;display:flex;justify-content:space-between;align-items:center">
+          <span>Ar palaikote lietuvių kalbą su visomis raidėmis?</span>
+          <span style="color:var(--blue3);font-size:20px;font-weight:300">+</span>
+        </summary>
+        <p style="margin-top:14px;font-size:13px;color:var(--text2);line-height:1.7">Taip — visa sistema veikia lietuviškai. AI analizuoja dokumentus lietuvių kalba, rezultatus pateikia lietuvių kalba, eksportuoti dokumentai (PDF, Word) išsaugo visus lietuviškus simbolius (ė, š, ž, ū, č, ą, į).</p>
+      </details>
+    </div>
+  </div>
+</div>
+
+<!-- CTA FINAL -->
+<div class="section" style="padding-top:72px;padding-bottom:72px">
+  <div class="container" style="text-align:center">
+    <div style="background:linear-gradient(135deg,rgba(26,86,219,.08),rgba(124,58,237,.08));border:1px solid rgba(59,130,246,.2);border-radius:24px;padding:56px 32px;max-width:780px;margin:0 auto">
+      <h2 style="font-family:Sora,sans-serif;font-size:32px;font-weight:900;line-height:1.2;margin-bottom:16px">Pirmas konkursas — <span class="grad-text">analizė nemokama</span></h2>
+      <p style="font-size:15px;color:var(--text2);line-height:1.7;margin-bottom:28px;max-width:520px;margin-left:auto;margin-right:auto">3 nemokamos analizės · Registracija per 30 sek. · Be kreditinės kortelės<br><strong style="color:var(--text)">Sužinokite ar verta dalyvauti dar prieš pradedant ruošti pasiūlymą.</strong></p>
+      <div style="display:flex;gap:12px;justify-content:center;flex-wrap:wrap">
+        <button class="btn btn-primary" style="padding:16px 36px;font-size:15px" onclick="openAuth('register')">🚀 Pradėti nemokamai</button>
+        <button class="btn btn-outline" style="padding:16px 28px;font-size:15px" onclick="runDemo()">▶ Žiūrėti demo</button>
+      </div>
+    </div>
+  </div>
+</div>
+
+<!-- FOOTER -->
       <div style="border-top:1px solid #e2e8f0;padding-top:12px;margin-top:16px;text-align:center;color:#94a3b8;font-size:10px">
         Bidwise AI · bidwiseai.vercel.app · Sugeneruota: ${new Date().toLocaleString('lt-LT')}
       </div>
@@ -2844,20 +3073,25 @@ function openCVP(){
     const updated = [q, ...recent.filter(r=>r!==q)].slice(0,10);
     localStorage.setItem('cvp_recent', JSON.stringify(updated));
   }
-  // Veikiantis Lietuvos viešųjų pirkimų portalas (CVPP)
-  const url = 'https://cvpp.eviesiejipirkimai.lt/';
+  // Tikrasis veikiantis Lietuvos viešųjų pirkimų portalas
+  // Jeigu yra raktažodis — atidarom išplėstinę paiešką, kitaip — pradinį puslapį
+  const url = q
+    ? 'https://viesiejipirkimai.lt/epps/prepareAdvancedSearch.do?type=cftFTS'
+    : 'https://viesiejipirkimai.lt/epps/home.do';
   window.open(url, '_blank', 'noopener');
   if(q){
+    // Nukopijuojam į iškarpinę kad vartotojas galetų lengvai įklijuoti
+    try { navigator.clipboard.writeText(q); } catch(e) {}
     const tip = document.createElement('div');
-    tip.style.cssText = 'position:fixed;top:80px;right:24px;background:#1a56db;color:#fff;padding:14px 18px;border-radius:12px;font-size:13px;z-index:999;box-shadow:0 4px 20px rgba(0,0,0,.4);max-width:340px;line-height:1.6';
-    tip.innerHTML = '🔍 Atidarytas CVPP portalas.<br>Paieškos laukelyje (viršuje) įveskite:<br><strong style="font-size:14px;background:rgba(255,255,255,.2);padding:2px 8px;border-radius:6px">' + q + '</strong><br><span style="opacity:.85;font-size:11px;margin-top:6px;display:block">Tada spauskite „Ieškoti" portalo viduje</span>';
+    tip.style.cssText = 'position:fixed;top:80px;right:24px;background:#1a56db;color:#fff;padding:16px 20px;border-radius:12px;font-size:13px;z-index:999;box-shadow:0 8px 32px rgba(0,0,0,.4);max-width:360px;line-height:1.7';
+    tip.innerHTML = '🔍 <strong>Išplėstinė paieška atidaryta</strong><br><br>Įklijuokite raktažodį <em>(jau nukopijuotas)</em>:<br><div style="background:rgba(255,255,255,.2);padding:6px 12px;border-radius:6px;margin:6px 0;font-weight:700;font-size:14px">' + q + '</div><span style="opacity:.85;font-size:11px">Tada spauskite „Ieškoti" portale → suradę konkursą atsisiųskite ZIP → grįžkite čia ir įkelkite</span>';
     const close = document.createElement('button');
-    close.style.cssText = 'position:absolute;top:8px;right:10px;background:none;border:none;color:#fff;cursor:pointer;font-size:18px';
+    close.style.cssText = 'position:absolute;top:8px;right:10px;background:none;border:none;color:#fff;cursor:pointer;font-size:20px;padding:0;line-height:1';
     close.textContent = '×';
     close.onclick = () => tip.remove();
     tip.appendChild(close);
     document.body.appendChild(tip);
-    setTimeout(() => tip && tip.remove(), 10000);
+    setTimeout(() => tip && tip.remove(), 12000);
   }
 }
 
