@@ -12,6 +12,7 @@ function verifyToken(req) {
 module.exports = async (req, res) => {
   res.setHeader('Access-Control-Allow-Origin', '*');
   res.setHeader('Access-Control-Allow-Headers', 'Content-Type, Authorization');
+  res.setHeader('Access-Control-Allow-Methods', 'GET, DELETE, PATCH, OPTIONS');
   if (req.method === 'OPTIONS') return res.status(200).end();
 
   const user = verifyToken(req);
@@ -20,11 +21,12 @@ module.exports = async (req, res) => {
 
   const supabase = createClient(process.env.SUPABASE_URL, process.env.SUPABASE_SERVICE_KEY);
 
+  // GET: list analyses
   if (req.method === 'GET') {
     try {
       const { data, error } = await supabase
         .from('analyses')
-        .select('id, document_name, score, result_json, created_at, project_id, projects(name)')
+        .select('id, document_name, score, result_json, created_at, project_id, outcome, projects(name)')
         .eq('user_id', user.id)
         .order('created_at', { ascending: false })
         .limit(100);
@@ -38,17 +40,34 @@ module.exports = async (req, res) => {
     }
   }
 
+  // DELETE: remove analysis
   if (req.method === 'DELETE') {
     const { id } = req.body || {};
     if (!id) return res.status(400).json({ error: 'ID būtinas' });
     try {
-      const { error } = await supabase
-        .from('analyses')
-        .delete()
-        .eq('id', id)
-        .eq('user_id', user.id); // saugumas — tik savos analizės
+      const { error } = await supabase.from('analyses').delete().eq('id', id).eq('user_id', user.id);
       if (error) throw error;
       return res.status(200).json({ deleted: true });
+    } catch (e) {
+      return res.status(500).json({ error: e.message });
+    }
+  }
+
+  // PATCH: update outcome (win/loss tracking)
+  if (req.method === 'PATCH') {
+    const { id, outcome } = req.body || {};
+    if (!id) return res.status(400).json({ error: 'ID būtinas' });
+    if (!['won', 'lost', 'participated', 'skipped', null].includes(outcome)) {
+      return res.status(400).json({ error: 'Neteisingas rezultatas' });
+    }
+    try {
+      const { error } = await supabase
+        .from('analyses')
+        .update({ outcome, outcome_at: new Date().toISOString() })
+        .eq('id', id)
+        .eq('user_id', user.id);
+      if (error) throw error;
+      return res.status(200).json({ updated: true, outcome });
     } catch (e) {
       return res.status(500).json({ error: e.message });
     }
