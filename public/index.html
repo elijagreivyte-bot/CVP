@@ -3518,26 +3518,11 @@ function openCVP(){
     const updated = [q, ...recent.filter(r=>r!==q)].slice(0,10);
     localStorage.setItem('cvp_recent', JSON.stringify(updated));
   }
-  // Tikrasis veikiantis Lietuvos viešųjų pirkimų portalas
-  // Jeigu yra raktažodis — atidarom išplėstinę paiešką, kitaip — pradinį puslapį
+  // TIESIOGINĖ paieška su jau įvestu žodžiu
   const url = q
-    ? 'https://viesiejipirkimai.lt/epps/prepareAdvancedSearch.do?type=cftFTS'
+    ? 'https://viesiejipirkimai.lt/epps/searchNotices.do?searchText=' + encodeURIComponent(q)
     : 'https://viesiejipirkimai.lt/epps/home.do';
   window.open(url, '_blank', 'noopener');
-  if(q){
-    // Nukopijuojam į iškarpinę kad vartotojas galetų lengvai įklijuoti
-    try { navigator.clipboard.writeText(q); } catch(e) {}
-    const tip = document.createElement('div');
-    tip.style.cssText = 'position:fixed;top:80px;right:24px;background:#1a56db;color:#fff;padding:16px 20px;border-radius:12px;font-size:13px;z-index:999;box-shadow:0 8px 32px rgba(0,0,0,.4);max-width:360px;line-height:1.7';
-    tip.innerHTML = '🔍 <strong>Išplėstinė paieška atidaryta</strong><br><br>Įklijuokite raktažodį <em>(jau nukopijuotas)</em>:<br><div style="background:rgba(255,255,255,.2);padding:6px 12px;border-radius:6px;margin:6px 0;font-weight:700;font-size:14px">' + q + '</div><span style="opacity:.85;font-size:11px">Tada spauskite „Ieškoti" portale → suradę konkursą atsisiųskite ZIP → grįžkite čia ir įkelkite</span>';
-    const close = document.createElement('button');
-    close.style.cssText = 'position:absolute;top:8px;right:10px;background:none;border:none;color:#fff;cursor:pointer;font-size:20px;padding:0;line-height:1';
-    close.textContent = '×';
-    close.onclick = () => tip.remove();
-    tip.appendChild(close);
-    document.body.appendChild(tip);
-    setTimeout(() => tip && tip.remove(), 12000);
-  }
 }
 
 
@@ -4025,18 +4010,15 @@ function renderBVPZTree(){
 }
 
 function openCVPByCode(code, name){
-  try { navigator.clipboard.writeText(code); } catch(e) {}
-  window.open('https://viesiejipirkimai.lt/epps/prepareAdvancedSearch.do?type=cftFTS', '_blank', 'noopener');
+  // TIESIOGINĖ paieška CVP IS — kodas eina į searchText, portalas filtruoja iš karto
+  const url = 'https://viesiejipirkimai.lt/epps/searchNotices.do?searchText=' + encodeURIComponent(code);
+  window.open(url, '_blank', 'noopener');
+  // Trumpa žinutė
   const tip = document.createElement('div');
-  tip.style.cssText = 'position:fixed;top:80px;right:24px;background:#1a56db;color:#fff;padding:16px 20px;border-radius:12px;font-size:13px;z-index:999;box-shadow:0 8px 32px rgba(0,0,0,.4);max-width:360px;line-height:1.7';
-  tip.innerHTML = '🔗 <strong>CVP portalas atidarytas</strong><br><br>BVPŽ kodas nukopijuotas:<br><div style="background:rgba(255,255,255,.2);padding:6px 12px;border-radius:6px;margin:6px 0;font-weight:700;font-size:15px;font-family:monospace">' + code + '</div><span style="opacity:.85;font-size:11px">' + name + '</span><br><br><span style="opacity:.85;font-size:11px">Įklijuokite (Ctrl+V) į &laquo;BVPŽ kodas&raquo; lauką portalo paieškoje</span>';
-  const close = document.createElement('button');
-  close.style.cssText = 'position:absolute;top:8px;right:10px;background:none;border:none;color:#fff;cursor:pointer;font-size:20px;padding:0;line-height:1';
-  close.textContent = '×';
-  close.onclick = () => tip.remove();
-  tip.appendChild(close);
+  tip.style.cssText = 'position:fixed;top:80px;right:24px;background:#10b981;color:#fff;padding:14px 18px;border-radius:12px;font-size:13px;z-index:999;box-shadow:0 4px 20px rgba(0,0,0,.3);max-width:340px;line-height:1.6';
+  tip.innerHTML = '✅ <strong>CVP atidarytas su filtru</strong><br><span style="font-family:monospace;background:rgba(255,255,255,.2);padding:2px 8px;border-radius:4px;font-size:12px">' + code + '</span> ' + name + '<br><span style="opacity:.85;font-size:11px;margin-top:4px;display:inline-block">Rezultatai jau filtruoti pagal kodą</span>';
   document.body.appendChild(tip);
-  setTimeout(() => tip && tip.remove(), 12000);
+  setTimeout(() => tip && tip.remove(), 6000);
 }
 
 // Textarea auto-resize
