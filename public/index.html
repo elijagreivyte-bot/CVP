@@ -479,6 +479,43 @@ footer{background:var(--navy2);border-top:1px solid var(--border);padding:48px 3
 @media print {
   .no-print, footer, .sidebar, .chat-wrap { display: none !important; }
 }
+
+/* === TOAST SYSTEM === */
+#toast-container { position: fixed; top: 90px; right: 24px; z-index: 9999; display: flex; flex-direction: column; gap: 10px; pointer-events: none; max-width: 360px; }
+.toast { background: rgba(13,23,64,.95); backdrop-filter: blur(12px); border: 1px solid var(--border); border-left: 3px solid var(--blue3); border-radius: 12px; padding: 14px 18px; font-size: 13px; color: var(--text); box-shadow: 0 8px 32px rgba(0,0,0,.4); pointer-events: auto; animation: toast-in .3s ease-out; display: flex; align-items: flex-start; gap: 12px; max-width: 100%; }
+.toast.t-success { border-left-color: #10b981; }
+.toast.t-error { border-left-color: #ef4444; }
+.toast.t-warn { border-left-color: #f59e0b; }
+.toast .t-icon { font-size: 18px; flex-shrink: 0; line-height: 1; }
+.toast .t-body { flex: 1; line-height: 1.5; }
+.toast .t-close { background: none; border: none; color: var(--text2); cursor: pointer; font-size: 16px; padding: 0; line-height: 1; }
+@keyframes toast-in { from { opacity: 0; transform: translateX(20px); } to { opacity: 1; transform: translateX(0); } }
+.toast.fade { opacity: 0; transition: opacity .3s; }
+
+/* === LIVE PROGRESS === */
+.ai-progress { background: rgba(0,0,0,.25); border-radius: 12px; padding: 20px; margin: 14px 0; }
+.ai-step { display: flex; align-items: center; gap: 12px; padding: 7px 0; font-size: 13px; color: var(--text2); opacity: .4; transition: all .3s; }
+.ai-step.active { opacity: 1; color: var(--text); }
+.ai-step.done { opacity: .8; color: var(--text); }
+.ai-step .ai-step-i { width: 20px; height: 20px; border-radius: 50%; background: var(--card2); border: 1px solid var(--border); display: flex; align-items: center; justify-content: center; font-size: 11px; font-weight: 700; flex-shrink: 0; }
+.ai-step.done .ai-step-i { background: rgba(16,185,129,.15); border-color: rgba(16,185,129,.3); color: #10b981; }
+.ai-step.active .ai-step-i { background: rgba(59,130,246,.15); border-color: var(--blue3); color: var(--blue3); animation: ai-pulse 1.5s infinite; }
+@keyframes ai-pulse { 0%, 100% { transform: scale(1); } 50% { transform: scale(1.1); } }
+
+/* === SKELETON LOADERS === */
+.skeleton { background: linear-gradient(90deg, rgba(255,255,255,.03), rgba(255,255,255,.06), rgba(255,255,255,.03)); background-size: 200% 100%; animation: skel 1.5s infinite; border-radius: 8px; }
+@keyframes skel { 0% { background-position: 200% 0; } 100% { background-position: -200% 0; } }
+
+/* === EMPTY STATES === */
+.empty-state { text-align: center; padding: 60px 32px; max-width: 460px; margin: 0 auto; }
+.empty-state-icon { font-size: 48px; margin-bottom: 16px; opacity: .5; }
+.empty-state-title { font-family: Sora, sans-serif; font-size: 16px; font-weight: 700; color: var(--text); margin-bottom: 8px; }
+.empty-state-text { font-size: 13px; color: var(--text2); line-height: 1.7; margin-bottom: 20px; }
+
+/* === TRUST BADGES === */
+.trust-row { display: flex; gap: 14px; flex-wrap: wrap; align-items: center; justify-content: center; padding: 18px 0; opacity: .8; }
+.trust-badge { display: flex; align-items: center; gap: 6px; padding: 6px 12px; background: rgba(255,255,255,.04); border: 1px solid var(--border); border-radius: 24px; font-size: 11px; color: var(--text2); font-weight: 600; letter-spacing: 0.3px; }
+.trust-badge .tb-icon { color: #10b981; font-size: 12px; }
 </style>
 </head>
 <body>
@@ -519,6 +556,12 @@ footer{background:var(--navy2);border-top:1px solid var(--border);padding:48px 3
   <div class="hero-cta au d3">
     <button class="btn btn-primary" style="padding:16px 36px;font-size:15px" onclick="openAuth('register')">🚀 Pradėti nemokamai</button>
     <button class="btn btn-outline" style="padding:16px 28px;font-size:15px" onclick="runDemo()">▶ Išbandyti demo</button>
+  </div>
+  <div class="trust-row au d4" style="margin-bottom:18px">
+    <div class="trust-badge"><span class="tb-icon">🔒</span> SSL šifravimas</div>
+    <div class="trust-badge"><span class="tb-icon">🇪🇺</span> GDPR / BDAR atitinka</div>
+    <div class="trust-badge"><span class="tb-icon">🤖</span> Dokumentai nenaudojami AI mokymui</div>
+    <div class="trust-badge"><span class="tb-icon">🛡️</span> EU debesyje</div>
   </div>
   <div class="hero-trust au d4">
     <div class="hero-trust-item"><span>✓</span> Tikimybės balas 0–100%</div>
@@ -1695,12 +1738,12 @@ footer{background:var(--navy2);border-top:1px solid var(--border);padding:48px 3
 
 <!-- LOADING -->
 <div id="loading">
-  <div style="width:100%;max-width:480px;padding:0 24px">
-    <div style="text-align:center;margin-bottom:32px">
-      <div class="spin" style="margin:0 auto 20px"></div>
-      <div style="font-family:'Sora',sans-serif;font-size:22px;font-weight:800;margin-bottom:8px" id="lt">Analizuojama...</div>
-      <div style="font-size:13px;color:var(--text2)" id="ls2">Prašome palaukti</div>
+  <div style="width:100%;max-width:560px;padding:0 24px">
+    <div style="text-align:center;margin-bottom:24px">
+      <div style="font-family:'Sora',sans-serif;font-size:22px;font-weight:800;margin-bottom:6px" id="lt">AI analizuoja konkursą</div>
+      <div style="font-size:13px;color:var(--text2)" id="ls2">Tai užtruks 30–60 sekundžių</div>
     </div>
+    <div id="ai-progress-target"></div>
     <div style="background:rgba(255,255,255,.06);border-radius:8px;height:6px;overflow:hidden;margin-bottom:28px">
       <div id="prog-bar" style="height:100%;background:var(--grad);border-radius:8px;width:0%;transition:width .8s ease"></div>
     </div>
@@ -1931,7 +1974,7 @@ function obGoStep(n){
 async function obStep1Next(){
   const company=document.getElementById('ob-company').value.trim();
   const sector=document.getElementById('ob-sector').value;
-  if(!sector){alert('Pasirinkite veiklos sritį');return;}
+  if(!sector){toast('Pasirinkite veiklos sritį', 'warn');return;}
   const btn=document.getElementById('ob-next1');
   btn.disabled=true;btn.textContent='⏳ AI generuoja klausimus...';
   obGoStep(2);
@@ -2185,6 +2228,8 @@ async function startAn(){
   document.getElementById('result-view').style.display='none';
   const loading=document.getElementById('loading');
   loading.style.display='flex';
+  const useAgents = curUser && curUser.company_profile && curUser.company_profile.profilioSantrauka;
+  window.aiProg = showAIProgress(document.getElementById('ai-progress-target'), useAgents);
   startStages();
   try{
     let combined='';
@@ -3563,7 +3608,7 @@ function runDemo(){
 // ELIGIBILITY CHECK
 // ══════════════════════════════════
 function openEligCheck(){
-  if(!curResult){ alert('Pirmiausia atlikite analizę'); return; }
+  if(!curResult){ toast('Pirmiausia atlikite analizę', 'warn'); return; }
   document.getElementById('elig-form').style.display = 'block';
   document.getElementById('elig-result').style.display = 'none';
   document.getElementById('elig-modal').style.display = 'flex';
@@ -3575,7 +3620,7 @@ async function checkEligibility(){
   const employees = parseInt(document.getElementById('elig-employees')?.value)||0;
   const exp = parseInt(document.getElementById('elig-exp')?.value)||0;
   const certs = (document.getElementById('elig-certs')?.value||'').trim();
-  if(!revenue && !employees){ alert('Įveskite bent apyvartos duomenis'); return; }
+  if(!revenue && !employees){ toast('Įveskite bent apyvartos duomenis', 'warn'); return; }
   document.getElementById('elig-form').style.display = 'none';
   const res = document.getElementById('elig-result');
   res.style.display = 'block';
@@ -3617,13 +3662,13 @@ Atsakyk: TINKA ✅ / NETINKA ❌ / ABEJOTINA ⚠️ — po vieną sakinį kiekvi
 async function setReminderFromResult(){
   if(!curResult) return;
   const deadline = curResult.terminai?.pasiulymoTerminas;
-  if(!deadline){ alert('Terminas nerastas analizėje'); return; }
+  if(!deadline){ toast('Terminas nerastas analizėje', 'warn'); return; }
   const tok = localStorage.getItem(TK);
   try{
     const r = await fetch(API+'/api/reminders',{method:'POST',headers:{'Content-Type':'application/json','Authorization':'Bearer '+tok},body:JSON.stringify({deadline, title:curResult.pavadinimas||'Konkursas'})});
     const d = await r.json();
     if(r.ok) alert('✅ Priminimai nustatyti! Gausite el. laišką 7 d. ir 1 d. prieš terminą ('+deadline+')');
-    else alert('Klaida: '+(d.error||'Nepavyko'));
+    else toast('Klaida: '+(d.error||'Nepavyko'));
   } catch(e){ alert('Klaida: '+e.message); }
 }
 
@@ -3726,7 +3771,7 @@ async function deleteAnalysis(id){
       filterHistory();
     } else {
       const d = await r.json();
-      alert('Klaida: '+(d.error||'Nepavyko ištrinti'));
+      toast('Klaida: '+(d.error||'Nepavyko ištrinti'));
     }
   } catch(e){ alert('Klaida: '+e.message); }
 }
@@ -3815,7 +3860,7 @@ function renderDashStats(items){
 
 function renderDashDistribution(items){
   const el = document.getElementById('dash-distribution');
-  if(!items.length){ el.innerHTML = '<p style="color:var(--text3);font-size:13px">Atlikite analizes — atsiras grafikas</p>'; return; }
+  if(!items.length){ el.innerHTML = '<div style="text-align:center;padding:20px 0;color:var(--text3);font-size:12px;line-height:1.6">📈<br>Grafikas atsiras<br>po pirmos analizės</div>'; return; }
   const buckets = { high: 0, mid: 0, low: 0 };
   items.forEach(a => {
     const s = a.score || 0;
@@ -3853,7 +3898,7 @@ function renderDashDistribution(items){
 
 function renderDashRecent(items){
   const el = document.getElementById('dash-recent');
-  if(!items.length){ el.innerHTML = '<p style="color:var(--text3);font-size:13px">Nėra duomenų</p>'; return; }
+  if(!items.length){ el.innerHTML = '<div class="empty-state" style="padding:30px 16px"><div class="empty-state-icon">📊</div><div class="empty-state-text">Dar nėra analizių.<br>Įkelkite pirmą CVP konkursą ir pradėkite.</div><button class="btn btn-primary btn-sm" onclick="pg(\'analyze\')">+ Atlikti analizę</button></div>'; return; }
   const recent = items.slice(0, 4);
   el.innerHTML = recent.map((a, i) => {
     const r = a.result_json || {};
@@ -3900,7 +3945,7 @@ async function trackOutcome(analysisId, outcome){
 }
 
 function openOutcomeModal(){
-  if(!curResult){ alert('Pirmiausia atlikite analizę'); return; }
+  if(!curResult){ toast('Pirmiausia atlikite analizę', 'warn'); return; }
   document.getElementById('outcome-modal').style.display = 'flex';
 }
 
@@ -4034,6 +4079,66 @@ document.addEventListener('input', function(e){
 document.addEventListener('DOMContentLoaded', function(){
   setTimeout(()=>{ if(typeof restoreResult==='function') restoreResult(); }, 600);
 });
+
+// ══════════════════════════════════
+// TOAST SYSTEM
+// ══════════════════════════════════
+function toast(msg, type, duration){
+  type = type || 'info';
+  duration = duration || 4000;
+  const c = document.getElementById('toast-container');
+  if(!c) return;
+  const el = document.createElement('div');
+  el.className = 'toast t-' + type;
+  const iconMap = {info:'💬', success:'✅', error:'❌', warn:'⚠️'};
+  el.innerHTML = '<span class="t-icon">' + (iconMap[type]||'💬') + '</span><div class="t-body">' + msg + '</div>';
+  const close = document.createElement('button');
+  close.className = 't-close';
+  close.textContent = '×';
+  close.onclick = () => { el.classList.add('fade'); setTimeout(() => el.remove(), 300); };
+  el.appendChild(close);
+  c.appendChild(el);
+  setTimeout(() => {
+    if(el.parentNode){ el.classList.add('fade'); setTimeout(() => el.remove(), 300); }
+  }, duration);
+}
+
+// ══════════════════════════════════
+// AI PROGRESS — gyvas analizės jausmas
+// ══════════════════════════════════
+const AI_STEPS = [
+  'Atidaromi įkelti dokumentai...',
+  'Nuskaitomas tekstas (OCR jei reikia)...',
+  '🤖 Agentas 1: dokumentų struktūros analizė',
+  '🤖 Agentas 2: kvalifikacijos reikalavimų tikrinimas',
+  '🤖 Agentas 3: kainodaron strategija',
+  '🤖 Agentas 4: rizikų ir paslėptų sąlygų paieška',
+  '🤖 Agentas 5: laimėjimo tikimybės sintezė',
+  'Generuojama personalizuota strategija...',
+  'Analizė užbaigta ✓'
+];
+
+function showAIProgress(targetEl, useAgents){
+  if(!targetEl) return null;
+  const steps = useAgents ? AI_STEPS : AI_STEPS.filter((s,i) => i < 3 || i >= 7);
+  targetEl.innerHTML = '<div class="ai-progress" id="ai-progress-box"><div style="font-size:11px;color:var(--text2);letter-spacing:1.5px;text-transform:uppercase;font-weight:700;margin-bottom:14px">AI analizė vyksta</div>' +
+    steps.map((s,i) => '<div class="ai-step" data-i="' + i + '"><div class="ai-step-i">' + (i+1) + '</div><div>' + s + '</div></div>').join('') +
+    '</div>';
+  let cur = 0;
+  const interval = setInterval(() => {
+    const stepEls = targetEl.querySelectorAll('.ai-step');
+    if(cur > 0) { stepEls[cur-1].classList.remove('active'); stepEls[cur-1].classList.add('done'); stepEls[cur-1].querySelector('.ai-step-i').textContent = '✓'; }
+    if(cur < stepEls.length){
+      stepEls[cur].classList.add('active');
+      cur++;
+    } else { clearInterval(interval); }
+  }, useAgents ? 4000 : 1500);
+  return { stop: () => {
+    clearInterval(interval);
+    const stepEls = targetEl.querySelectorAll('.ai-step');
+    stepEls.forEach(s => { s.classList.remove('active'); s.classList.add('done'); const i = s.querySelector('.ai-step-i'); if(i) i.textContent = '✓'; });
+  }};
+}
 </script>
 
 <!-- AI CHAT WIDGET -->
@@ -4071,6 +4176,8 @@ document.addEventListener('DOMContentLoaded', function(){
 
 
 <!-- COOKIE CONSENT -->
+<div id="toast-container"></div>
+
 <div id="cookie-banner" style="position:fixed;bottom:0;left:0;right:0;z-index:600;background:var(--navy2);border-top:1px solid var(--border);padding:16px 24px;display:none;align-items:center;justify-content:space-between;gap:16px;flex-wrap:wrap;backdrop-filter:blur(10px)">
   <div style="flex:1;min-width:280px">
     <p style="font-size:13px;color:var(--text);margin-bottom:4px"><strong>🍪 Duomenų naudojimas</strong></p>
