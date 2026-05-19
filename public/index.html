@@ -3563,10 +3563,10 @@ function openCVP(){
     const updated = [q, ...recent.filter(r=>r!==q)].slice(0,10);
     localStorage.setItem('cvp_recent', JSON.stringify(updated));
   }
-  // TIESIOGINĖ paieška su jau įvestu žodžiu (naujas CVP IS portalas)
+  // TIESIOGINĖ paieška su jau įvestu žodžiu
   const url = q
-    ? 'https://cvpp.eviesiejipirkimai.lt/?NoticeType=&TendererName=&BuyerName=&TenderName=' + encodeURIComponent(q)
-    : 'https://cvpp.eviesiejipirkimai.lt/';
+    ? 'https://viesiejipirkimai.lt/epps/quickSearchAction.do?searchType=cftFTS&searchText=' + encodeURIComponent(q)
+    : 'https://viesiejipirkimai.lt/epps/home.do';
   window.open(url, '_blank', 'noopener');
 }
 
@@ -4055,8 +4055,8 @@ function renderBVPZTree(){
 }
 
 function openCVPByCode(code, name){
-  // TIESIOGINĖ paieška CVP IS — BVPŽ kodas per naują portalą
-  const url = 'https://cvpp.eviesiejipirkimai.lt/?CpvCodes=' + encodeURIComponent(code);
+  // TIESIOGINĖ paieška CVP IS — BVPŽ kodas į quickSearch
+  const url = 'https://viesiejipirkimai.lt/epps/quickSearchAction.do?searchType=cftFTS&searchText=' + encodeURIComponent(code);
   window.open(url, '_blank', 'noopener');
   // Trumpa žinutė
   const tip = document.createElement('div');
