@@ -1468,19 +1468,30 @@ footer{background:var(--navy2);border-top:1px solid var(--border);padding:48px 3
 
   <!-- CVP.lt SEARCH PAGE -->
   <div id="pg-cvp" class="hidden">
-    <h1 class="pg-h">🇱🇹 CVP.lt konkursų paieška</h1>
-    <p class="pg-sub">Raskite aktyvius konkursus ir vienų paspaudimu pradėkite analizę</p>
+    <h1 class="pg-h">🇱🇹 CVP konkursų navigatorius</h1>
+    <p class="pg-sub">Raskite konkursus pagal BVPŽ kodą — visa CPV klasifikacija vienoje vietoje</p>
 
-    <!-- SEARCH BAR → opens CVP.lt with pre-filled search -->
-    <div style="display:flex;gap:10px;flex-wrap:wrap;margin-bottom:24px">
-      <input id="cvp-q" class="inp" placeholder="🔍 Raktažodis (pvz. įranga, valymas, IT...)" style="flex:1;min-width:220px" onkeydown="if(event.key==='Enter')openCVP()">
-      <select id="cvp-type" class="inp" style="width:200px">
-        <option value="">Visi pirkimai</option>
-        <option value="OPEN">Atviras konkursas</option>
-        <option value="SIMPLIFIED">Supaprastintas</option>
-        <option value="SMALL">Mažos vertės</option>
-      </select>
-      <button class="btn btn-primary" onclick="openCVP()">🔗 Ieškoti CVP.lt →</button>
+    <!-- TABS -->
+    <div style="display:flex;gap:4px;margin-bottom:18px;border-bottom:1px solid var(--border);padding-bottom:2px">
+      <button id="cvp-tab-search" onclick="cvpTab('search')" class="cvp-tab-btn" style="background:var(--card2);border:none;color:var(--text);padding:10px 18px;border-radius:8px 8px 0 0;cursor:pointer;font-family:Inter,sans-serif;font-weight:600;font-size:13px;border-bottom:2px solid var(--blue3)">🔍 Paieška pagal žodį</button>
+      <button id="cvp-tab-codes" onclick="cvpTab('codes')" class="cvp-tab-btn" style="background:none;border:none;color:var(--text2);padding:10px 18px;border-radius:8px 8px 0 0;cursor:pointer;font-family:Inter,sans-serif;font-size:13px">📋 BVPŽ kodai (visi)</button>
+    </div>
+
+    <!-- TAB: SEARCH -->
+    <div id="cvp-pane-search">
+      <div style="display:flex;gap:10px;flex-wrap:wrap;margin-bottom:24px">
+        <input id="cvp-q" class="inp" placeholder="🔍 Raktažodis (pvz. įranga, valymas, IT...)" style="flex:1;min-width:220px" onkeydown="if(event.key==='Enter')openCVP()">
+        <button class="btn btn-primary" onclick="openCVP()">🔗 Ieškoti CVP →</button>
+      </div>
+    </div>
+
+    <!-- TAB: BVPŽ CODES -->
+    <div id="cvp-pane-codes" style="display:none">
+      <div style="background:rgba(59,130,246,.06);border:1px solid rgba(59,130,246,.15);border-radius:10px;padding:12px 16px;margin-bottom:18px;font-size:12px;color:var(--text2);line-height:1.6">
+        💡 <strong>Kaip naudotis:</strong> Spauskite kategoriją → matysite konkrečius kodus → spauskite kodą → atidaromas CVP portalas su nukopijuotu kodu (Ctrl+V paieškoje).
+      </div>
+      <input id="bvpz-filter" class="inp" placeholder="🔎 Filtruoti kodus arba pavadinimus..." style="width:100%;margin-bottom:16px" oninput="renderBVPZTree()">
+      <div id="bvpz-tree" style="display:flex;flex-direction:column;gap:8px"></div>
     </div>
 
     <!-- HOW IT WORKS STEPS -->
@@ -3218,21 +3229,230 @@ async function sendChat(){
 // ══════════════════════════════════
 // CVP.lt GATEWAY
 // ══════════════════════════════════
-const CVP_CATEGORIES = [
-  {label:'🏗️ Statybos', q:'statybos darbai'},
-  {label:'💻 IT ir programinė įranga', q:'informacinių technologijų'},
-  {label:'🧹 Valymo paslaugos', q:'valymo paslaugos'},
-  {label:'🍽️ Maisto tiekimas', q:'maisto produktų tiekimas'},
-  {label:'🚌 Transportas', q:'transporto paslaugos'},
-  {label:'🏥 Medicinos įranga', q:'medicinos įranga'},
-  {label:'📚 Mokymai', q:'mokymo paslaugos'},
-  {label:'⚙️ Įranga ir technika', q:'įrangos tiekimas'},
-  {label:'🌿 Aplinkosauga', q:'aplinkosaugos paslaugos'},
-  {label:'🔒 Apsauga', q:'apsaugos paslaugos'},
+// Pilnas BVPŽ kodų medis — Bendras viešųjų pirkimų žodynas (CPV)
+const BVPZ_TREE = [
+  {code:'03', icon:'🌾', name:'Žemės ūkis, miškininkystė', subs:[
+    {code:'03100000', name:'Žemės ūkio ir sodininkystės produktai'},
+    {code:'03200000', name:'Augalininkystė ir gyvulininkystė'},
+    {code:'03400000', name:'Miškininkystė ir miškų produktai'},
+  ]},
+  {code:'09', icon:'⛽', name:'Naftos produktai, kuras, elektra', subs:[
+    {code:'09100000', name:'Kuras'},
+    {code:'09300000', name:'Elektra, šildymas, saulės ir branduolinė energija'},
+  ]},
+  {code:'14', icon:'⛏️', name:'Kasyba, metalai, akmenys', subs:[
+    {code:'14200000', name:'Smėlis, žvyras, akmenys'},
+    {code:'14600000', name:'Metalo rūdos ir lydiniai'},
+  ]},
+  {code:'15', icon:'🍎', name:'Maistas, gėrimai, tabakas', subs:[
+    {code:'15100000', name:'Gyvūninės kilmės produktai, mėsa'},
+    {code:'15300000', name:'Vaisiai, daržovės'},
+    {code:'15500000', name:'Pieno produktai'},
+    {code:'15800000', name:'Įvairūs maisto produktai'},
+  ]},
+  {code:'18', icon:'👕', name:'Drabužiai, avalynė, bagažas', subs:[
+    {code:'18100000', name:'Profesionalūs drabužiai, darbo apranga'},
+    {code:'18400000', name:'Specialūs drabužiai ir aksesuarai'},
+    {code:'18800000', name:'Avalynė'},
+  ]},
+  {code:'22', icon:'📰', name:'Spauda ir spaudiniai', subs:[
+    {code:'22100000', name:'Knygos, brošiūros, lankstinukai'},
+    {code:'22400000', name:'Žymos, etiketės'},
+  ]},
+  {code:'24', icon:'🧪', name:'Chemijos produktai', subs:[
+    {code:'24100000', name:'Dujos'},
+    {code:'24300000', name:'Pagrindinės neorganinės/organinės cheminės medžiagos'},
+    {code:'24900000', name:'Chemijos produktai, įvairūs'},
+  ]},
+  {code:'30', icon:'💻', name:'Biuro įranga, kompiuteriai', subs:[
+    {code:'30100000', name:'Biuro mašinos ir įranga'},
+    {code:'30200000', name:'Kompiuterinė įranga ir reikmenys'},
+    {code:'30210000', name:'Kompiuteriai (mašinos duomenims apdoroti)'},
+    {code:'30230000', name:'Kompiuterių periferiniai įrenginiai'},
+  ]},
+  {code:'31', icon:'⚡', name:'Elektros mašinos, prietaisai', subs:[
+    {code:'31100000', name:'Elektriniai varikliai, generatoriai'},
+    {code:'31500000', name:'Apšvietimo įranga ir lemputės'},
+    {code:'31700000', name:'Elektroninės dalys'},
+  ]},
+  {code:'32', icon:'📡', name:'Radijo, TV, ryšiai', subs:[
+    {code:'32200000', name:'Radijo, TV perdavimo aparatūra'},
+    {code:'32400000', name:'Tinklai'},
+    {code:'32500000', name:'Telekomunikacijų įranga ir reikmenys'},
+  ]},
+  {code:'33', icon:'🏥', name:'Medicinos įranga, vaistai', subs:[
+    {code:'33100000', name:'Medicinos įranga'},
+    {code:'33600000', name:'Vaistai'},
+    {code:'33700000', name:'Asmens higienos produktai'},
+    {code:'33900000', name:'Skrodimo įranga, balzamavimas'},
+  ]},
+  {code:'34', icon:'🚗', name:'Transporto priemonės', subs:[
+    {code:'34100000', name:'Motorinės transporto priemonės'},
+    {code:'34300000', name:'Transporto priemonių dalys'},
+    {code:'34900000', name:'Įvairi transporto įranga'},
+  ]},
+  {code:'35', icon:'🔒', name:'Sauga, gaisrų gesinimas, policija', subs:[
+    {code:'35100000', name:'Avarinė ir saugos įranga'},
+    {code:'35400000', name:'Karinė įranga'},
+    {code:'35800000', name:'Asmens įranga, ginklai'},
+  ]},
+  {code:'37', icon:'🎵', name:'Muzikos instrumentai, sportas', subs:[
+    {code:'37300000', name:'Muzikos instrumentai'},
+    {code:'37400000', name:'Sporto prekės ir įranga'},
+  ]},
+  {code:'38', icon:'🔬', name:'Laboratorijos, optika', subs:[
+    {code:'38400000', name:'Fizinių savybių tikrinimo prietaisai'},
+    {code:'38600000', name:'Optikos prietaisai'},
+    {code:'38900000', name:'Įvairūs vertinimo prietaisai'},
+  ]},
+  {code:'39', icon:'🛋️', name:'Baldai, virtuvės įranga', subs:[
+    {code:'39100000', name:'Baldai'},
+    {code:'39200000', name:'Patalpų apdaila'},
+    {code:'39700000', name:'Buitiniai prietaisai'},
+  ]},
+  {code:'42', icon:'⚙️', name:'Pramonės mašinos', subs:[
+    {code:'42100000', name:'Mašinos energijos gamybai'},
+    {code:'42400000', name:'Kėlimo, manipuliavimo įranga'},
+    {code:'42900000', name:'Įvairūs įrengimai'},
+  ]},
+  {code:'44', icon:'🧱', name:'Statybos medžiagos', subs:[
+    {code:'44100000', name:'Statybos medžiagos'},
+    {code:'44200000', name:'Konstrukciniai produktai'},
+    {code:'44500000', name:'Įrankiai, spynos, raktai, vyriai'},
+    {code:'44900000', name:'Akmens, kalkių, gipso produktai'},
+  ]},
+  {code:'45', icon:'🏗️', name:'Statybos darbai', subs:[
+    {code:'45100000', name:'Sklypo paruošimo darbai'},
+    {code:'45200000', name:'Įvairių statybų darbai'},
+    {code:'45210000', name:'Pastatų statybos darbai'},
+    {code:'45260000', name:'Stogų ir kiti specialūs statybų darbai'},
+    {code:'45300000', name:'Statybinių įrenginių montavimas'},
+    {code:'45400000', name:'Pastatų apdailos darbai'},
+    {code:'45500000', name:'Statybų ir civ. inžin. mašinų nuoma'},
+  ]},
+  {code:'48', icon:'💾', name:'Programinė įranga (SW)', subs:[
+    {code:'48100000', name:'Programinė įranga konkrečioms pramonės šakoms'},
+    {code:'48400000', name:'Verslo programinė įranga'},
+    {code:'48600000', name:'Duomenų bazių ir operacinė programinė įranga'},
+    {code:'48700000', name:'Programinė įranga, paslaugos'},
+  ]},
+  {code:'50', icon:'🔧', name:'Remonto ir techn. priežiūros paslaugos', subs:[
+    {code:'50100000', name:'Transporto priemonių remontas'},
+    {code:'50300000', name:'Asmeninių kompiuterių remontas'},
+    {code:'50700000', name:'Pastatų įrenginių remontas'},
+    {code:'50800000', name:'Įvairios remonto, techn. priežiūros paslaugos'},
+  ]},
+  {code:'51', icon:'🔌', name:'Montavimo paslaugos', subs:[
+    {code:'51100000', name:'Elektros įrangos montavimas'},
+    {code:'51500000', name:'Mašinų, įrangos montavimas'},
+  ]},
+  {code:'55', icon:'🍽️', name:'Maitinimas, viešbučiai', subs:[
+    {code:'55100000', name:'Viešbučių paslaugos'},
+    {code:'55300000', name:'Restoranų, maisto patiekimo paslaugos'},
+    {code:'55500000', name:'Valgyklų ir maitinimo paslaugos'},
+  ]},
+  {code:'60', icon:'🚌', name:'Transporto paslaugos', subs:[
+    {code:'60100000', name:'Kelių transporto paslaugos'},
+    {code:'60200000', name:'Geležinkelių transporto paslaugos'},
+    {code:'60400000', name:'Oro transporto paslaugos'},
+    {code:'60600000', name:'Vandens transporto paslaugos'},
+  ]},
+  {code:'63', icon:'🚢', name:'Papildomos transporto paslaugos', subs:[
+    {code:'63100000', name:'Krovinių tvarkymas, sandėliavimas'},
+    {code:'63500000', name:'Kelionių agentūrų paslaugos'},
+  ]},
+  {code:'64', icon:'📞', name:'Pašto ir telekomunikacijų paslaugos', subs:[
+    {code:'64100000', name:'Pašto ir kurjerių paslaugos'},
+    {code:'64200000', name:'Telekomunikacijų paslaugos'},
+  ]},
+  {code:'65', icon:'💧', name:'Komunalinės paslaugos', subs:[
+    {code:'65100000', name:'Vandens paskirstymas'},
+    {code:'65300000', name:'Elektros paskirstymas'},
+    {code:'65500000', name:'Skaitiklių rodmenų nuėmimo paslaugos'},
+  ]},
+  {code:'66', icon:'💰', name:'Finansų ir draudimo paslaugos', subs:[
+    {code:'66100000', name:'Bankininkystės ir investavimo paslaugos'},
+    {code:'66500000', name:'Draudimo, pensijų paslaugos'},
+    {code:'66700000', name:'Perdraudimo paslaugos'},
+  ]},
+  {code:'70', icon:'🏠', name:'Nekilnojamasis turtas', subs:[
+    {code:'70100000', name:'Nekilnojamojo turto valdymas'},
+    {code:'70300000', name:'Nekilnojamojo turto valdymo paslaugos'},
+  ]},
+  {code:'71', icon:'📐', name:'Architektūra, inžinerija', subs:[
+    {code:'71200000', name:'Architektūros paslaugos'},
+    {code:'71300000', name:'Inžinerijos paslaugos'},
+    {code:'71400000', name:'Miestų planavimas, kraštovaizdis'},
+    {code:'71600000', name:'Techninio bandymo ir analizės paslaugos'},
+  ]},
+  {code:'72', icon:'💻', name:'IT paslaugos', subs:[
+    {code:'72100000', name:'IT konsultacijos'},
+    {code:'72200000', name:'Programavimo paslaugos'},
+    {code:'72300000', name:'Duomenų paslaugos'},
+    {code:'72400000', name:'Interneto paslaugos'},
+    {code:'72500000', name:'Kompiuterių paslaugos'},
+    {code:'72600000', name:'Kompiuterių pagalbos paslaugos'},
+  ]},
+  {code:'73', icon:'🔬', name:'Moksliniai tyrimai', subs:[
+    {code:'73100000', name:'Moksliniai tyrimai ir eksperimentinė plėtra'},
+  ]},
+  {code:'75', icon:'🏛️', name:'Viešasis administravimas', subs:[
+    {code:'75100000', name:'Viešojo administravimo paslaugos'},
+    {code:'75200000', name:'Bendruomenės paslaugos'},
+  ]},
+  {code:'77', icon:'🌳', name:'Žemės ūkio, sodininkystės paslaugos', subs:[
+    {code:'77100000', name:'Žemės ūkio paslaugos'},
+    {code:'77200000', name:'Miškininkystės paslaugos'},
+    {code:'77300000', name:'Sodininkystės paslaugos'},
+  ]},
+  {code:'79', icon:'💼', name:'Verslo paslaugos', subs:[
+    {code:'79100000', name:'Teisinės paslaugos'},
+    {code:'79200000', name:'Apskaitos, audito paslaugos'},
+    {code:'79300000', name:'Rinkos ir ekonomikos tyrimai'},
+    {code:'79400000', name:'Verslo, vadybos paslaugos'},
+    {code:'79500000', name:'Biuro pagalbinės paslaugos'},
+    {code:'79700000', name:'Tyrimo, saugos paslaugos'},
+    {code:'79900000', name:'Įvairios verslo, su verslu susijusios paslaugos'},
+  ]},
+  {code:'80', icon:'📚', name:'Švietimas ir mokymas', subs:[
+    {code:'80100000', name:'Pradinis ugdymas'},
+    {code:'80200000', name:'Vidurinis ugdymas'},
+    {code:'80300000', name:'Aukštasis mokslas'},
+    {code:'80500000', name:'Mokymo paslaugos'},
+    {code:'80570000', name:'Asmens tobulinimo mokymai'},
+  ]},
+  {code:'85', icon:'🩺', name:'Sveikatos ir socialinės paslaugos', subs:[
+    {code:'85100000', name:'Sveikatos priežiūros paslaugos'},
+    {code:'85200000', name:'Veterinarijos paslaugos'},
+    {code:'85300000', name:'Socialinio darbo, susijusios paslaugos'},
+  ]},
+  {code:'90', icon:'🧹', name:'Atliekų tvarkymas, valymas', subs:[
+    {code:'90400000', name:'Nuotekų tvarkymo paslaugos'},
+    {code:'90500000', name:'Atliekų tvarkymo paslaugos'},
+    {code:'90900000', name:'Valymo, sanitarijos paslaugos'},
+    {code:'90910000', name:'Valymo paslaugos'},
+    {code:'90920000', name:'Įrenginių dezinfekcijos paslaugos'},
+  ]},
+  {code:'92', icon:'🎭', name:'Poilsis, kultūra, sportas', subs:[
+    {code:'92100000', name:'Kino ir vaizdo įrašų paslaugos'},
+    {code:'92300000', name:'Pramogų paslaugos'},
+    {code:'92500000', name:'Bibliotekų, archyvų, muziejų paslaugos'},
+    {code:'92600000', name:'Sporto paslaugos'},
+  ]},
+  {code:'98', icon:'🔧', name:'Kitos bendruomenės paslaugos', subs:[
+    {code:'98300000', name:'Įvairios paslaugos'},
+    {code:'98390000', name:'Įvairios paslaugos asmenims'},
+    {code:'98500000', name:'Privatūs namų ūkiai'},
+  ]},
 ];
 
+// Ankstesnės kategorijos — paliekam atgaliniam suderinamumui
+const CVP_CATEGORIES = BVPZ_TREE.map(c => ({label: c.icon + ' ' + c.name, q: c.code}));
+
 function initCVPPage(){
-  // Render quick links
+  // Render BVPŽ tree if codes tab is visible
+  renderBVPZTree();
+  // Render quick links (kept for backwards compat)
   const ql = document.getElementById('cvp-quicklinks');
   if(ql) ql.innerHTML = CVP_CATEGORIES.map(c =>
     `<button onclick="document.getElementById('cvp-q').value='${c.q}';openCVP()" 
@@ -3679,6 +3899,108 @@ async function markOutcome(outcome){
       if(latest) await trackOutcome(latest.id, outcome);
     } catch(e){ console.error(e); }
   }
+}
+
+// ══════════════════════════════════
+// BVPŽ KODŲ NAVIGATORIUS
+// ══════════════════════════════════
+function cvpTab(name){
+  const search = document.getElementById('cvp-pane-search');
+  const codes = document.getElementById('cvp-pane-codes');
+  const tabS = document.getElementById('cvp-tab-search');
+  const tabC = document.getElementById('cvp-tab-codes');
+  if(name === 'codes'){
+    search.style.display = 'none';
+    codes.style.display = 'block';
+    tabS.style.background = 'none'; tabS.style.color = 'var(--text2)'; tabS.style.borderBottom = '';
+    tabC.style.background = 'var(--card2)'; tabC.style.color = 'var(--text)'; tabC.style.borderBottom = '2px solid var(--blue3)';
+    renderBVPZTree();
+  } else {
+    search.style.display = 'block';
+    codes.style.display = 'none';
+    tabC.style.background = 'none'; tabC.style.color = 'var(--text2)'; tabC.style.borderBottom = '';
+    tabS.style.background = 'var(--card2)'; tabS.style.color = 'var(--text)'; tabS.style.borderBottom = '2px solid var(--blue3)';
+  }
+}
+
+function renderBVPZTree(){
+  const el = document.getElementById('bvpz-tree');
+  if(!el) return;
+  const filter = (document.getElementById('bvpz-filter') && document.getElementById('bvpz-filter').value || '').toLowerCase().trim();
+
+  const filtered = BVPZ_TREE.map(cat => {
+    const matchCat = !filter || cat.name.toLowerCase().includes(filter) || cat.code.includes(filter);
+    const subs = (cat.subs||[]).filter(s => !filter || s.name.toLowerCase().includes(filter) || s.code.includes(filter));
+    if(matchCat || subs.length) return Object.assign({}, cat, {subs: matchCat ? cat.subs : subs, _matchedSubs: subs.length > 0 && !matchCat});
+    return null;
+  }).filter(Boolean);
+
+  if(!filtered.length){
+    el.innerHTML = '<div style="text-align:center;padding:40px;color:var(--text2)">Nieko nerasta pagal &laquo;' + filter + '&raquo;</div>';
+    return;
+  }
+
+  // Clear and build with DOM (avoids string escaping issues)
+  el.innerHTML = '';
+  filtered.forEach(cat => {
+    const expanded = !!filter || cat._matchedSubs;
+    const details = document.createElement('details');
+    if(expanded) details.open = true;
+    details.style.cssText = 'background:var(--card);border:1px solid var(--border);border-radius:12px;padding:0;overflow:hidden';
+
+    const summary = document.createElement('summary');
+    summary.style.cssText = 'padding:14px 18px;cursor:pointer;list-style:none;display:flex;align-items:center;gap:12px;font-family:Inter,sans-serif;user-select:none';
+    summary.innerHTML = '<span style="font-size:22px">' + cat.icon + '</span>' +
+      '<div style="flex:1">' +
+        '<div style="font-size:14px;font-weight:700;color:var(--text)">' + cat.name + '</div>' +
+        '<div style="font-size:11px;color:var(--text3);font-family:monospace;margin-top:2px">BVPŽ ' + cat.code + 'XXXXXX · ' + (cat.subs||[]).length + ' subkategorijos</div>' +
+      '</div>';
+
+    const catBtn = document.createElement('button');
+    catBtn.style.cssText = 'background:var(--grad);color:#fff;border:none;padding:7px 14px;border-radius:8px;cursor:pointer;font-size:12px;font-weight:600;font-family:Inter,sans-serif;white-space:nowrap';
+    catBtn.textContent = '→ CVP';
+    catBtn.onclick = (e) => { e.stopPropagation(); openCVPByCode(cat.code, cat.name); };
+    summary.appendChild(catBtn);
+
+    const arrow = document.createElement('span');
+    arrow.style.cssText = 'color:var(--text3);font-size:12px';
+    arrow.textContent = '▾';
+    summary.appendChild(arrow);
+
+    details.appendChild(summary);
+
+    const subsWrap = document.createElement('div');
+    subsWrap.style.cssText = 'padding:0 18px 14px 56px;display:flex;flex-direction:column;gap:6px';
+    (cat.subs||[]).forEach(s => {
+      const row = document.createElement('div');
+      row.style.cssText = 'display:flex;align-items:center;gap:10px;padding:8px 10px;background:rgba(0,0,0,.15);border-radius:8px';
+      row.innerHTML = '<span style="font-family:monospace;font-size:11px;color:var(--blue3);min-width:90px">' + s.code + '</span>' +
+        '<span style="font-size:12px;color:var(--text2);flex:1;line-height:1.4">' + s.name + '</span>';
+      const sBtn = document.createElement('button');
+      sBtn.style.cssText = 'background:var(--card2);border:1px solid var(--border);color:var(--text);padding:5px 10px;border-radius:6px;cursor:pointer;font-size:11px;font-family:Inter,sans-serif';
+      sBtn.textContent = '→ Konkursai';
+      sBtn.onclick = () => openCVPByCode(s.code, s.name);
+      row.appendChild(sBtn);
+      subsWrap.appendChild(row);
+    });
+    details.appendChild(subsWrap);
+    el.appendChild(details);
+  });
+}
+
+function openCVPByCode(code, name){
+  try { navigator.clipboard.writeText(code); } catch(e) {}
+  window.open('https://viesiejipirkimai.lt/epps/prepareAdvancedSearch.do?type=cftFTS', '_blank', 'noopener');
+  const tip = document.createElement('div');
+  tip.style.cssText = 'position:fixed;top:80px;right:24px;background:#1a56db;color:#fff;padding:16px 20px;border-radius:12px;font-size:13px;z-index:999;box-shadow:0 8px 32px rgba(0,0,0,.4);max-width:360px;line-height:1.7';
+  tip.innerHTML = '🔗 <strong>CVP portalas atidarytas</strong><br><br>BVPŽ kodas nukopijuotas:<br><div style="background:rgba(255,255,255,.2);padding:6px 12px;border-radius:6px;margin:6px 0;font-weight:700;font-size:15px;font-family:monospace">' + code + '</div><span style="opacity:.85;font-size:11px">' + name + '</span><br><br><span style="opacity:.85;font-size:11px">Įklijuokite (Ctrl+V) į &laquo;BVPŽ kodas&raquo; lauką portalo paieškoje</span>';
+  const close = document.createElement('button');
+  close.style.cssText = 'position:absolute;top:8px;right:10px;background:none;border:none;color:#fff;cursor:pointer;font-size:20px;padding:0;line-height:1';
+  close.textContent = '×';
+  close.onclick = () => tip.remove();
+  tip.appendChild(close);
+  document.body.appendChild(tip);
+  setTimeout(() => tip && tip.remove(), 12000);
 }
 </script>
 
