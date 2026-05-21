@@ -271,27 +271,28 @@ module.exports = async (req, res) => {
   if (!user) return res.status(401).json({ error: 'Neprisijungta' });
   if (!ANTHROPIC_API_KEY) return res.status(500).json({ error: 'AI nepasiekiamas' });
 
-  const { documentText, documentName } = req.body || {};
-  if (!documentText || documentText.length < 50) {
+  const { documentText, text, documentName, companyProfile, clientContext } = req.body || {};
+  const docText = documentText || text || '';
+  if (!docText || docText.length < 50) {
     return res.status(400).json({ error: 'Dokumento tekstas per trumpas arba tuščias' });
   }
 
   try {
-    // Gaunam kliento profilį iš DB
-    let profile = {};
-    if (process.env.SUPABASE_URL) {
+    // Gaunam kliento profilį — pirma iš užklausos, tada iš DB
+    let profile = companyProfile || {};
+    if ((!profile || !profile.sector) && process.env.SUPABASE_URL) {
       const supabase = createClient(process.env.SUPABASE_URL, process.env.SUPABASE_SERVICE_KEY);
       const { data } = await supabase.from('users').select('company_profile').eq('id', user.id).single();
-      profile = (data && data.company_profile) || {};
+      if (data && data.company_profile) profile = data.company_profile;
     }
 
     const profileCtx = buildProfileContext(profile);
 
     // Vykdom agentus nuosekliai
-    const docInfo = await agentDocParser(documentText);
-    const qualification = await agentQualification(documentText, profileCtx);
-    const pricing = await agentPricing(documentText, profileCtx);
-    const risk = await agentRisk(documentText, profileCtx);
+    const docInfo = await agentDocParser(docText);
+    const qualification = await agentQualification(docText, profileCtx);
+    const pricing = await agentPricing(docText, profileCtx);
+    const risk = await agentRisk(docText, profileCtx);
     const strategy = await agentStrategy(docInfo, qualification, pricing, risk, profileCtx);
 
     // Apjungiam į galutinį rezultatą
