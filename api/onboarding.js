@@ -1,6 +1,13 @@
-const { createClient } = require('@supabase/supabase-js');
+// ═══════════════════════════════════════════════════════════
+// BIDWISE AI — SUMANUS ONBOARDING
+// 2 endpoint'ai: generate-questions + create-profile
+// ═══════════════════════════════════════════════════════════
 const jwt = require('jsonwebtoken');
+const { createClient } = require('@supabase/supabase-js');
+
 const JWT_SECRET = process.env.JWT_SECRET || 'bidwise-secret-2025';
+const ANTHROPIC_API_KEY = process.env.ANTHROPIC_API_KEY;
+const MODEL = 'claude-sonnet-4-6';
 
 function verifyToken(req) {
   const auth = req.headers.authorization || '';
@@ -9,147 +16,130 @@ function verifyToken(req) {
   try { return jwt.verify(token, JWT_SECRET); } catch { return null; }
 }
 
-async function callClaude(system, userMsg, maxTokens = 2000) {
+async function callClaude(system, user, maxTokens = 2000) {
   const r = await fetch('https://api.anthropic.com/v1/messages', {
     method: 'POST',
     headers: {
       'Content-Type': 'application/json',
-      'x-api-key': process.env.ANTHROPIC_API_KEY,
+      'x-api-key': ANTHROPIC_API_KEY,
       'anthropic-version': '2023-06-01'
     },
-    body: JSON.stringify({
-      model: 'claude-sonnet-4-6',
-      max_tokens: maxTokens,
-      temperature: 0,
-      system,
-      messages: [{ role: 'user', content: userMsg }]
-    })
+    body: JSON.stringify({ model: MODEL, max_tokens: maxTokens, system, messages: [{ role: 'user', content: user }] })
   });
   if (!r.ok) throw new Error('Claude API klaida: ' + r.status);
-  const d = await r.json();
-  return d.content?.[0]?.text || '';
+  const data = await r.json();
+  return data.content.map(c => c.text || '').join('\n');
+}
+
+function parseJSON(text, fallback = {}) {
+  try {
+    let clean = text.replace(/```json|```/g, '').trim();
+    const s = clean.indexOf('{'), e = clean.lastIndexOf('}');
+    if (s >= 0 && e > s) clean = clean.slice(s, e + 1);
+    return JSON.parse(clean);
+  } catch { return fallback; }
 }
 
 module.exports = async (req, res) => {
   res.setHeader('Access-Control-Allow-Origin', '*');
   res.setHeader('Access-Control-Allow-Headers', 'Content-Type, Authorization');
+  res.setHeader('Access-Control-Allow-Methods', 'POST, OPTIONS');
   if (req.method === 'OPTIONS') return res.status(200).end();
+  if (req.method !== 'POST') return res.status(405).json({ error: 'Metodas neleidžiamas' });
 
   const user = verifyToken(req);
   if (!user) return res.status(401).json({ error: 'Neprisijungta' });
+  if (!ANTHROPIC_API_KEY) return res.status(500).json({ error: 'AI nepasiekiamas' });
 
-  const { step, sector, name, answers } = req.body || {};
+  const { action } = req.body || {};
 
-  // ── STEP 1: Generate smart questions based on sector ──
-  if (step === 'questions') {
-    if (!sector) return res.status(400).json({ error: 'Sritis būtina' });
-
-    const system = `Tu esi viešųjų pirkimų ekspertas Lietuvoje. Tavo užduotis — sugeneruoti tikslingus klausimus apie įmonę, kad vėliau galėtum personalizuoti CVP konkursų analizę.`;
-
-    const prompt = `Įmonė veikia šioje srityje: "${sector}".
-Sugeneruok 7 konkrečius klausimus apie šią įmonę, kurie padės personalizuoti viešųjų pirkimų konkursų analizę.
-
-Klausimai turi atskleisti:
-- Tikslią specializaciją ir patirtį
-- Turimus sertifikatus ir licencijas
-- Finansines galimybes (be konkrečių skaičių)
-- Stipriąsias ir silpnąsias puses viešuosiuose pirkimuose
-- Ankstesnę patirtį su panašiais konkursais
-
-Grąžink TIK JSON masyvą, be markdown:
-[
-  {"id": "q1", "klausimas": "...", "tipas": "text|select|multiselect", "variantai": ["..."]}
-]
-
-"tipas" = "text" jei laisvas atsakymas, "select" jei vienas variantas, "multiselect" jei keli.
-Variantai tik "select" ir "multiselect" tipams.`;
+  // ─────────────────────────────────────────
+  // ŽINGSNIS 2: Generuoti sektoriui pritaikytus klausimus
+  // ─────────────────────────────────────────
+  if (action === 'generate-questions') {
+    const { name, sector } = req.body;
+    if (!sector) return res.status(400).json({ error: 'Nurodykite veiklos sritį' });
 
     try {
-      const raw = await callClaude(system, prompt, 1500);
-      let questions;
-      try {
-        const clean = raw.replace(/^```json\s*/i, '').replace(/^```\s*/, '').replace(/```\s*$/, '').trim();
-        const s = clean.indexOf('['), e = clean.lastIndexOf(']');
-        questions = JSON.parse(clean.slice(s, e + 1));
-      } catch (e) {
-        // Fallback questions if parse fails
-        questions = getDefaultQuestions(sector);
-      }
-      return res.status(200).json({ questions });
-    } catch (e) {
-      return res.status(200).json({ questions: getDefaultQuestions(sector) });
-    }
-  }
+      const system = `Tu esi viešųjų pirkimų konsultantas. Sukurk konkrečius klausimus įmonei, kad galėtum sukurti tikslų jos profilį viešųjų pirkimų analizei. Klausimai turi būti specifiški sektoriui. Atsakyk TIK JSON.`;
+      const userMsg = `Įmonė „${name || 'įmonė'}" veikia srityje: ${sector}.
 
-  // ── STEP 2: Process answers into rich company profile ──
-  if (step === 'profile') {
-    if (!answers || !sector) return res.status(400).json({ error: 'Trūksta duomenų' });
+Sukurk 5-6 konkrečius klausimus, kurių atsakymai padės įvertinti šios įmonės galimybes laimėti viešuosius pirkimus būtent šiame sektoriuje. Klausimai turi būti apie: apyvartą, patirtį, sertifikatus, pajėgumus, specializaciją, geografiją — pritaikyti sektoriui.
 
-    const system = `Tu esi viešųjų pirkimų ekspertas Lietuvoje. Sukuri išsamų įmonės profilį, kuris bus naudojamas personalizuoti CVP konkursų analizę.`;
-
-    const answersText = Object.entries(answers)
-      .map(([q, a]) => `Klausimas: ${q}\nAtsakymas: ${a}`)
-      .join('\n\n');
-
-    const prompt = `Įmonė: "${name || 'Nenurodyta'}"
-Sritis: "${sector}"
-
-Atsakymai į profilinimo klausimus:
-${answersText}
-
-Sukurk išsamų įmonės profilį JSON formatu. Grąžink TIK JSON, be markdown:
+Grąžink JSON:
 {
-  "name": "${name || ''}",
-  "sector": "${sector}",
-  "specializacija": "2-3 sakiniai apie tikslią specializaciją",
-  "stiprybės": ["stiprybė1", "stiprybė2", "stiprybė3"],
-  "silpnybės": ["silpnybė1", "silpnybė2"],
-  "sertifikatai": "sertifikatų sąrašas",
-  "patirtis": "patirties aprašymas",
-  "tipinieKonkursai": "kokio tipo konkursai tinkamiausi",
-  "vengtiniKonkursai": "kokių konkursų geriau vengti",
-  "kainuStrategija": "kaip turi elgtis su kainodara",
-  "finansinesStiprybe": "maža/vidutinė/didelė",
-  "apyvartaGruppe": "iki100k/100k-500k/500k-2m/virs2m",
-  "darbuotojuGrupe": "1-9/10-49/50-249/250+",
-  "profilioSantrauka": "3-4 sakiniai — bendra santrauka kas yra ši įmonė viešųjų pirkimų kontekste"
+  "klausimai": [
+    {"id": "q1", "klausimas": "konkretus klausimas", "tipas": "text/number/select", "placeholder": "užuomina ką įvesti"}
+  ]
 }`;
-
-    try {
-      const raw = await callClaude(system, prompt, 2000);
-      let profile;
-      try {
-        const clean = raw.replace(/^```json\s*/i, '').replace(/^```\s*/, '').replace(/```\s*$/, '').trim();
-        const s = clean.indexOf('{'), e = clean.lastIndexOf('}');
-        profile = JSON.parse(clean.slice(s, e + 1));
-      } catch (e) {
-        profile = { name, sector, specializacija: answersText.slice(0, 200), profilioSantrauka: 'Profilis išsaugotas' };
-      }
-
-      // Save to Supabase
-      if (process.env.SUPABASE_URL && process.env.SUPABASE_SERVICE_KEY) {
-        const supabase = createClient(process.env.SUPABASE_URL, process.env.SUPABASE_SERVICE_KEY);
-        await supabase.from('users').update({ company_profile: profile }).eq('id', user.id);
-      }
-
-      return res.status(200).json({ profile });
+      const res2 = await callClaude(system, userMsg, 1500);
+      const parsed = parseJSON(res2, { klausimai: [] });
+      return res.status(200).json(parsed);
     } catch (e) {
-      console.error('Profile error:', e.message);
       return res.status(500).json({ error: e.message });
     }
   }
 
-  return res.status(400).json({ error: 'Nežinomas žingsnis' });
-};
+  // ─────────────────────────────────────────
+  // ŽINGSNIS 3: Sukurti pilną įmonės profilį
+  // ─────────────────────────────────────────
+  if (action === 'create-profile') {
+    const { name, sector, answers } = req.body;
+    if (!sector) return res.status(400).json({ error: 'Trūksta duomenų' });
 
-function getDefaultQuestions(sector) {
-  return [
-    { id: 'q1', klausimas: `Kiek metų jūsų įmonė dirba ${sector} srityje?`, tipas: 'select', variantai: ['Mažiau nei 1 metai', '1–3 metai', '3–5 metai', '5–10 metų', 'Daugiau nei 10 metų'] },
-    { id: 'q2', klausimas: 'Kokia jūsų įmonės metinė apyvarta?', tipas: 'select', variantai: ['iki 100 000 EUR', '100 000 – 500 000 EUR', '500 000 – 2 000 000 EUR', 'virš 2 000 000 EUR'] },
-    { id: 'q3', klausimas: 'Kiek darbuotojų dirba jūsų įmonėje?', tipas: 'select', variantai: ['1–9', '10–49', '50–249', '250 ir daugiau'] },
-    { id: 'q4', klausimas: 'Kokie sertifikatai ar licencijos jūsų įmonei yra išduoti?', tipas: 'text', variantai: [] },
-    { id: 'q5', klausimas: 'Ar jūsų įmonė anksčiau dalyvavo viešuosiuose pirkimuose?', tipas: 'select', variantai: ['Ne, pirmą kartą', 'Taip, bet nelaimėjome', 'Taip, turime laimėtų konkursų'] },
-    { id: 'q6', klausimas: 'Koks yra didžiausias sutarties dydis, kurį galite vykdyti?', tipas: 'select', variantai: ['iki 50 000 EUR', '50 000–200 000 EUR', '200 000–1 000 000 EUR', 'virš 1 000 000 EUR'] },
-    { id: 'q7', klausimas: 'Kokia yra jūsų pagrindinė konkurencinė privalumas prieš kitus tiekėjus?', tipas: 'text', variantai: [] }
-  ];
-}
+    try {
+      // Surenkam klausimyno atsakymus į tekstą
+      let answersText = '';
+      const klausimynas = {};
+      if (answers && typeof answers === 'object') {
+        for (const [k, v] of Object.entries(answers)) {
+          if (v) {
+            answersText += `${k}: ${v}\n`;
+            klausimynas[k] = v;
+          }
+        }
+      }
+
+      const system = `Tu esi viešųjų pirkimų ekspertas. Iš įmonės pateiktos informacijos sukurk struktūruotą profilį, kuris bus naudojamas AI analizei. Būk konkretus ir naudingas. Atsakyk TIK JSON.`;
+      const userMsg = `Įmonė: ${name || 'Nenurodyta'}
+Veiklos sritis: ${sector}
+
+Klausimyno atsakymai:
+${answersText || 'Nepateikta'}
+
+Sukurk struktūruotą įmonės profilį viešųjų pirkimų analizei. Grąžink JSON:
+{
+  "specializacija": "konkreti įmonės specializacija",
+  "stiprybes": ["3-4 stiprybės kurios padeda laimėti konkursus"],
+  "silpnybes": ["1-2 galimi ribojimai"],
+  "sertifikatai": ["paminėti sertifikatai jei buvo"],
+  "kainuStrategija": "rekomenduojama kainodaron strategija šiai įmonei",
+  "tikslai": "ko įmonė siekia viešuosiuose pirkimuose",
+  "profilioSantrauka": "2-3 sakinių santrauka kuri apibūdina įmonę ir jos pozicija viešųjų pirkimų rinkoje"
+}`;
+      const aiRes = await callClaude(system, userMsg, 2000);
+      const aiProfile = parseJSON(aiRes, {});
+
+      // Sudedam pilną profilį
+      const fullProfile = {
+        name: name || '',
+        sector,
+        ...aiProfile,
+        klausimynas,  // SVARBU: išsaugom visus klausimyno atsakymus
+        sukurta: new Date().toISOString()
+      };
+
+      // Išsaugom į DB
+      if (process.env.SUPABASE_URL) {
+        const supabase = createClient(process.env.SUPABASE_URL, process.env.SUPABASE_SERVICE_KEY);
+        await supabase.from('users').update({ company_profile: fullProfile }).eq('id', user.id);
+      }
+
+      return res.status(200).json({ profile: fullProfile });
+    } catch (e) {
+      return res.status(500).json({ error: e.message });
+    }
+  }
+
+  return res.status(400).json({ error: 'Nežinomas veiksmas' });
+};
