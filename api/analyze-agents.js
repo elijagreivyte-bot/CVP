@@ -1,6 +1,7 @@
 // ═══════════════════════════════════════════════════════════
-// BIDWISE AI — MULTI-AGENT ANALIZĖ
-// 5 specializuoti agentai + stiprus kliento profilio naudojimas
+// BIDWISE AI — ANALIZĖ (vienas greitas kvietimas, be timeout)
+// Vienas išsamus AI kvietimas vietoj 5 atskirų — greičiau ir
+// neviršija Vercel funkcijos laiko limito.
 // ═══════════════════════════════════════════════════════════
 const jwt = require('jsonwebtoken');
 const { createClient } = require('@supabase/supabase-js');
@@ -9,6 +10,8 @@ const JWT_SECRET = process.env.JWT_SECRET || 'bidwise-secret-2025';
 const ANTHROPIC_API_KEY = process.env.ANTHROPIC_API_KEY;
 const MODEL = 'claude-sonnet-4-6';
 
+module.exports.config = { maxDuration: 60 };
+
 function verifyToken(req) {
   const auth = req.headers.authorization || '';
   const token = auth.replace('Bearer ', '');
@@ -16,31 +19,39 @@ function verifyToken(req) {
   try { return jwt.verify(token, JWT_SECRET); } catch { return null; }
 }
 
-// ── Anthropic API kvietimas ──
-async function callClaude(system, user, maxTokens = 2000) {
-  const r = await fetch('https://api.anthropic.com/v1/messages', {
-    method: 'POST',
-    headers: {
-      'Content-Type': 'application/json',
-      'x-api-key': ANTHROPIC_API_KEY,
-      'anthropic-version': '2023-06-01'
-    },
-    body: JSON.stringify({
-      model: MODEL,
-      max_tokens: maxTokens,
-      system,
-      messages: [{ role: 'user', content: user }]
-    })
-  });
-  if (!r.ok) {
-    const err = await r.text();
-    throw new Error('Claude API klaida: ' + r.status + ' ' + err.slice(0, 200));
+async function callClaude(system, user, maxTokens = 4000) {
+  const controller = new AbortController();
+  const timeout = setTimeout(() => controller.abort(), 55000);
+  try {
+    const r = await fetch('https://api.anthropic.com/v1/messages', {
+      method: 'POST',
+      headers: {
+        'Content-Type': 'application/json',
+        'x-api-key': ANTHROPIC_API_KEY,
+        'anthropic-version': '2023-06-01'
+      },
+      body: JSON.stringify({
+        model: MODEL,
+        max_tokens: maxTokens,
+        system,
+        messages: [{ role: 'user', content: user }]
+      }),
+      signal: controller.signal
+    });
+    clearTimeout(timeout);
+    if (!r.ok) {
+      const err = await r.text();
+      throw new Error('Claude API klaida: ' + r.status + ' ' + err.slice(0, 200));
+    }
+    const data = await r.json();
+    return data.content.map(c => c.text || '').join('\n');
+  } catch (e) {
+    clearTimeout(timeout);
+    if (e.name === 'AbortError') throw new Error('Analizė užtruko per ilgai. Pabandykite su mažesniu dokumentu.');
+    throw e;
   }
-  const data = await r.json();
-  return data.content.map(c => c.text || '').join('\n');
 }
 
-// ── Saugus JSON parse ──
 function parseJSON(text, fallback = {}) {
   try {
     let clean = text.replace(/```json|```/g, '').trim();
@@ -54,212 +65,38 @@ function parseJSON(text, fallback = {}) {
   }
 }
 
-// ═══════════════════════════════════════════════════════════
-// KLIENTO PROFILIO KONTEKSTAS — naudojamas VISUOSE agentuose
-// ═══════════════════════════════════════════════════════════
 function buildProfileContext(profile) {
-  if (!profile || !profile.profilioSantrauka) {
+  if (!profile || (!profile.profilioSantrauka && !profile.sector && !profile.name)) {
     return {
       hasProfile: false,
-      contextText: 'KLIENTO PROFILIS NEUŽPILDYTAS. Analizuok bendrai, bet pabrėžk, kad užpildžius įmonės profilį analizė būtų tikslesnė ir personalizuota.'
+      contextText: 'KLIENTO PROFILIS NEUŽPILDYTAS. Analizuok bendrai. Pabaigoje pažymėk, kad užpildžius įmonės profilį analizė būtų tikslesnė.'
     };
   }
-
-  // Surenkam VISĄ profilio informaciją į struktūruotą tekstą
-  let ctx = 'KLIENTO ĮMONĖS PROFILIS (naudok šią informaciją kaip pagrindą vertinant atitikimą):\n\n';
-
-  if (profile.name) ctx += `• Įmonės pavadinimas: ${profile.name}\n`;
+  let ctx = 'KLIENTO ĮMONĖS PROFILIS (naudok aktyviai vertindamas atitikimą):\n\n';
+  if (profile.name) ctx += `• Pavadinimas: ${profile.name}\n`;
   if (profile.sector) ctx += `• Veiklos sritis: ${profile.sector}\n`;
   if (profile.specializacija) ctx += `• Specializacija: ${profile.specializacija}\n`;
   if (profile.apyvarta) ctx += `• Metinė apyvarta: ${profile.apyvarta}\n`;
   if (profile.darbuotojai) ctx += `• Darbuotojų skaičius: ${profile.darbuotojai}\n`;
   if (profile.patirtis) ctx += `• Patirtis: ${profile.patirtis}\n`;
-
   if (Array.isArray(profile.sertifikatai) && profile.sertifikatai.length)
-    ctx += `• Turimi sertifikatai: ${profile.sertifikatai.join(', ')}\n`;
+    ctx += `• Sertifikatai: ${profile.sertifikatai.join(', ')}\n`;
   if (Array.isArray(profile.stiprybes) && profile.stiprybes.length)
     ctx += `• Stiprybės: ${profile.stiprybes.join('; ')}\n`;
   if (Array.isArray(profile.silpnybes) && profile.silpnybes.length)
     ctx += `• Silpnybės/ribojimai: ${profile.silpnybes.join('; ')}\n`;
   if (profile.kainuStrategija) ctx += `• Kainodaron strategija: ${profile.kainuStrategija}\n`;
-  if (profile.tikslai) ctx += `• Tikslai: ${profile.tikslai}\n`;
-  if (profile.regionas) ctx += `• Veiklos regionas: ${profile.regionas}\n`;
-
-  // Klausimyno atsakymai — SVARBIAUSIA dalis personalizacijai
+  if (profile.regionas) ctx += `• Regionas: ${profile.regionas}\n`;
   if (profile.klausimynas && typeof profile.klausimynas === 'object') {
-    ctx += '\nKLIENTO KLAUSIMYNO ATSAKYMAI (specifinė informacija apie įmonę — naudok šiuos atsakymus aktyviai):\n';
-    for (const [klausimas, atsakymas] of Object.entries(profile.klausimynas)) {
-      if (atsakymas) ctx += `  – ${klausimas}: ${atsakymas}\n`;
+    ctx += '\nKLAUSIMYNO ATSAKYMAI (specifinė info — naudok aktyviai):\n';
+    for (const [k, v] of Object.entries(profile.klausimynas)) {
+      if (v) ctx += `  – ${k}: ${v}\n`;
     }
   }
-
-  if (profile.profilioSantrauka)
-    ctx += `\nAI PROFILIO SANTRAUKA:\n${profile.profilioSantrauka}\n`;
-
+  if (profile.profilioSantrauka) ctx += `\nPROFILIO SANTRAUKA:\n${profile.profilioSantrauka}\n`;
   return { hasProfile: true, contextText: ctx };
 }
 
-// ═══════════════════════════════════════════════════════════
-// AGENTAI
-// ═══════════════════════════════════════════════════════════
-
-// AGENTAS 1: Dokumentų parser
-async function agentDocParser(docText) {
-  const system = `Tu esi viešųjų pirkimų dokumentų analitikas. Ištrauk struktūruotą informaciją iš pirkimo dokumentų. Atsakyk TIK JSON formatu, be jokio papildomo teksto.`;
-  const user = `Išanalizuok šį CVP pirkimo dokumentą ir ištrauk pagrindinę informaciją.
-
-DOKUMENTAS:
-${docText.slice(0, 30000)}
-
-Grąžink JSON su laukais:
-{
-  "pavadinimas": "tikslus pirkimo pavadinimas",
-  "perkancioji": "perkančiosios organizacijos pavadinimas",
-  "verte": "numatoma vertė su valiuta arba 'nenurodyta'",
-  "bvpzKodai": ["BVPŽ kodai jei nurodyti"],
-  "pirkimoTipas": "atviras konkursas / supaprastintas / mažos vertės / kt.",
-  "terminas": "pasiūlymų pateikimo terminas (data ir laikas)",
-  "trukme": "sutarties trukmė",
-  "pirkimoObjektas": "trumpas objekto aprašymas 2-3 sakiniai"
-}`;
-  const res = await callClaude(system, user, 1500);
-  return parseJSON(res, { pavadinimas: 'Pirkimo dokumentas', perkancioji: 'Nenurodyta' });
-}
-
-// AGENTAS 2: Kvalifikacijos atitikimas — NAUDOJA PROFILĮ STIPRIAI
-async function agentQualification(docText, profileCtx) {
-  const system = `Tu esi viešųjų pirkimų kvalifikacijos ekspertas. Tavo užduotis — palyginti pirkimo kvalifikacinius reikalavimus su KONKREČIA kliento įmone ir tiksliai pasakyti ar ji atitinka. Būk konkretus ir remkis kliento profiliu. Atsakyk TIK JSON formatu.`;
-
-  const user = `${profileCtx.contextText}
-
-━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
-
-PIRKIMO DOKUMENTAS:
-${docText.slice(0, 28000)}
-
-━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
-
-UŽDUOTIS: Palygink pirkimo kvalifikacinius reikalavimus su KONKREČIAIS kliento įmonės duomenimis aukščiau. ${profileCtx.hasProfile ? 'Aktyviai naudok kliento profilį ir klausimyno atsakymus — kiekvieną reikalavimą įvertink būtent šios įmonės kontekste.' : ''}
-
-Grąžink JSON:
-{
-  "reikalavimai": [
-    {
-      "reikalavimas": "konkretus kvalifikacinis reikalavimas",
-      "kliento_atitikimas": "TINKA / NETINKA / ABEJOTINA / TRŪKSTA_INFO",
-      "paaiskinimas": "kodėl būtent ši įmonė atitinka ar ne, remiantis profiliu"
-    }
-  ],
-  "bendrasAtitikimas": "TINKA / NETINKA / DALINAI",
-  "kritiniaiTrukumai": ["ko trūksta šiai konkrečiai įmonei kad galėtų dalyvauti"],
-  "atitikimoBalas": 75
-}`;
-
-  const res = await callClaude(system, user, 2500);
-  return parseJSON(res, { bendrasAtitikimas: 'DALINAI', reikalavimai: [], atitikimoBalas: 50 });
-}
-
-// AGENTAS 3: Kainodara — naudoja kliento kainų strategiją
-async function agentPricing(docText, profileCtx) {
-  const system = `Tu esi viešųjų pirkimų kainodaron strategas. Analizuok vertinimo kriterijus ir patark kaip klientui formuoti kainą. Atsakyk TIK JSON formatu.`;
-
-  const user = `${profileCtx.contextText}
-
-━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
-
-PIRKIMO DOKUMENTAS:
-${docText.slice(0, 26000)}
-
-━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
-
-UŽDUOTIS: Išanalizuok vertinimo kriterijus ir jų svorius. ${profileCtx.hasProfile ? 'Atsižvelk į kliento kainodaron strategiją ir galimybes iš profilio.' : ''} Patark kaip formuoti konkurencingą kainą.
-
-Grąžink JSON:
-{
-  "vertinimoKriterijai": [
-    {"kriterijus": "pvz. Kaina", "svoris": "60%", "komentaras": "ką tai reiškia klientui"}
-  ],
-  "kainosStrategija": "konkreti rekomendacija kaip formuoti kainą šiai įmonei",
-  "konkurencingumas": "ar kliento įprasta kaina bus konkurencinga",
-  "patarimai": ["konkretūs kainodaron patarimai"]
-}`;
-
-  const res = await callClaude(system, user, 2000);
-  return parseJSON(res, { kainosStrategija: 'Reikia daugiau informacijos', vertinimoKriterijai: [] });
-}
-
-// AGENTAS 4: Rizikos
-async function agentRisk(docText, profileCtx) {
-  const system = `Tu esi viešųjų pirkimų rizikų analitikas. Ieškok paslėptų sąlygų, baudų, nepalankių nuostatų ir dažnų klaidų. Atsakyk TIK JSON formatu.`;
-
-  const user = `${profileCtx.contextText}
-
-━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
-
-PIRKIMO DOKUMENTAS:
-${docText.slice(0, 26000)}
-
-━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
-
-UŽDUOTIS: Identifikuok rizikas ir paslėptas sąlygas. ${profileCtx.hasProfile ? 'Atkreipk dėmesį į rizikas kurios būtent šiai įmonei (pagal jos profilį) gali būti problematiškos.' : ''}
-
-Grąžink JSON:
-{
-  "rizikos": [
-    {"rizika": "konkreti rizika", "lygis": "AUKŠTA / VIDUTINĖ / ŽEMA", "rekomendacija": "ką daryti"}
-  ],
-  "paslėptosSalygos": ["nestandartinės ar nepalankios sąlygos"],
-  "klausimaiPerkanciajai": ["klausimai kuriuos verta užduoti perkančiajai organizacijai"]
-}`;
-
-  const res = await callClaude(system, user, 2000);
-  return parseJSON(res, { rizikos: [], paslėptosSalygos: [], klausimaiPerkanciajai: [] });
-}
-
-// AGENTAS 5: Strategijos sintezė — apjungia viską į tikimybę + strategiją
-async function agentStrategy(docInfo, qualification, pricing, risk, profileCtx) {
-  const system = `Tu esi vyriausiasis viešųjų pirkimų strategas. Apjungei keturių agentų analizę į vieną aiškų laimėjimo tikimybės balą ir konkrečią personalizuotą strategiją. Atsakyk TIK JSON formatu.`;
-
-  const user = `${profileCtx.contextText}
-
-━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
-
-AGENTŲ ANALIZĖS REZULTATAI:
-
-DOKUMENTŲ INFO: ${JSON.stringify(docInfo)}
-
-KVALIFIKACIJA: ${JSON.stringify(qualification)}
-
-KAINODARA: ${JSON.stringify(pricing)}
-
-RIZIKOS: ${JSON.stringify(risk)}
-
-━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
-
-UŽDUOTIS: Apjunk visą analizę. Apskaičiuok laimėjimo tikimybę (0-100%) būtent šiai įmonei ${profileCtx.hasProfile ? 'remiantis jos profiliu ir klausimyno atsakymais' : '(profilis neužpildytas — naudok bendrą vertinimą)'}. Pateik konkrečią laimėjimo strategiją — ką akcentuoti, kokius dokumentus paruošti.
-
-Grąžink JSON:
-{
-  "tikimybesBalas": 72,
-  "verdiktas": "REKOMENDUOJAMA / SĄLYGINAI / NEREKOMENDUOJAMA",
-  "santrauka": "2-3 sakinių apibendrinimas kodėl būtent toks balas",
-  "strategija": [
-    "konkretus žingsnis 1 — ką akcentuoti pasiūlyme",
-    "konkretus žingsnis 2",
-    "konkretus žingsnis 3"
-  ],
-  "akcentuoti": ["kliento stiprybės kurias verta pabrėžti šiame konkurse"],
-  "dokumentai": ["kokius dokumentus reikia paruošti"],
-  "kitiZingsniai": "ką daryti pirmiausia"
-}`;
-
-  const res = await callClaude(system, user, 2500);
-  return parseJSON(res, { tikimybesBalas: 50, verdiktas: 'SĄLYGINAI', strategija: [] });
-}
-
-// ═══════════════════════════════════════════════════════════
-// PAGRINDINIS HANDLERIS
-// ═══════════════════════════════════════════════════════════
 module.exports = async (req, res) => {
   res.setHeader('Access-Control-Allow-Origin', '*');
   res.setHeader('Access-Control-Allow-Headers', 'Content-Type, Authorization');
@@ -271,45 +108,88 @@ module.exports = async (req, res) => {
   if (!user) return res.status(401).json({ error: 'Neprisijungta' });
   if (!ANTHROPIC_API_KEY) return res.status(500).json({ error: 'AI nepasiekiamas' });
 
-  const { documentText, text, documentName, companyProfile, clientContext } = req.body || {};
+  const { documentText, text, documentName, companyProfile } = req.body || {};
   const docText = documentText || text || '';
   if (!docText || docText.length < 50) {
     return res.status(400).json({ error: 'Dokumento tekstas per trumpas arba tuščias' });
   }
 
   try {
-    // Gaunam kliento profilį — pirma iš užklausos, tada iš DB
     let profile = companyProfile || {};
     if ((!profile || !profile.sector) && process.env.SUPABASE_URL) {
       const supabase = createClient(process.env.SUPABASE_URL, process.env.SUPABASE_SERVICE_KEY);
       const { data } = await supabase.from('users').select('company_profile').eq('id', user.id).single();
       if (data && data.company_profile) profile = data.company_profile;
     }
-
     const profileCtx = buildProfileContext(profile);
 
-    // Vykdom agentus nuosekliai
-    const docInfo = await agentDocParser(docText);
-    const qualification = await agentQualification(docText, profileCtx);
-    const pricing = await agentPricing(docText, profileCtx);
-    const risk = await agentRisk(docText, profileCtx);
-    const strategy = await agentStrategy(docInfo, qualification, pricing, risk, profileCtx);
+    const system = `Tu esi Bidwise AI — ekspertų komanda viešųjų pirkimų analizei. Tavyje veikia 5 specializuoti analitikai:
+1. Dokumentų analitikas — ištraukia pirkimo informaciją
+2. Kvalifikacijos ekspertas — vertina ar klientas atitinka reikalavimus
+3. Kainodaron strategas — analizuoja vertinimo kriterijus
+4. Rizikų analitikas — randa paslėptas sąlygas ir rizikas
+5. Vyriausiasis strategas — apskaičiuoja laimėjimo tikimybę ir strategiją
 
-    // Apjungiam į galutinį rezultatą
-    const result = {
-      ...docInfo,
-      score: strategy.tikimybesBalas || qualification.atitikimoBalas || 50,
-      verdiktas: strategy.verdiktas,
-      santrauka: strategy.santrauka,
-      kvalifikacija: qualification,
-      kainodara: pricing,
-      rizikos: risk,
-      strategija: strategy,
-      personalizuota: profileCtx.hasProfile,
-      _meta: { agentai: 5, profilisPanaudotas: profileCtx.hasProfile }
-    };
+Atlik VISŲ 5 analitikų darbą ir grąžink TIK JSON formatu, be jokio papildomo teksto.`;
 
-    // Išsaugom į DB
+    const userMsg = `${profileCtx.contextText}
+
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+
+PIRKIMO DOKUMENTAS:
+${docText.slice(0, 45000)}
+
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+
+Išanalizuok šį konkursą ${profileCtx.hasProfile ? 'KONKREČIAI šios įmonės kontekste — naudok jos profilį ir klausimyno atsakymus vertindamas kiekvieną aspektą' : '(profilis neužpildytas — bendras vertinimas)'}. Grąžink JSON:
+
+{
+  "pavadinimas": "tikslus pirkimo pavadinimas",
+  "perkancioji": "perkančiosios organizacijos pavadinimas",
+  "verte": "numatoma vertė arba 'nenurodyta'",
+  "bvpzKodai": ["BVPŽ kodai jei nurodyti"],
+  "pirkimoTipas": "atviras konkursas / supaprastintas / mažos vertės",
+  "terminas": "pasiūlymų pateikimo terminas",
+  "trukme": "sutarties trukmė",
+  "pirkimoObjektas": "trumpas objekto aprašymas",
+  "score": 72,
+  "verdiktas": "REKOMENDUOJAMA / SĄLYGINAI / NEREKOMENDUOJAMA",
+  "santrauka": "2-3 sakinių apibendrinimas kodėl būtent toks tikimybės balas",
+  "kvalifikacija": {
+    "bendrasAtitikimas": "TINKA / NETINKA / DALINAI",
+    "reikalavimai": [
+      {"reikalavimas": "konkretus reikalavimas", "kliento_atitikimas": "TINKA / NETINKA / ABEJOTINA", "paaiskinimas": "kodėl ši įmonė atitinka ar ne"}
+    ],
+    "kritiniaiTrukumai": ["ko trūksta šiai įmonei"]
+  },
+  "kainodara": {
+    "vertinimoKriterijai": [{"kriterijus": "pvz. Kaina", "svoris": "60%", "komentaras": "ką reiškia klientui"}],
+    "kainosStrategija": "konkreti rekomendacija šiai įmonei",
+    "patarimai": ["kainodaron patarimai"]
+  },
+  "rizikos": {
+    "rizikos": [{"rizika": "konkreti rizika", "lygis": "AUKŠTA / VIDUTINĖ / ŽEMA", "rekomendacija": "ką daryti"}],
+    "paslėptosSalygos": ["nepalankios sąlygos"],
+    "klausimaiPerkanciajai": ["klausimai perkančiajai organizacijai"]
+  },
+  "strategija": {
+    "zingsniai": ["konkretus žingsnis 1", "žingsnis 2", "žingsnis 3"],
+    "akcentuoti": ["kliento stiprybės kurias pabrėžti"],
+    "dokumentai": ["kokius dokumentus paruošti"]
+  }
+}`;
+
+    const aiRes = await callClaude(system, userMsg, 4000);
+    const result = parseJSON(aiRes, null);
+
+    if (!result || !result.pavadinimas) {
+      return res.status(500).json({ error: 'AI nepavyko struktūrizuoti atsakymo. Pabandykite dar kartą.' });
+    }
+
+    result.score = result.score || 50;
+    result.personalizuota = profileCtx.hasProfile;
+    result._meta = { agentai: 5, profilisPanaudotas: profileCtx.hasProfile };
+
     if (process.env.SUPABASE_URL) {
       const supabase = createClient(process.env.SUPABASE_URL, process.env.SUPABASE_SERVICE_KEY);
       const { data: saved } = await supabase.from('analyses').insert({
@@ -319,11 +199,6 @@ module.exports = async (req, res) => {
         result_json: result
       }).select('id').single();
       if (saved) result._analysisId = saved.id;
-
-      // Sumažinam nemokamų analizių skaičių
-      if (user.plan === 'free') {
-        await supabase.rpc('decrement_free_analyses', { uid: user.id }).catch(() => {});
-      }
     }
 
     return res.status(200).json({ result });
