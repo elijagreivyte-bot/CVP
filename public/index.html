@@ -1557,6 +1557,7 @@ footer{background:var(--navy2);border-top:1px solid var(--border);padding:48px 3
     <div style="display:flex;gap:4px;margin-bottom:18px;border-bottom:1px solid var(--border);padding-bottom:2px">
       <button id="cvp-tab-search" onclick="cvpTab('search')" class="cvp-tab-btn" style="background:var(--card2);border:none;color:var(--text);padding:10px 18px;border-radius:8px 8px 0 0;cursor:pointer;font-family:Inter,sans-serif;font-weight:600;font-size:13px;border-bottom:2px solid var(--blue3)">🔍 Paieška pagal žodį</button>
       <button id="cvp-tab-codes" onclick="cvpTab('codes')" class="cvp-tab-btn" style="background:none;border:none;color:var(--text2);padding:10px 18px;border-radius:8px 8px 0 0;cursor:pointer;font-family:Inter,sans-serif;font-size:13px">📋 BVPŽ kodai (visi)</button>
+      <button id="cvp-tab-research" onclick="cvpTab('research')" class="cvp-tab-btn" style="background:none;border:none;color:var(--text2);padding:10px 18px;border-radius:8px 8px 0 0;cursor:pointer;font-family:Inter,sans-serif;font-size:13px">🔬 Konkurentų tyrimas</button>
     </div>
 
     <!-- TAB: SEARCH -->
@@ -1574,6 +1575,57 @@ footer{background:var(--navy2);border-top:1px solid var(--border);padding:48px 3
       </div>
       <input id="bvpz-filter" class="inp" placeholder="🔎 Filtruoti kodus arba pavadinimus..." style="width:100%;margin-bottom:16px" oninput="renderBVPZTree()">
       <div id="bvpz-tree" style="display:flex;flex-direction:column;gap:8px"></div>
+    </div>
+
+    <!-- TAB: KONKURENTŲ TYRIMAS -->
+    <div id="cvp-pane-research" style="display:none">
+      <div style="background:rgba(124,58,237,.06);border:1px solid rgba(124,58,237,.15);border-radius:10px;padding:14px 18px;margin-bottom:20px;font-size:13px;color:var(--text2);line-height:1.7">
+        💡 <strong style="color:var(--text)">Tyrinėkite konkurentus ir istorinius laimėjimus</strong><br>
+        Visi viešųjų pirkimų duomenys Lietuvoje yra nemokami ir vieši. Šie oficialūs šaltiniai parodo kas laimėjo panašius konkursus, už kokią kainą ir kada.
+      </div>
+      <div style="display:grid;grid-template-columns:1fr 1fr;gap:14px;margin-bottom:20px">
+        <a href="https://vpt.lrv.lt/lt/statistika-ir-analize/pirkimu-ir-sutarciu-duomenys-1/sutarciu-duomenys" target="_blank" rel="noopener" style="text-decoration:none">
+          <div style="background:var(--card);border:1px solid var(--border);border-radius:14px;padding:20px;height:100%" onmouseover="this.style.borderColor='var(--blue3)'" onmouseout="this.style.borderColor='var(--border)'">
+            <div style="font-size:28px;margin-bottom:10px">📊</div>
+            <div style="font-family:Sora,sans-serif;font-size:14px;font-weight:700;color:var(--text);margin-bottom:6px">Sutarčių duomenys</div>
+            <p style="font-size:12px;color:var(--text2);line-height:1.6;margin-bottom:8px">Visos laimėtos sutartys nuo 2015 m. — kas laimėjo, už kokią kainą, kada. Filtruokite pagal įmonę ar BVPŽ.</p>
+            <span style="font-size:11px;color:var(--blue3)">VPT oficialūs duomenys →</span>
+          </div>
+        </a>
+        <a href="https://vpt.lrv.lt/lt/statistika-ir-analize/pirkimu-ir-sutarciu-duomenys-1/pirkimu-duomenys" target="_blank" rel="noopener" style="text-decoration:none">
+          <div style="background:var(--card);border:1px solid var(--border);border-radius:14px;padding:20px;height:100%" onmouseover="this.style.borderColor='var(--blue3)'" onmouseout="this.style.borderColor='var(--border)'">
+            <div style="font-size:28px;margin-bottom:10px">📋</div>
+            <div style="font-family:Sora,sans-serif;font-size:14px;font-weight:700;color:var(--text);margin-bottom:6px">Pirkimų ataskaitos</div>
+            <p style="font-size:12px;color:var(--text2);line-height:1.6;margin-bottom:8px">Pirkimų procedūrų ataskaitos nuo 2010 m. — kiek dalyvių, kokie pasiūlymai, kaip vyko vertinimas.</p>
+            <span style="font-size:11px;color:var(--blue3)">VPT oficialūs duomenys →</span>
+          </div>
+        </a>
+        <a href="https://data.gov.lt/datasets/2867/" target="_blank" rel="noopener" style="text-decoration:none">
+          <div style="background:var(--card);border:1px solid var(--border);border-radius:14px;padding:20px;height:100%" onmouseover="this.style.borderColor='var(--blue3)'" onmouseout="this.style.borderColor='var(--border)'">
+            <div style="font-size:28px;margin-bottom:10px">🗄️</div>
+            <div style="font-family:Sora,sans-serif;font-size:14px;font-weight:700;color:var(--text);margin-bottom:6px">Atvirų duomenų portalas</div>
+            <p style="font-size:12px;color:var(--text2);line-height:1.6;margin-bottom:8px">Pilnos sutarčių lentelės su dalyvavusiomis šalimis. Galima atsisiųsti CSV ir analizuoti Excel'e.</p>
+            <span style="font-size:11px;color:var(--blue3)">data.gov.lt →</span>
+          </div>
+        </a>
+        <a href="https://cvpp.eviesiejipirkimai.lt/" target="_blank" rel="noopener" style="text-decoration:none">
+          <div style="background:var(--card);border:1px solid var(--border);border-radius:14px;padding:20px;height:100%" onmouseover="this.style.borderColor='var(--blue3)'" onmouseout="this.style.borderColor='var(--border)'">
+            <div style="font-size:28px;margin-bottom:10px">🏛️</div>
+            <div style="font-family:Sora,sans-serif;font-size:14px;font-weight:700;color:var(--text);margin-bottom:6px">CVPP sutarčių archyvas</div>
+            <p style="font-size:12px;color:var(--text2);line-height:1.6;margin-bottom:8px">Centrinis portalas su sudarytomis sutartimis ir ataskaitomis. Paieška pagal tiekėją, CPV, vertę.</p>
+            <span style="font-size:11px;color:var(--blue3)">cvpp.eviesiejipirkimai.lt →</span>
+          </div>
+        </a>
+      </div>
+      <div style="background:var(--card);border:1px solid var(--border);border-radius:14px;padding:20px">
+        <h3 style="font-family:Sora,sans-serif;font-size:14px;font-weight:700;margin-bottom:14px">🎯 Kaip atlikti konkurentų tyrimą</h3>
+        <div style="display:flex;flex-direction:column;gap:12px">
+          <div style="display:flex;gap:12px;align-items:flex-start"><div style="background:rgba(59,130,246,.15);color:var(--blue3);width:24px;height:24px;border-radius:50%;display:flex;align-items:center;justify-content:center;font-size:12px;font-weight:700;flex-shrink:0">1</div><p style="font-size:13px;color:var(--text2);line-height:1.6">Atidarykite <strong>Sutarčių duomenis</strong> ir filtruokite pagal BVPŽ kodą arba perkančiąją organizaciją</p></div>
+          <div style="display:flex;gap:12px;align-items:flex-start"><div style="background:rgba(59,130,246,.15);color:var(--blue3);width:24px;height:24px;border-radius:50%;display:flex;align-items:center;justify-content:center;font-size:12px;font-weight:700;flex-shrink:0">2</div><p style="font-size:13px;color:var(--text2);line-height:1.6">Pažiūrėkite <strong>kas laimėjo panašius konkursus</strong> ir už kokią kainą — tai parodys realų rinkos lygį</p></div>
+          <div style="display:flex;gap:12px;align-items:flex-start"><div style="background:rgba(59,130,246,.15);color:var(--blue3);width:24px;height:24px;border-radius:50%;display:flex;align-items:center;justify-content:center;font-size:12px;font-weight:700;flex-shrink:0">3</div><p style="font-size:13px;color:var(--text2);line-height:1.6">Pastebėkite <strong>laimėtojų kainodaron tendencijas</strong> — ar laimi pigiausi, ar geriausios kokybės</p></div>
+          <div style="display:flex;gap:12px;align-items:flex-start"><div style="background:rgba(16,185,129,.15);color:var(--success);width:24px;height:24px;border-radius:50%;display:flex;align-items:center;justify-content:center;font-size:12px;font-weight:700;flex-shrink:0">4</div><p style="font-size:13px;color:var(--text2);line-height:1.6">Grįžkite į <strong>Bidwise analizę</strong> ir pritaikykite žinias formuodami konkurencingą pasiūlymą</p></div>
+        </div>
+      </div>
     </div>
 
     <!-- HOW IT WORKS STEPS -->
@@ -4078,22 +4130,18 @@ async function markOutcome(outcome){
 // BVPŽ KODŲ NAVIGATORIUS
 // ══════════════════════════════════
 function cvpTab(name){
-  const search = document.getElementById('cvp-pane-search');
-  const codes = document.getElementById('cvp-pane-codes');
-  const tabS = document.getElementById('cvp-tab-search');
-  const tabC = document.getElementById('cvp-tab-codes');
-  if(name === 'codes'){
-    search.style.display = 'none';
-    codes.style.display = 'block';
-    tabS.style.background = 'none'; tabS.style.color = 'var(--text2)'; tabS.style.borderBottom = '';
-    tabC.style.background = 'var(--card2)'; tabC.style.color = 'var(--text)'; tabC.style.borderBottom = '2px solid var(--blue3)';
-    renderBVPZTree();
-  } else {
-    search.style.display = 'block';
-    codes.style.display = 'none';
-    tabC.style.background = 'none'; tabC.style.color = 'var(--text2)'; tabC.style.borderBottom = '';
-    tabS.style.background = 'var(--card2)'; tabS.style.color = 'var(--text)'; tabS.style.borderBottom = '2px solid var(--blue3)';
-  }
+  const panes = {search:'cvp-pane-search', codes:'cvp-pane-codes', research:'cvp-pane-research'};
+  const tabs = {search:'cvp-tab-search', codes:'cvp-tab-codes', research:'cvp-tab-research'};
+  Object.keys(panes).forEach(k => {
+    const pane = document.getElementById(panes[k]);
+    const tab = document.getElementById(tabs[k]);
+    if(pane) pane.style.display = (k === name) ? 'block' : 'none';
+    if(tab){
+      if(k === name){ tab.style.background = 'var(--card2)'; tab.style.color = 'var(--text)'; tab.style.borderBottom = '2px solid var(--blue3)'; }
+      else { tab.style.background = 'none'; tab.style.color = 'var(--text2)'; tab.style.borderBottom = ''; }
+    }
+  });
+  if(name === 'codes') renderBVPZTree();
 }
 
 function renderBVPZTree(){
