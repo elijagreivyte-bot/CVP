@@ -2399,28 +2399,12 @@ function updSZ(text){
 // ── ANALYZE ──
 let stageTimer=null;
 function startStages(){
-  let idx=0;
-  const stages=document.querySelectorAll('.stage-item');
-  stages.forEach(s=>{s.classList.remove('done','active');s.querySelector('.stage-dot').textContent='○';s.querySelector('.stage-status').textContent=''});
-  document.getElementById('prog-bar').style.width='5%';
-  function next(){
-    if(idx>0){
-      const prev=document.getElementById('stage-'+(idx-1));
-      if(prev){prev.classList.remove('active');prev.classList.add('done');prev.querySelector('.stage-dot').textContent='✓';prev.querySelector('.stage-status').textContent='✓'}
-    }
-    if(idx<stages.length){
-      const cur=document.getElementById('stage-'+idx);
-      if(cur){cur.classList.add('active');const pct=cur.dataset.pct||0;document.getElementById('prog-bar').style.width=pct+'%'}
-      idx++;
-      stageTimer=setTimeout(next,idx===1?1500:idx===2?4000:idx===3?8000:12000);
-    }
-  }
-  next();
+  // Senoji sistema pakeista showAIProgress — paliekam tuščią saugumui
 }
 function stopStages(){
   if(stageTimer)clearTimeout(stageTimer);
-  document.querySelectorAll('.stage-item').forEach(s=>{s.classList.remove('active');s.classList.add('done');s.querySelector('.stage-dot').textContent='✓';s.querySelector('.stage-status').textContent='✓'});
-  document.getElementById('prog-bar').style.width='100%';
+  // Užbaigiam naująjį AI progresą jei veikia
+  if(window.aiProg && window.aiProg.stop) window.aiProg.stop();
 }
 
 // ── BUILD RICH CLIENT CONTEXT ──
@@ -2537,7 +2521,9 @@ async function startAn(){
     },600);
   }catch(e){
     loading.style.display='none';
-    alert('Klaida: '+e.message);
+    if(window.aiProg && window.aiProg.stop) window.aiProg.stop();
+    if(typeof toast==='function') toast('Klaida: '+e.message, 'error', 7000);
+    else alert('Klaida: '+e.message);
   }
 }
 
@@ -2807,17 +2793,7 @@ async function renderAcc(){
 
 function ri2(k,v){return `<div class="r-item"><span class="r-item-k">${k}</span><span class="r-item-v">${v||'–'}</span></div>`}
 
-function openOnboardingEdit(){
-  const cp=curUser&&curUser.company_profile||{};
-  document.getElementById('ob-company').value=cp.name||'';
-  document.getElementById('ob-sector').value=cp.sector||'';
-  document.getElementById('ob-size').value=cp.size||'';
-  document.getElementById('ob-revenue').value=cp.revenue||'';
-  document.querySelector('.onboard-box>p').textContent='Atnaujinkite savo įmonės informaciją.';
-  document.getElementById('ob-name').textContent='';
-  document.querySelector('.onboard-step').textContent='Įmonės profilis';
-  document.getElementById('onboarding-modal').classList.add('open');
-}
+
 
 // ── PROJECTS ──
 async function renderProjects(){
