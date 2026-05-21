@@ -571,6 +571,17 @@ footer{background:var(--navy2);border-top:1px solid var(--border);padding:48px 3
   </div>
 </div>
 
+<!-- CONCRETE CAPABILITIES -->
+<div class="container" style="margin-top:-20px;margin-bottom:40px">
+  <div style="display:flex;gap:10px;flex-wrap:wrap;justify-content:center">
+    <span style="background:var(--card);border:1px solid var(--border);border-radius:24px;padding:8px 16px;font-size:12px;color:var(--text2)">📄 Įkelti CVP dokumentus (PDF/Word/ZIP)</span>
+    <span style="background:var(--card);border:1px solid var(--border);border-radius:24px;padding:8px 16px;font-size:12px;color:var(--text2)">✓ Ištraukti kvalifikacinius reikalavimus</span>
+    <span style="background:var(--card);border:1px solid var(--border);border-radius:24px;padding:8px 16px;font-size:12px;color:var(--text2)">⚠️ Identifikuoti rizikas</span>
+    <span style="background:var(--card);border:1px solid var(--border);border-radius:24px;padding:8px 16px;font-size:12px;color:var(--text2)">📊 Apskaičiuoti tikimybės balą</span>
+    <span style="background:var(--card);border:1px solid var(--border);border-radius:24px;padding:8px 16px;font-size:12px;color:var(--text2)">📝 Sugeneruoti klausimų raštą</span>
+  </div>
+</div>
+
 <!-- PROOF STRIP -->
 <div class="proof-strip">
   <div class="proof-item"><span class="proof-icon">⚡</span><div><strong>30 sek.</strong><br>vidutinė analizės trukmė</div></div>
@@ -978,30 +989,47 @@ footer{background:var(--navy2);border-top:1px solid var(--border);padding:48px 3
     <div class="footer-top">
       <div class="footer-brand">
         <div class="footer-brand-name">Bidwise <span class="grad-text">AI</span> <span style="font-size:11px;background:rgba(245,158,11,.15);color:#fbbf24;border-radius:6px;padding:2px 8px;vertical-align:middle">BETA</span></div>
-        <p>Išmani CVP konkursų analizė Lietuvos įmonėms. Sutaupykite laiko ir geriau supraskite konkursus.</p>
-
+        <p>AI platforma viešųjų pirkimų analizei: dokumentų nuskaitymas, kvalifikacijos atitikimo vertinimas, rizikų identifikavimas ir laimėjimo tikimybės skaičiavimas.</p>
+        <div style="display:flex;align-items:center;gap:8px;margin-top:14px;font-size:12px;color:var(--text2)">
+          <span style="width:8px;height:8px;border-radius:50%;background:#10b981;box-shadow:0 0 8px #10b981;display:inline-block"></span>
+          Sistema veikia · 99.9% uptime
+        </div>
       </div>
       <div class="footer-links">
         <div class="footer-col">
           <h4>Produktas</h4>
           <a onclick="scrollTo({top:document.getElementById('kaip-veikia').offsetTop-80,behavior:'smooth'})">Kaip veikia</a>
           <a onclick="scrollTo({top:document.getElementById('kainos').offsetTop-80,behavior:'smooth'})">Kainos</a>
-          <a onclick="openAuth('register')">Registracija</a>
+          <a onclick="scrollTo({top:document.getElementById('faq').offsetTop-80,behavior:'smooth'})">DUK</a>
+          <a onclick="openAuth('register')">Pradėti nemokamai</a>
         </div>
         <div class="footer-col">
-          <h4>Teisinė info</h4>
+          <h4>Saugumas</h4>
+          <a onclick="openSecurity()">Saugumas</a>
+          <a onclick="openAIPolicy()">AI politika</a>
           <a onclick="openPrivacy()">Privatumo politika</a>
           <a onclick="openTerms()">Paslaugų sąlygos</a>
+        </div>
+        <div class="footer-col">
+          <h4>Įmonė</h4>
           <a href="mailto:elija@bidwiseai.lt">Kontaktai</a>
+          <a onclick="openRoadmap()">Planai (Roadmap)</a>
+          <a href="mailto:elija@bidwiseai.lt?subject=Demo užklausa">Užsisakyti demo</a>
         </div>
       </div>
     </div>
+    <div style="display:flex;gap:14px;flex-wrap:wrap;align-items:center;padding:18px 0;border-top:1px solid var(--border);margin-top:8px">
+      <div class="trust-badge"><span class="tb-icon">🔒</span> SSL šifravimas</div>
+      <div class="trust-badge"><span class="tb-icon">🇪🇺</span> GDPR / BDAR</div>
+      <div class="trust-badge"><span class="tb-icon">🤖</span> Dokumentai nenaudojami AI mokymui</div>
+      <div class="trust-badge"><span class="tb-icon">🛡️</span> EU debesyje</div>
+    </div>
     <div class="footer-bottom">
-      <p>© 2025 Bidwise AI · Beta versija</p>
+      <p>© 2026 Bidwise AI · Beta versija · Sukurta Lietuvoje 🇱🇹</p>
       <div class="footer-legal">
         <a onclick="openPrivacy()">Privatumo politika</a>
         <a onclick="openTerms()">Paslaugų sąlygos</a>
-        <a href="mailto:elija@bidwiseai.lt">Kontaktai</a>
+        <a onclick="openAIPolicy()">AI politika</a>
       </div>
     </div>
   </div>
@@ -1801,6 +1829,74 @@ footer{background:var(--navy2);border-top:1px solid var(--border);padding:48px 3
       </div>
       <button onclick="document.getElementById('outcome-modal').style.display='none'" style="background:none;border:none;color:var(--text2);font-size:12px;cursor:pointer;font-family:Inter,sans-serif;width:100%;padding:8px;margin-top:4px">Atšaukti</button>
     </div>
+  </div>
+</div>
+
+<!-- SECURITY MODAL -->
+<div id="security-modal" class="legal-modal" style="display:none">
+  <div class="legal-box">
+    <button class="legal-close" onclick="document.getElementById('security-modal').style.display='none'">×</button>
+    <h2>🔒 Saugumas</h2>
+    <p style="color:var(--text2);margin-bottom:20px">Kaip mes saugome jūsų komerciškai jautrius duomenis</p>
+
+    <h3>Duomenų šifravimas</h3>
+    <p>Visa komunikacija tarp jūsų naršyklės ir mūsų serverių šifruojama naudojant TLS/SSL (HTTPS). Slaptažodžiai saugomi tik bcrypt hash pavidalu — net mes negalime jų matyti.</p>
+
+    <h3>Dokumentų apsauga</h3>
+    <p>Įkelti pirkimo dokumentai apdorojami analizei ir <strong>automatiškai ištrinami iš serverių iškart po analizės</strong>. Mūsų duomenų bazėje saugomi tik struktūruoti analizės rezultatai, ne originalūs failai.</p>
+
+    <h3>Infrastruktūra</h3>
+    <p>Sistema veikia ES teritorijoje esančiuose serveriuose (Vercel + Supabase). Duomenys neperduodami už ES ribų be tinkamų apsaugos priemonių.</p>
+
+    <h3>Prieigos kontrolė</h3>
+    <p>Kiekvienas vartotojas mato tik savo duomenis. Autentifikacija vykdoma JWT žetonais. Jūsų analizės nėra prieinamos jokiam kitam vartotojui.</p>
+
+    <h3>Duomenų ištrynimas</h3>
+    <p>Galite bet kada ištrinti visas savo analizes iš paskyros nustatymų. Norėdami ištrinti visą paskyrą — parašykite elija@bidwiseai.lt.</p>
+  </div>
+</div>
+
+<!-- AI POLICY MODAL -->
+<div id="aipolicy-modal" class="legal-modal" style="display:none">
+  <div class="legal-box">
+    <button class="legal-close" onclick="document.getElementById('aipolicy-modal').style.display='none'">×</button>
+    <h2>🤖 AI politika</h2>
+    <p style="color:var(--text2);margin-bottom:20px">Kaip mes naudojame dirbtinį intelektą</p>
+
+    <h3>Kokį AI naudojame</h3>
+    <p>Bidwise AI naudoja Anthropic Claude kalbos modelį per oficialią API. Tai vienas tiksliausių ir saugiausių AI modelių rinkoje.</p>
+
+    <h3>Jūsų duomenys ir AI mokymas</h3>
+    <p><strong>Jūsų įkelti dokumentai NIEKADA nenaudojami AI modelių apmokymui.</strong> Anthropic API pagal sutartį užtikrina, kad per API perduoti duomenys nebus naudojami modelių mokymui.</p>
+
+    <h3>AI ribotumai</h3>
+    <p>AI yra <strong>pagalbinis įrankis, ne sprendimų priimėjas.</strong> Nors mūsų 5-agentų sistema yra labai tiksli, AI gali klysti. <strong>Visada patikrinkite originalius pirkimo dokumentus prieš teikdami pasiūlymą.</strong> Galutinį sprendimą priimate jūs.</p>
+
+    <h3>Tikimybės balas</h3>
+    <p>Laimėjimo tikimybės balas (0–100%) yra AI įvertinimas pagrįstas dokumentų analize ir jūsų įmonės profiliu. Tai orientacinis rodiklis, ne garantija. Realus rezultatas priklauso nuo daugelio veiksnių.</p>
+
+    <h3>Skaidrumas</h3>
+    <p>Mūsų analizė pateikia šaltinius ir paaiškinimus — kodėl AI taip mano. Galite matyti kiekvieno agento išvadas atskirai.</p>
+  </div>
+</div>
+
+<!-- ROADMAP MODAL -->
+<div id="roadmap-modal" class="legal-modal" style="display:none">
+  <div class="legal-box">
+    <button class="legal-close" onclick="document.getElementById('roadmap-modal').style.display='none'">×</button>
+    <h2>🗺️ Planai (Roadmap)</h2>
+    <p style="color:var(--text2);margin-bottom:20px">Ką kuriame ir kas planuojama</p>
+
+    <h3 style="color:#10b981">✅ Jau veikia</h3>
+    <p>5-agentų AI analizė · Laimėjimo tikimybės balas · Personalizuotas įmonės profilis · Kvalifikacijos atitikimo vertinimas · Rizikų identifikavimas · Klausimų rašto generavimas · AI asistentas · BVPŽ kodų navigatorius · Win/Loss sekiklis · PDF eksportas · El. pašto ataskaitos</p>
+
+    <h3 style="color:#f59e0b">🔨 Kuriama dabar</h3>
+    <p>Komandos planas (keli vartotojai) · Detalesnė konkurentų analizė · Mobilios aplikacijos optimizacija</p>
+
+    <h3 style="color:var(--blue3)">📅 Planuojama</h3>
+    <p>Automatinis konkursų monitoringas pagal jūsų profilį · El. pašto pranešimai apie naujus tinkamus konkursus · Integracija su VPT atvirais duomenimis · Istorinių laimėjimų duomenų bazė · Konkursų palyginimas šonas šonan</p>
+
+    <p style="margin-top:24px;padding:14px;background:rgba(59,130,246,.08);border-radius:10px;font-size:13px">💡 Turite idėją ką pridėti? Parašykite <a href="mailto:elija@bidwiseai.lt" style="color:var(--blue3)">elija@bidwiseai.lt</a> — beta vartotojų pasiūlymai formuoja produktą.</p>
   </div>
 </div>
 
@@ -4331,6 +4427,10 @@ function showAIProgress(targetEl, useAgents){
     stepEls.forEach(s => { s.classList.remove('active'); s.classList.add('done'); const i = s.querySelector('.ai-step-i'); if(i) i.textContent = '✓'; });
   }};
 }
+
+function openSecurity(){ document.getElementById('security-modal').style.display='flex'; }
+function openAIPolicy(){ document.getElementById('aipolicy-modal').style.display='flex'; }
+function openRoadmap(){ document.getElementById('roadmap-modal').style.display='flex'; }
 </script>
 
 <!-- AI CHAT WIDGET -->
