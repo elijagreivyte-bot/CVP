@@ -1941,27 +1941,61 @@ let obAnswers={};
 let obQuestions=[];
 
 function openOnboarding(){
-  const name=(curUser&&curUser.name)||'';
-  document.getElementById('ob-name').textContent=name;
-  obGoStep(1);
-  document.getElementById('onboarding-modal').classList.add('open');
+  try {
+    const name = (curUser && curUser.name) || '';
+    const obName = document.getElementById('ob-name');
+    if(obName) obName.textContent = name;
+    obGoStep(1);
+    const modal = document.getElementById('onboarding-modal');
+    if(modal) {
+      modal.classList.add('open');
+      modal.style.display = 'flex';  // force display in case CSS class fails
+    } else {
+      console.error('onboarding-modal element not found');
+      if(typeof toast === 'function') toast('Modal nepasiekiamas', 'error');
+    }
+  } catch(e) {
+    console.error('openOnboarding error:', e);
+    if(typeof toast === 'function') toast('Klaida: ' + e.message, 'error');
+  }
 }
 
 function openOnboardingEdit(){
-  const cp=curUser&&curUser.company_profile||{};
-  document.getElementById('ob-company').value=cp.name||'';
-  document.getElementById('ob-sector').value=cp.sector||'';
-  openOnboarding();
+  try {
+    const cp = (curUser && curUser.company_profile) || {};
+    const company = document.getElementById('ob-company');
+    const sector = document.getElementById('ob-sector');
+    if(!company || !sector){
+      console.error('Onboarding modal elements not found');
+      if(typeof toast === 'function') toast('Klaida atidarant profilio formą', 'error');
+      return;
+    }
+    company.value = cp.name || '';
+    sector.value = cp.sector || '';
+    openOnboarding();
+  } catch(e) {
+    console.error('openOnboardingEdit error:', e);
+    if(typeof toast === 'function') toast('Klaida: ' + e.message, 'error');
+  }
 }
 
 function closeOnboarding(){
-  document.getElementById('onboarding-modal').classList.remove('open');
-  showApp();
+  const modal = document.getElementById('onboarding-modal');
+  if(modal){
+    modal.classList.remove('open');
+    modal.style.display = 'none';
+  }
+  // If we're in the app, just stay; if not, show app
+  if(!document.getElementById('app').classList.contains('open')) showApp();
 }
 
 function skipOnboarding(){
-  document.getElementById('onboarding-modal').classList.remove('open');
-  showApp();
+  const modal = document.getElementById('onboarding-modal');
+  if(modal){
+    modal.classList.remove('open');
+    modal.style.display = 'none';
+  }
+  if(!document.getElementById('app').classList.contains('open')) showApp();
 }
 
 function obGoStep(n){
@@ -4055,13 +4089,35 @@ function renderBVPZTree(){
 }
 
 function openCVPByCode(code, name){
-  // TIESIOGINĖ paieška CVP IS — BVPŽ kodas į quickSearch
-  const url = 'https://viesiejipirkimai.lt/epps/quickSearchAction.do?searchType=cftFTS&searchText=' + encodeURIComponent(code);
-  window.open(url, '_blank', 'noopener');
+  // POST forma — CVP IS priima cpvCodes per POST išplėstinėje paieškoje
+  const form = document.createElement('form');
+  form.method = 'POST';
+  form.action = 'https://viesiejipirkimai.lt/epps/searchNotices.do?type=cftFTS';
+  form.target = '_blank';
+  form.style.display = 'none';
+
+  // cpvCodes laukas — portalas filtruoja pagal šį parametrą
+  const f1 = document.createElement('input');
+  f1.type = 'hidden';
+  f1.name = 'cpvCodes';
+  f1.value = code;
+  form.appendChild(f1);
+
+  // Būsena — tik aktyvūs pirkimai (Pasiūlymų teikimas)
+  const f2 = document.createElement('input');
+  f2.type = 'hidden';
+  f2.name = 'cftStatus';
+  f2.value = 'TENDERING';
+  form.appendChild(f2);
+
+  document.body.appendChild(form);
+  form.submit();
+  document.body.removeChild(form);
+
   // Trumpa žinutė
   const tip = document.createElement('div');
   tip.style.cssText = 'position:fixed;top:80px;right:24px;background:#10b981;color:#fff;padding:14px 18px;border-radius:12px;font-size:13px;z-index:999;box-shadow:0 4px 20px rgba(0,0,0,.3);max-width:340px;line-height:1.6';
-  tip.innerHTML = '✅ <strong>CVP atidarytas su filtru</strong><br><span style="font-family:monospace;background:rgba(255,255,255,.2);padding:2px 8px;border-radius:4px;font-size:12px">' + code + '</span> ' + name + '<br><span style="opacity:.85;font-size:11px;margin-top:4px;display:inline-block">Rezultatai jau filtruoti pagal kodą</span>';
+  tip.innerHTML = '✅ <strong>CVP atidarytas su filtru</strong><br><span style="font-family:monospace;background:rgba(255,255,255,.2);padding:2px 8px;border-radius:4px;font-size:12px">' + code + '</span> ' + (name||'') + '<br><span style="opacity:.85;font-size:11px;margin-top:4px;display:inline-block">Rezultatai filtruoti pagal BVPŽ kodą</span>';
   document.body.appendChild(tip);
   setTimeout(() => tip && tip.remove(), 6000);
 }
