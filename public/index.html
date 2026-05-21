@@ -1368,6 +1368,22 @@ footer{background:var(--navy2);border-top:1px solid var(--border);padding:48px 3
       <button class="btn btn-outline btn-sm" onclick="openNewProjectModal()" style="white-space:nowrap">+ Naujas</button>
       <span id="proj-sel-hint" style="font-size:11px;color:var(--text3)">Analizė bus išsaugota pasirinktame projekte</span>
     </div>
+    <div id="profile-banner-analyze" style="display:none;background:rgba(245,158,11,.07);border:1px solid rgba(245,158,11,.2);border-radius:10px;padding:12px 16px;margin-bottom:16px;font-size:13px;line-height:1.55;display:flex;align-items:center;justify-content:space-between;gap:12px;flex-wrap:wrap">
+      <span>⚠️ <strong style="color:var(--warn)">Profilis neužpildytas</strong> — analizė nebus personalizuota jūsų įmonei. Užpildžius profilį AI tiksliau įvertins atitikimą ir laimėjimo tikimybę.</span>
+      <button class="btn btn-outline btn-sm" style="flex-shrink:0;border-color:rgba(245,158,11,.4);color:var(--warn)" onclick="pg('account')">Užpildyti profilį →</button>
+    </div>
+    <div id="profile-banner-analyze" style="display:none;background:rgba(245,158,11,.07);border:1px solid rgba(245,158,11,.2);border-radius:10px;padding:12px 16px;margin-bottom:16px;font-size:13px;line-height:1.55">
+      <span>⚠️ <strong style="color:var(--warn)">Profilis neužpildytas</strong> — analizė nebus personalizuota jūsų įmonei. Užpildžius profilį AI tiksliau įvertins atitikimą ir laimėjimo tikimybę.</span>
+      <button class="btn btn-outline btn-sm" style="margin-left:12px;border-color:rgba(245,158,11,.4);color:var(--warn)" onclick="pg('account')">Užpildyti profilį →</button>
+    </div>
+    <div id="profile-banner-analyze" style="display:none;background:rgba(245,158,11,.07);border:1px solid rgba(245,158,11,.2);border-radius:10px;padding:12px 16px;margin-bottom:16px;font-size:13px;line-height:1.55">
+      <span>⚠️ <strong style="color:var(--warn)">Profilis nežpildytas</strong> — analizė nebus personalizuota jūsų įmonėi. Užpildžius profilį AI tiksliau įvertins atitikimą ir laimėjimo tikimybę.</span>
+      <button class="btn btn-outline btn-sm" style="margin-left:12px;border-color:rgba(245,158,11,.4);color:var(--warn)" onclick="pg('account')">Užpildyti profilį →</button>
+    </div>
+    <div id="profile-banner-analyze" style="display:none;background:rgba(245,158,11,.07);border:1px solid rgba(245,158,11,.2);border-radius:10px;padding:12px 16px;margin-bottom:16px;font-size:13px;line-height:1.55">
+      <span>⚠️ <strong style="color:var(--warn)">Profilis nežpildytas</strong> — analizė nebus personalizuota jūsų įmonėi. Užpildžius profilį AI tiksliau įvertins atitikimą ir laimėjimo tikimybę.</span> <button class="btn btn-outline btn-sm" style="margin-left:12px;border-color:rgba(245,158,11,.4);color:var(--warn)" onclick="pg('account')">Užpildyti profilį →</button>
+    </div>
+    <div id="profile-banner-analyze" style="display:none;background:rgba(245,158,11,.07);border:1px solid rgba(245,158,11,.2);border-radius:10px;padding:12px 16px;margin-bottom:16px;font-size:13px;line-height:1.55"><span>⚠️ <strong style="color:var(--warn)">Profilis nežpildytas</strong> — analizė nebus personalizuota jūsų įmonėi. Užpildžius profilį AI tiksliau įvertins atitikimą ir laimėjimo tikimybę.</span> <button class="btn btn-outline btn-sm" style="margin-left:12px;border-color:rgba(245,158,11,.4);color:var(--warn)" onclick="pg('account')">Užpildyti profilį →</button></div>
     <div class="doc-checks">
       <label class="dc req"><input type="checkbox" checked> Pirkimo sąlygos <span style="color:var(--danger);font-size:10px;margin-left:4px">BŪTINA</span></label>
       <label class="dc req"><input type="checkbox" checked> Techninė specifikacija <span style="color:var(--danger);font-size:10px;margin-left:4px">BŪTINA</span></label>
@@ -1861,6 +1877,11 @@ function pg(n){
   if(n==='projects')renderProjects();
   if(n==='assistant')initAssistant();
   if(n==='cvp'){initCVPPage();setTimeout(()=>document.getElementById('cvp-q')?.focus(),100);}
+  if(n==='analyze'){
+    const banner=document.getElementById('profile-banner-analyze');
+    const hasProf=curUser&&curUser.company_profile&&(curUser.company_profile.profilioSantrauka||curUser.company_profile.sector);
+    if(banner)banner.style.display=hasProf?'none':'block';
+  }
 }
 
 function updSB(){
@@ -2072,7 +2093,18 @@ async function obStep2Next(){
     });
     const d=await r.json();
     const profile=d.profile||{name:company,sector};
-    if(curUser){curUser.company_profile=profile;localStorage.setItem(UK,JSON.stringify(curUser));}
+    // Merge raw Q&A answers into profile so buildClientContext() can use them
+    const enriched=Object.assign({name:company,sector},profile,{_rawAnswers:obAnswers});
+    // Also persist well-known answer keys if backend didn't parse them
+    Object.entries(obAnswers).forEach(([q,v])=>{
+      if(/apyvarta|revenue/i.test(q))enriched.revenue=enriched.revenue||v;
+      if(/darbuotoj/i.test(q))enriched.size=enriched.size||v;
+      if(/sertifikat|licencij/i.test(q))enriched.sertifikatai=enriched.sertifikatai||v;
+      if(/patirtis|pirkimai/i.test(q))enriched.patirtis=enriched.patirtis||v;
+      if(/pranašumas|stipryb/i.test(q))enriched.konkurencisPranasumas=enriched.konkurencisPranasumas||v;
+      if(/sutarties dydis|max/i.test(q))enriched.max_sutartis=enriched.max_sutartis||v;
+    });
+    if(curUser){curUser.company_profile=enriched;localStorage.setItem(UK,JSON.stringify(curUser));}
     const preview=document.getElementById('ob-profile-preview');
     preview.innerHTML='<strong style="color:var(--text)">🏢 '+( profile.name||company)+'</strong><br>'+
       '<span style="color:var(--blue3)">'+( profile.sector||sector)+'</span><br><br>'+
@@ -2253,6 +2285,26 @@ function stopStages(){
   document.getElementById('prog-bar').style.width='100%';
 }
 
+// ── BUILD RICH CLIENT CONTEXT ──
+function buildClientContext(cp){
+  if(!cp) return null;
+  const lines=[];
+  if(cp.name)       lines.push('Įmonės pavadinimas: '+cp.name);
+  if(cp.sector)     lines.push('Veiklos sritis: '+cp.sector);
+  if(cp.specializacija) lines.push('Specializacija: '+cp.specializacija);
+  if(cp.patirtis)   lines.push('Patirtis: '+cp.patirtis);
+  if(cp.revenue||cp.finansinesStiprybe) lines.push('Finansinė padėtis: '+(cp.finansinesStiprybe||cp.revenue||''));
+  if(cp.size)       lines.push('Darbuotojų skaičius: '+cp.size);
+  if(cp.sertifikatai) lines.push('Sertifikatai / licencijos: '+cp.sertifikatai);
+  if(cp.stiprybės&&cp.stiprybės.length) lines.push('Konkurenciniai pranašumai: '+(cp.stiprybės||[]).join(', '));
+  if(cp.tipinieKonkursai) lines.push('Tinka konkursų tipams: '+cp.tipinieKonkursai);
+  if(cp.profilioSantrauka) lines.push('\nAI profilio santrauka:\n'+cp.profilioSantrauka);
+  // Include any extra freeform answers stored during onboarding
+  const extras=['apyvarta','darbuotojai','konkurencisPranasumas','pirkimuPatirtis','max_sutartis','kiti'];
+  extras.forEach(k=>{ if(cp[k]) lines.push(k+': '+cp[k]); });
+  return lines.length ? lines.join('\n') : null;
+}
+
 async function startAn(){
   const u=curUser;
   if(!u)return;
@@ -2262,7 +2314,14 @@ async function startAn(){
   document.getElementById('result-view').style.display='none';
   const loading=document.getElementById('loading');
   loading.style.display='flex';
-  const useAgents = curUser && curUser.company_profile && curUser.company_profile.profilioSantrauka;
+  const companyProfile=(curUser&&curUser.company_profile)||null;
+  const hasProfile = companyProfile && (
+    companyProfile.profilioSantrauka ||
+    companyProfile.sector ||
+    companyProfile.name ||
+    companyProfile.specializacija
+  );
+  const useAgents = !!hasProfile;
   window.aiProg = showAIProgress(document.getElementById('ai-progress-target'), useAgents);
   startStages();
   try{
@@ -2278,14 +2337,21 @@ async function startAn(){
     extText=combined;
     updSZ(combined);
     const tok=localStorage.getItem(TK);
-    const companyProfile=(curUser&&curUser.company_profile)||null;
     const docName=files.map(f=>f.name).join(', ');
-    // Use multi-agent if company profile exists
-    const endpoint=companyProfile&&companyProfile.profilioSantrauka?'/api/analyze-agents':'/api/analyze';
+    // Build rich client context string for more accurate AI analysis
+    const clientContext = buildClientContext(companyProfile);
+    // Use multi-agent endpoint if ANY profile data exists
+    const endpoint = hasProfile ? '/api/analyze-agents' : '/api/analyze';
     const r=await fetch(API+endpoint,{
       method:'POST',
       headers:{'Content-Type':'application/json','Authorization':'Bearer '+tok},
-      body:JSON.stringify({text:combined,documentName:docName,projectId:currentProject,companyProfile})
+      body:JSON.stringify({
+        text:combined,
+        documentName:docName,
+        projectId:currentProject,
+        companyProfile,
+        clientContext   // rich structured text context for the AI prompt
+      })
     });
     const d=await r.json();
     if(!r.ok){
@@ -2563,9 +2629,16 @@ async function renderAcc(){
       ${cp.sertifikatai?ri2('Sertifikatai',cp.sertifikatai):''}
       ${cp.stiprybės&&cp.stiprybės.length?ri2('Stiprybės',(cp.stiprybės||[]).join(', ')):''}
       ${cp.tipinieKonkursai?ri2('Tinka konkursams',cp.tipinieKonkursai):''}
-      ${cp.profilioSantrauka?`<div style="background:rgba(16,185,129,.05);border:1px solid rgba(16,185,129,.15);border-radius:10px;padding:12px;margin-top:12px;font-size:12px;color:var(--text2);line-height:1.6"><strong style="color:var(--success)">AI profilio santrauka:</strong><br>${cp.profilioSantrauka}</div>`:''}
-      <button class="btn btn-outline btn-sm" style="margin-top:16px" onclick="openOnboardingEdit()">✏️ ${cp.profilioSantrauka?'Atnaujinti profilį':'Užpildyti profilį'}</button>
-      ${!cp.profilioSantrauka?'<p style="font-size:11px;color:var(--warn);margin-top:8px">⚠️ Profilis neužpildytas — analizės nėra personalizuotos</p>':''}
+      ${(()=>{
+        const fields=[cp.name,cp.sector,cp.specializacija,cp.patirtis,cp.sertifikatai,cp.finansinesStiprybe||cp.revenue,cp.stiprybės&&cp.stiprybės.length,cp.profilioSantrauka];
+        const filled=fields.filter(Boolean).length;
+        const pct=Math.round((filled/fields.length)*100);
+        const color=pct>=75?'var(--success)':pct>=40?'var(--warn)':'var(--danger)';
+        return '<div style="margin:12px 0 6px"><div style="display:flex;justify-content:space-between;font-size:11px;color:var(--text2);margin-bottom:4px"><span>Profilio išsamumas</span><span style=\"color:'+color+';font-weight:700\">'+pct+'%</span></div><div style=\"height:6px;background:var(--card2);border-radius:4px;overflow:hidden\"><div style=\"height:100%;width:'+pct+'%;background:'+color+';border-radius:4px;transition:width .4s\"></div></div></div>';
+      })()}
+      ${cp.profilioSantrauka?`<div style="background:rgba(16,185,129,.05);border:1px solid rgba(16,185,129,.15);border-radius:10px;padding:12px;margin-top:8px;font-size:12px;color:var(--text2);line-height:1.6"><strong style="color:var(--success)">AI profilio santrauka:</strong><br>${cp.profilioSantrauka}</div>`:''}
+      <button class="btn btn-outline btn-sm" style="margin-top:14px" onclick="openOnboardingEdit()">✏️ ${cp.profilioSantrauka?'Atnaujinti profilį':'Užpildyti profilį'}</button>
+      ${!cp.profilioSantrauka?`<div style="background:rgba(245,158,11,.07);border:1px solid rgba(245,158,11,.2);border-radius:8px;padding:10px 12px;margin-top:10px;font-size:12px;line-height:1.6"><strong style="color:var(--warn)">⚠️ Profilis neužpildytas</strong><br><span style="color:var(--text2)">Užpildykite profilį — AI analizė taps tikslingesnė: atitiks jūsų įmonės pajėgumus, sertifikatus ir patirtį, o laimėjimo tikimybės balas bus apskaičiuotas konkrečiai jums.</span></div>`:''}
     </div>
     ${!pro?`
     <div class="acc-card" style="grid-column:1/-1;background:linear-gradient(135deg,rgba(26,86,219,.08),rgba(124,58,237,.08));border-color:rgba(59,130,246,.2)">
