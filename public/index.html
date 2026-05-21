@@ -1908,16 +1908,6 @@ footer{background:var(--navy2);border-top:1px solid var(--border);padding:48px 3
       <div style="font-size:13px;color:var(--text2)" id="ls2">Tai užtruks 30–60 sekundžių</div>
     </div>
     <div id="ai-progress-target"></div>
-    <div style="background:rgba(255,255,255,.06);border-radius:8px;height:6px;overflow:hidden;margin-bottom:28px">
-      <div id="prog-bar" style="height:100%;background:var(--grad);border-radius:8px;width:0%;transition:width .8s ease"></div>
-    </div>
-    <div style="display:flex;flex-direction:column;gap:12px" id="lst">
-      <div class="stage-item" id="stage-0"><span class="stage-dot">○</span><span class="stage-txt">Skaitau dokumentą</span><span class="stage-status"></span></div>
-      <div class="stage-item" id="stage-1"><span class="stage-dot">○</span><span class="stage-txt">Analizuoju sąlygas ir reikalavimus</span><span class="stage-status"></span></div>
-      <div class="stage-item" id="stage-2"><span class="stage-dot">○</span><span class="stage-txt">Vertinu rizikas ir galimybes</span><span class="stage-status"></span></div>
-      <div class="stage-item" id="stage-3"><span class="stage-dot">○</span><span class="stage-txt">Rengu laimėjimo strategiją</span><span class="stage-status"></span></div>
-      <div class="stage-item" id="stage-4"><span class="stage-dot">○</span><span class="stage-txt">Baigiu ataskaitą</span><span class="stage-status"></span></div>
-    </div>
   </div>
 </div>
 
@@ -4416,11 +4406,16 @@ function showAIProgress(targetEl, useAgents){
   const interval = setInterval(() => {
     const stepEls = targetEl.querySelectorAll('.ai-step');
     if(cur > 0) { stepEls[cur-1].classList.remove('active'); stepEls[cur-1].classList.add('done'); stepEls[cur-1].querySelector('.ai-step-i').textContent = '✓'; }
-    if(cur < stepEls.length){
+    // Sustojam ties priešpaskutiniu žingsniu — paskutinis ("užbaigta") tik kai realiai gauname atsakymą
+    if(cur < stepEls.length - 1){
       stepEls[cur].classList.add('active');
       cur++;
-    } else { clearInterval(interval); }
-  }, useAgents ? 4000 : 1500);
+    } else {
+      // Liekam ties paskutiniu aktyviu, laukiam stop()
+      if(cur < stepEls.length) { stepEls[cur].classList.add('active'); }
+      clearInterval(interval);
+    }
+  }, useAgents ? 3000 : 1500);
   return { stop: () => {
     clearInterval(interval);
     const stepEls = targetEl.querySelectorAll('.ai-step');
