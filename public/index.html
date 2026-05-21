@@ -2375,16 +2375,30 @@ async function startAn(){
   );
   const useAgents = !!hasProfile;
   window.aiProg = showAIProgress(document.getElementById('ai-progress-target'), useAgents);
-  startStages();
   try{
     let combined='';
+    let failedFiles=[];
     for(const f of files){
       let t='';
-      if(f.name.endsWith('.pdf'))t=await extPDF(f);
-      else if(f.name.endsWith('.docx')||f.name.endsWith('.doc'))t=await extDOCX(f);
-      else if(f.name.endsWith('.zip'))t=await extZIP(f);
-      else t=await extTXT(f);
-      combined+=`\n\n=== ${f.name} ===\n${t}`;
+      try {
+        if(f.name.endsWith('.pdf'))t=await extPDF(f);
+        else if(f.name.endsWith('.docx')||f.name.endsWith('.doc'))t=await extDOCX(f);
+        else if(f.name.endsWith('.zip'))t=await extZIP(f);
+        else t=await extTXT(f);
+        if(t && t.trim()) combined+=`\n\n=== ${f.name} ===\n${t}`;
+        else failedFiles.push(f.name+' (tuščias)');
+      } catch(fileErr) {
+        console.error('Failo skaitymo klaida:', f.name, fileErr);
+        failedFiles.push(f.name);
+      }
+    }
+    if(failedFiles.length && typeof toast==='function'){
+      toast('Nepavyko perskaityti '+failedFiles.length+' failo(-ų). Jei atidaryti Word/PDF programoje — uždarykite ir bandykite vėl.', 'warn', 9000);
+    }
+    if(!combined || combined.trim().length < 50){
+      loading.style.display='none';
+      toast('Nepavyko ištraukti teksto iš failų. Įsitikinkite, kad failai neužrakinti ir nėra tušti.', 'error', 9000);
+      return;
     }
     extText=combined;
     updSZ(combined);
@@ -2399,10 +2413,11 @@ async function startAn(){
       headers:{'Content-Type':'application/json','Authorization':'Bearer '+tok},
       body:JSON.stringify({
         text:combined,
+        documentText:combined,
         documentName:docName,
         projectId:currentProject,
         companyProfile,
-        clientContext   // rich structured text context for the AI prompt
+        clientContext
       })
     });
     const d=await r.json();
