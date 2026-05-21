@@ -1,7 +1,7 @@
 // ═══════════════════════════════════════════════════════════
-// BIDWISE AI — ANALIZĖ (vienas greitas kvietimas, be timeout)
-// Vienas išsamus AI kvietimas vietoj 5 atskirų — greičiau ir
-// neviršija Vercel funkcijos laiko limito.
+// BIDWISE AI — ANALIZĖ (vienas greitas kvietimas)
+// Grąžina struktūrą suderintą su renderResult frontend'e.
+// temperature:0 — vienodi rezultatai tam pačiam dokumentui.
 // ═══════════════════════════════════════════════════════════
 const jwt = require('jsonwebtoken');
 const { createClient } = require('@supabase/supabase-js');
@@ -33,6 +33,7 @@ async function callClaude(system, user, maxTokens = 4000) {
       body: JSON.stringify({
         model: MODEL,
         max_tokens: maxTokens,
+        temperature: 0,
         system,
         messages: [{ role: 'user', content: user }]
       }),
@@ -69,10 +70,10 @@ function buildProfileContext(profile) {
   if (!profile || (!profile.profilioSantrauka && !profile.sector && !profile.name)) {
     return {
       hasProfile: false,
-      contextText: 'KLIENTO PROFILIS NEUŽPILDYTAS. Analizuok bendrai. Pabaigoje pažymėk, kad užpildžius įmonės profilį analizė būtų tikslesnė.'
+      contextText: 'KLIENTO PROFILIS NEUŽPILDYTAS. Vertink bendrai pagal dokumento turinį. Balą skaičiuok objektyviai pagal reikalavimų sudėtingumą ir konkurencijos lygį.'
     };
   }
-  let ctx = 'KLIENTO ĮMONĖS PROFILIS (naudok aktyviai vertindamas atitikimą):\n\n';
+  let ctx = 'KLIENTO ĮMONĖS PROFILIS (naudok aktyviai vertindamas atitikimą ir tikimybę):\n\n';
   if (profile.name) ctx += `• Pavadinimas: ${profile.name}\n`;
   if (profile.sector) ctx += `• Veiklos sritis: ${profile.sector}\n`;
   if (profile.specializacija) ctx += `• Specializacija: ${profile.specializacija}\n`;
@@ -84,8 +85,8 @@ function buildProfileContext(profile) {
   if (Array.isArray(profile.stiprybes) && profile.stiprybes.length)
     ctx += `• Stiprybės: ${profile.stiprybes.join('; ')}\n`;
   if (Array.isArray(profile.silpnybes) && profile.silpnybes.length)
-    ctx += `• Silpnybės/ribojimai: ${profile.silpnybes.join('; ')}\n`;
-  if (profile.kainuStrategija) ctx += `• Kainodaron strategija: ${profile.kainuStrategija}\n`;
+    ctx += `• Silpnybės: ${profile.silpnybes.join('; ')}\n`;
+  if (profile.kainuStrategija) ctx += `• Kainodaros strategija: ${profile.kainuStrategija}\n`;
   if (profile.regionas) ctx += `• Regionas: ${profile.regionas}\n`;
   if (profile.klausimynas && typeof profile.klausimynas === 'object') {
     ctx += '\nKLAUSIMYNO ATSAKYMAI (specifinė info — naudok aktyviai):\n';
@@ -123,14 +124,7 @@ module.exports = async (req, res) => {
     }
     const profileCtx = buildProfileContext(profile);
 
-    const system = `Tu esi Bidwise AI — ekspertų komanda viešųjų pirkimų analizei. Tavyje veikia 5 specializuoti analitikai:
-1. Dokumentų analitikas — ištraukia pirkimo informaciją
-2. Kvalifikacijos ekspertas — vertina ar klientas atitinka reikalavimus
-3. Kainodaron strategas — analizuoja vertinimo kriterijus
-4. Rizikų analitikas — randa paslėptas sąlygas ir rizikas
-5. Vyriausiasis strategas — apskaičiuoja laimėjimo tikimybę ir strategiją
-
-Atlik VISŲ 5 analitikų darbą ir grąžink TIK JSON formatu, be jokio papildomo teksto.`;
+    const system = `Tu esi Bidwise AI — ekspertų komanda viešųjų pirkimų analizei (dokumentų, kvalifikacijos, kainodaros, rizikų ir strategijos analitikai). Analizuok lietuviškai. Būk objektyvus ir nuoseklus — tam pačiam dokumentui visada duok tą patį tikimybės balą. Grąžink TIK JSON, be jokio papildomo teksto.`;
 
     const userMsg = `${profileCtx.contextText}
 
@@ -141,42 +135,53 @@ ${docText.slice(0, 45000)}
 
 ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
 
-Išanalizuok šį konkursą ${profileCtx.hasProfile ? 'KONKREČIAI šios įmonės kontekste — naudok jos profilį ir klausimyno atsakymus vertindamas kiekvieną aspektą' : '(profilis neužpildytas — bendras vertinimas)'}. Grąžink JSON:
+Išanalizuok šį konkursą ${profileCtx.hasProfile ? 'KONKREČIAI šios įmonės kontekste — naudok jos profilį ir klausimyno atsakymus' : '(profilis neužpildytas — bendras objektyvus vertinimas)'}.
+
+Grąžink TIKSLIAI tokios struktūros JSON (visi laukai privalomi, jei nėra informacijos — rašyk "Nenurodyta"):
 
 {
   "pavadinimas": "tikslus pirkimo pavadinimas",
-  "perkancioji": "perkančiosios organizacijos pavadinimas",
-  "verte": "numatoma vertė arba 'nenurodyta'",
-  "bvpzKodai": ["BVPŽ kodai jei nurodyti"],
+  "perkanciojiOrganizacija": "perkančiosios organizacijos pavadinimas",
   "pirkimoTipas": "atviras konkursas / supaprastintas / mažos vertės",
-  "terminas": "pasiūlymų pateikimo terminas",
-  "trukme": "sutarties trukmė",
-  "pirkimoObjektas": "trumpas objekto aprašymas",
-  "score": 72,
-  "verdiktas": "REKOMENDUOJAMA / SĄLYGINAI / NEREKOMENDUOJAMA",
-  "santrauka": "2-3 sakinių apibendrinimas kodėl būtent toks tikimybės balas",
+  "bendraVerte": "numatoma vertė su valiuta arba Nenurodyta",
+  "cpt": "pagrindinis BVPŽ kodas",
+  "score": 65,
+  "scoreLabel": "Aukšta tikimybė / Vidutinė tikimybė / Žema tikimybė",
+  "scorePaaiskinimas": "2-3 sakiniai kodėl būtent toks balas šiai įmonei",
+  "terminai": {
+    "pasiulymoTerminas": "data ir laikas",
+    "vokuAtplesimas": "data arba Nenurodyta",
+    "klausimaiIki": "data arba Nenurodyta",
+    "vykdymoTerminas": "sutarties trukmė",
+    "garantija": "garantinis terminas arba Nenurodyta"
+  },
   "kvalifikacija": {
-    "bendrasAtitikimas": "TINKA / NETINKA / DALINAI",
-    "reikalavimai": [
-      {"reikalavimas": "konkretus reikalavimas", "kliento_atitikimas": "TINKA / NETINKA / ABEJOTINA", "paaiskinimas": "kodėl ši įmonė atitinka ar ne"}
-    ],
-    "kritiniaiTrukumai": ["ko trūksta šiai įmonei"]
+    "apyvarta": "reikalaujama apyvarta",
+    "darbuotojai": "reikalavimai darbuotojams",
+    "patirtis": "reikalaujama patirtis",
+    "sertifikatai": "reikalaujami sertifikatai",
+    "finansinis": "finansiniai reikalavimai"
   },
-  "kainodara": {
-    "vertinimoKriterijai": [{"kriterijus": "pvz. Kaina", "svoris": "60%", "komentaras": "ką reiškia klientui"}],
-    "kainosStrategija": "konkreti rekomendacija šiai įmonei",
-    "patarimai": ["kainodaron patarimai"]
+  "finansinesSalygos": {
+    "avansas": "ar mokamas avansas",
+    "apmokejimas": "apmokėjimo sąlygos",
+    "baudos": "baudų sąlygos",
+    "garantinis": "garantinio laikotarpio sąlygos"
   },
-  "rizikos": {
-    "rizikos": [{"rizika": "konkreti rizika", "lygis": "AUKŠTA / VIDUTINĖ / ŽEMA", "rekomendacija": "ką daryti"}],
-    "paslėptosSalygos": ["nepalankios sąlygos"],
-    "klausimaiPerkanciajai": ["klausimai perkančiajai organizacijai"]
-  },
-  "strategija": {
-    "zingsniai": ["konkretus žingsnis 1", "žingsnis 2", "žingsnis 3"],
-    "akcentuoti": ["kliento stiprybės kurias pabrėžti"],
-    "dokumentai": ["kokius dokumentus paruošti"]
-  }
+  "vertinimoKriterijai": [
+    {"kriterijus": "pvz. Kaina", "svoris": "60%"}
+  ],
+  "rizikos": ["konkreti rizika 1", "rizika 2", "rizika 3"],
+  "galimybes": ["galimybė 1", "galimybė 2"],
+  "pasleptosNuostatos": ["nepalanki nuostata jei yra"],
+  "strategija": "konkreti laimėjimo strategija šiai įmonei (1 pastraipa)",
+  "prioritetiniaiZingsniai": [
+    {"terminas": "Iki kada", "zingsnis": "ką padaryti"}
+  ],
+  "butinaiIttraukti": [
+    {"dokumentas": "reikalingas dokumentas", "pastaba": "komentaras"}
+  ],
+  "isViso": "galutinė išvada ar verta dalyvauti ir kodėl (2-3 sakiniai)"
 }`;
 
     const aiRes = await callClaude(system, userMsg, 4000);
@@ -186,9 +191,8 @@ Išanalizuok šį konkursą ${profileCtx.hasProfile ? 'KONKREČIAI šios įmonė
       return res.status(500).json({ error: 'AI nepavyko struktūrizuoti atsakymo. Pabandykite dar kartą.' });
     }
 
-    result.score = result.score || 50;
+    result.score = typeof result.score === 'number' ? result.score : 50;
     result.personalizuota = profileCtx.hasProfile;
-    result._meta = { agentai: 5, profilisPanaudotas: profileCtx.hasProfile };
 
     if (process.env.SUPABASE_URL) {
       const supabase = createClient(process.env.SUPABASE_URL, process.env.SUPABASE_SERVICE_KEY);
