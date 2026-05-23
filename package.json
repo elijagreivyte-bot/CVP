@@ -3,9 +3,9 @@
   "version": "1.0.0",
   "description": "Bidwise AI – Išmani CVP konkursų analizė",
   "scripts": {
-    "dev": "node index.js",
-    "start": "node index.js",
-    "build": "echo 'No build step'"
+    "dev": "node server.js",
+    "start": "node server.js",
+    "build": "echo 'No build'"
   },
   "dependencies": {
     "@supabase/supabase-js": "^2.39.0",
