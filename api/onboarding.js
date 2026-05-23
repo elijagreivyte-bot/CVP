@@ -77,6 +77,52 @@ module.exports = async (req, res) => {
 
   const step = req.body?.step || req.body?.action || '';
 
+  // ── PASIŪLYTI SRITĮ pagal veiklos aprašymą (AI klasifikacija) ──
+  if (step === 'suggest-sector') {
+    const { activity } = req.body;
+    if (!activity || activity.length < 10) return res.status(400).json({ error: 'Aprašykite veiklą' });
+
+    const SEKTORIAI = [
+      'Statybos ir remontas', 'IT ir programinė įranga', 'Medicinos įranga ir farmacija',
+      'Švietimas ir mokymai', 'Valymo paslaugos', 'Maisto tiekimas ir maitinimas',
+      'Transportas ir logistika', 'Konsultacijos ir tyrimai', 'Inžinerinės paslaugos',
+      'Aplinkosauga ir želdynas', 'Saugos ir apsaugos paslaugos'
+    ];
+
+    try {
+      const system = `Tu esi viešųjų pirkimų klasifikatorius. Iš įmonės veiklos aprašymo nustatyk tinkamiausią sritį ir ištrauk visas veiklas. Atsakyk TIK JSON.`;
+      const userMsg = `Įmonės veiklos aprašymas:
+"${activity}"
+
+Galimos sritys:
+${SEKTORIAI.map((s, i) => (i + 1) + '. ' + s).join('\n')}
+12. Kita
+
+Nustatyk VISAS tinkamas sritis iš sąrašo (įmonė gali dirbti keliose). Jei veikla apima kelias sritis — nurodyk visas. Ištrauk atpažintas veiklas. Grąžink JSON:
+{
+  "sektoriai": ["tinkama sritis 1", "sritis 2"],
+  "sektorius": "pagrindinė (svarbiausia) sritis",
+  "veiklos": ["atpažinta veikla 1", "veikla 2", "veikla 3"],
+  "aprasymas": "patobulintas struktūruotas veiklos aprašymas (2-3 sakiniai)",
+  "paaiskinimas": "trumpas paaiškinimas kodėl šios sritys tinka (1 sakinys)"
+}`;
+
+      const aiRes = await callClaude(system, userMsg, 1200);
+      const parsed = parseJSON(aiRes, {});
+      if (!parsed.sektorius && !parsed.sektoriai) {
+        return res.status(200).json({ sektorius: 'Kita', sektoriai: ['Kita'], veiklos: [], aprasymas: activity, paaiskinimas: 'Veikla apima kelias sritis.' });
+      }
+      // Užtikrinam kad būtų ir sektorius, ir sektoriai
+      if (!parsed.sektoriai && parsed.sektorius) parsed.sektoriai = [parsed.sektorius];
+      if (!parsed.sektorius && parsed.sektoriai && parsed.sektoriai.length) parsed.sektorius = parsed.sektoriai[0];
+      return res.status(200).json(parsed);
+    } catch (e) {
+      console.error('Sektoriaus nustatymo klaida:', e);
+      return res.status(200).json({ sektorius: 'Kita', veiklos: [], aprasymas: activity, paaiskinimas: 'Nepavyko automatiškai nustatyti.' });
+    }
+  }
+
+
   // ── GENERUOTI KLAUSIMUS ──
   if (step === 'questions' || step === 'generate-questions') {
     const { name, sector, activity } = req.body;
