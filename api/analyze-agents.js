@@ -76,18 +76,28 @@ function buildProfileContext(profile) {
   let ctx = 'KLIENTO ĮMONĖS PROFILIS (naudok aktyviai vertindamas atitikimą ir tikimybę):\n\n';
   if (profile.name) ctx += `• Pavadinimas: ${profile.name}\n`;
   if (profile.sector) ctx += `• Veiklos sritis: ${profile.sector}\n`;
+  if (profile.activity) ctx += `• Veiklos aprašymas: ${profile.activity}\n`;
   if (profile.specializacija) ctx += `• Specializacija: ${profile.specializacija}\n`;
+  if (Array.isArray(profile.veiklos) && profile.veiklos.length)
+    ctx += `• Teikiamos paslaugos: ${profile.veiklos.join(', ')}\n`;
+  if (Array.isArray(profile.capabilityTags) && profile.capabilityTags.length)
+    ctx += `• Gebėjimai (tags): ${profile.capabilityTags.join(', ')}\n`;
+  if (Array.isArray(profile.regionai) && profile.regionai.length)
+    ctx += `• Veiklos regionai: ${profile.regionai.join(', ')}\n`;
+  if (profile.maxProjektoVerte) ctx += `• Didžiausia projekto vertė: ${profile.maxProjektoVerte}\n`;
   if (profile.apyvarta) ctx += `• Metinė apyvarta: ${profile.apyvarta}\n`;
-  if (profile.darbuotojai) ctx += `• Darbuotojų skaičius: ${profile.darbuotojai}\n`;
+  if (profile.darbuotojai) ctx += `• Darbuotojų/brigadų: ${profile.darbuotojai}\n`;
   if (profile.patirtis) ctx += `• Patirtis: ${profile.patirtis}\n`;
+  if (profile.viesPirkPatirtis) ctx += `• Viešųjų pirkimų patirtis: ${profile.viesPirkPatirtis}\n`;
   if (Array.isArray(profile.sertifikatai) && profile.sertifikatai.length)
     ctx += `• Sertifikatai: ${profile.sertifikatai.join(', ')}\n`;
   if (Array.isArray(profile.stiprybes) && profile.stiprybes.length)
     ctx += `• Stiprybės: ${profile.stiprybes.join('; ')}\n`;
   if (Array.isArray(profile.silpnybes) && profile.silpnybes.length)
     ctx += `• Silpnybės: ${profile.silpnybes.join('; ')}\n`;
+  if (Array.isArray(profile.vengia) && profile.vengia.length)
+    ctx += `• Vengia (NESIŪLYK tokių konkursų): ${profile.vengia.join('; ')}\n`;
   if (profile.kainuStrategija) ctx += `• Kainodaros strategija: ${profile.kainuStrategija}\n`;
-  if (profile.regionas) ctx += `• Regionas: ${profile.regionas}\n`;
   if (profile.klausimynas && typeof profile.klausimynas === 'object') {
     ctx += '\nKLAUSIMYNO ATSAKYMAI (specifinė info — naudok aktyviai):\n';
     for (const [k, v] of Object.entries(profile.klausimynas)) {
