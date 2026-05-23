@@ -10,7 +10,7 @@ const JWT_SECRET = process.env.JWT_SECRET || 'bidwise-secret-2025';
 const ANTHROPIC_API_KEY = process.env.ANTHROPIC_API_KEY;
 const MODEL = 'claude-sonnet-4-6';
 
-module.exports.config = { maxDuration: 60 };
+module.exports.config = { maxDuration: 300 };
 
 function verifyToken(req) {
   const auth = req.headers.authorization || '';
@@ -21,7 +21,7 @@ function verifyToken(req) {
 
 async function callClaude(system, user, maxTokens = 4000) {
   const controller = new AbortController();
-  const timeout = setTimeout(() => controller.abort(), 55000);
+  const timeout = setTimeout(() => controller.abort(), 120000);
   try {
     const r = await fetch('https://api.anthropic.com/v1/messages', {
       method: 'POST',
@@ -48,7 +48,7 @@ async function callClaude(system, user, maxTokens = 4000) {
     return data.content.map(c => c.text || '').join('\n');
   } catch (e) {
     clearTimeout(timeout);
-    if (e.name === 'AbortError') throw new Error('Analizė užtruko per ilgai. Pabandykite su mažesniu dokumentu.');
+    if (e.name === 'AbortError') throw new Error('Analizė užtruko per ilgai. Pabandykite atskirą dokumentą vietoj viso ZIP.');
     throw e;
   }
 }
@@ -141,7 +141,7 @@ module.exports = async (req, res) => {
 ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
 
 PIRKIMO DOKUMENTAS:
-${docText.slice(0, 45000)}
+${docText.slice(0, 30000)}
 
 ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
 
