@@ -4,6 +4,7 @@
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width,initial-scale=1.0">
 <title>Bidwise AI – Išmani CVP Konkursų Analizė</title>
+<link rel="icon" type="image/png" href="/favicon.png" />
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link href="https://fonts.googleapis.com/css2?family=Sora:wght@300;400;600;700;800;900&family=Inter:wght@300;400;500;600&display=swap" rel="stylesheet">
 <script src="https://cdnjs.cloudflare.com/ajax/libs/pdf.js/3.11.174/pdf.min.js"></script>
@@ -1094,20 +1095,22 @@ footer{background:var(--navy2);border-top:1px solid var(--border);padding:48px 3
         <div class="onboard-dot"></div>
       </div>
       <div class="fg"><label>Įmonės pavadinimas</label><input class="inp" id="ob-company" placeholder="UAB Mano Įmonė"></div>
-      <div class="fg">
-        <label>Veiklos sritys <span style="color:var(--text3);font-weight:400">(galite pasirinkti kelias)</span></label>
-        <div id="ob-sectors-chips" style="display:flex;flex-wrap:wrap;gap:8px;margin-top:6px"></div>
-        <input type="hidden" id="ob-sector">
-      </div>
-      <div class="fg">
-        <label>Aprašykite savo veiklą <span style="color:var(--text3);font-weight:400">(arba leiskite AI padėti)</span></label>
-        <textarea class="inp" id="ob-activity" rows="4" placeholder="Pvz. Dirbame su pramonine virtuvės įranga — įrengiame naujas virtuves mokyklose ir darželiuose, tiekiame ir montuojame profesionalią bei smulkią virtuvės įrangą. Dirbame visoje Lietuvoje." style="resize:none;font-size:13px"></textarea>
-        <div style="display:flex;gap:8px;margin-top:8px;align-items:center;flex-wrap:wrap">
-          <button type="button" class="btn btn-outline btn-sm" id="ob-ai-suggest" onclick="aiSuggestSector()" style="font-size:12px">🤖 AI padės pasirinkti sritį</button>
-          <span id="ob-ai-suggest-status" style="font-size:12px;color:var(--text2)"></span>
-        </div>
-        <div id="ob-ai-suggestion" style="display:none;margin-top:10px;padding:12px 14px;background:rgba(16,185,129,.06);border:1px solid rgba(16,185,129,.2);border-radius:10px;font-size:12px;color:var(--text);line-height:1.6"></div>
-        <p style="font-size:11px;color:var(--text3);margin-top:8px">💡 Aprašykite VISAS veiklas (paslaugos, regionai, pajėgumai). AI atpažins ir pasiūlys tinkamą sritį — net jei dirbate keliose srityse.</p>
+      <div class="fg"><label>Veiklos sritis</label>
+        <select class="inp" id="ob-sector">
+          <option value="">Pasirinkite...</option>
+          <option>Statybos ir remontas</option>
+          <option>IT ir programinė įranga</option>
+          <option>Medicinos įranga ir farmacija</option>
+          <option>Švietimas ir mokymai</option>
+          <option>Valymo paslaugos</option>
+          <option>Maisto tiekimas ir maitinimas</option>
+          <option>Transportas ir logistika</option>
+          <option>Konsultacijos ir tyrimai</option>
+          <option>Inžinerinės paslaugos</option>
+          <option>Aplinkosauga ir želdynas</option>
+          <option>Saugos ir apsaugos paslaugos</option>
+          <option>Kita</option>
+        </select>
       </div>
       <div class="onboard-actions">
         <button class="onboard-skip" onclick="skipOnboarding()">Praleisti</button>
@@ -2103,7 +2106,6 @@ function openOnboarding(){
     const obName = document.getElementById('ob-name');
     if(obName) obName.textContent = name;
     obGoStep(1);
-    if(typeof renderSectorChips === 'function') renderSectorChips();
     const modal = document.getElementById('onboarding-modal');
     if(modal) {
       modal.classList.add('open');
@@ -2166,7 +2168,7 @@ function obGoStep(n){
 async function obStep1Next(){
   const company=document.getElementById('ob-company').value.trim();
   const sector=document.getElementById('ob-sector').value;
-  if(!sector || (typeof obSelectedSectors !== 'undefined' && obSelectedSectors.length === 0)){toast('Pasirinkite bent vieną veiklos sritį', 'warn');return;}
+  if(!sector){toast('Pasirinkite veiklos sritį', 'warn');return;}
   const btn=document.getElementById('ob-next1');
   btn.disabled=true;btn.textContent='⏳ AI generuoja klausimus...';
   obGoStep(2);
@@ -2177,7 +2179,7 @@ async function obStep1Next(){
     const r=await fetch(API+'/api/onboarding',{
       method:'POST',
       headers:{'Content-Type':'application/json','Authorization':'Bearer '+tok},
-      body:JSON.stringify({step:'questions',sector,name:company,activity:document.getElementById('ob-activity')?.value?.trim()||''})
+      body:JSON.stringify({step:'questions',sector,name:company})
     });
     const d=await r.json();
     obQuestions=d.questions||[];
@@ -2226,27 +2228,30 @@ async function obStep2Next(){
     const r=await fetch(API+'/api/onboarding',{
       method:'POST',
       headers:{'Content-Type':'application/json','Authorization':'Bearer '+tok},
-      body:JSON.stringify({step:'profile',sector,name:company,answers:obAnswers,activity:document.getElementById('ob-activity')?.value?.trim()||''})
+      body:JSON.stringify({step:'profile',sector,name:company,answers:obAnswers})
     });
     const d=await r.json();
     const profile=d.profile||{name:company,sector};
-    // Backend jau išsaugojo į DB. Užtikrinam name+sector ir atnaujinam curUser.
-    profile.name = profile.name || company;
-    profile.sector = profile.sector || sector;
-    if(curUser){curUser.company_profile=profile;localStorage.setItem(UK,JSON.stringify(curUser));}
+    // Merge raw Q&A answers into profile so buildClientContext() can use them
+    const enriched=Object.assign({name:company,sector},profile,{_rawAnswers:obAnswers});
+    // Also persist well-known answer keys if backend didn't parse them
+    Object.entries(obAnswers).forEach(([q,v])=>{
+      if(/apyvarta|revenue/i.test(q))enriched.revenue=enriched.revenue||v;
+      if(/darbuotoj/i.test(q))enriched.size=enriched.size||v;
+      if(/sertifikat|licencij/i.test(q))enriched.sertifikatai=enriched.sertifikatai||v;
+      if(/patirtis|pirkimai/i.test(q))enriched.patirtis=enriched.patirtis||v;
+      if(/pranašumas|stipryb/i.test(q))enriched.konkurencisPranasumas=enriched.konkurencisPranasumas||v;
+      if(/sutarties dydis|max/i.test(q))enriched.max_sutartis=enriched.max_sutartis||v;
+    });
+    if(curUser){curUser.company_profile=enriched;localStorage.setItem(UK,JSON.stringify(curUser));}
     const preview=document.getElementById('ob-profile-preview');
-    preview.innerHTML='<strong style="color:var(--text)">🏢 '+(profile.name||company)+'</strong><br>'+
-      '<span style="color:var(--blue3)">'+(profile.sector||sector)+'</span><br><br>'+
+    preview.innerHTML='<strong style="color:var(--text)">🏢 '+( profile.name||company)+'</strong><br>'+
+      '<span style="color:var(--blue3)">'+( profile.sector||sector)+'</span><br><br>'+
       (profile.profilioSantrauka||profile.specializacija||'Profilis išsaugotas sėkmingai.')+
-      ((profile.stiprybes&&profile.stiprybes.length)?'<br><br><strong style="color:var(--text)">Stiprybės:</strong> '+profile.stiprybes.join(', '):'');
-    // Atnaujinam account puslapį jei jis matomas
-    if(typeof renderAcc==='function') renderAcc();
-    if(typeof toast==='function') toast('Profilis išsaugotas! Analizės bus personalizuotos.', 'success');
+      (profile.stiprybės?.length?'<br><br><strong style="color:var(--text)">Stiprybės:</strong> '+(profile.stiprybės||[]).join(', '):'');
   }catch(e){
-    const profile={name:company,sector,klausimynas:obAnswers,activity:document.getElementById('ob-activity')?.value?.trim()||''};
     document.getElementById('ob-profile-preview').textContent='Profilis išsaugotas (baziniai duomenys).';
-    if(curUser){curUser.company_profile=profile;localStorage.setItem(UK,JSON.stringify(curUser));}
-    if(typeof renderAcc==='function') renderAcc();
+    if(curUser){curUser.company_profile={name:company,sector};localStorage.setItem(UK,JSON.stringify(curUser));}
   }
 }
 
@@ -2758,18 +2763,14 @@ async function renderAcc(){
       <h3>🏢 Įmonės profilis</h3>
       ${ri2('Pavadinimas',cp.name||'–')}
       ${ri2('Sritis',cp.sector||'–')}
-      ${cp.activity?ri2('Veikla',cp.activity):''}
       ${cp.specializacija?ri2('Specializacija',cp.specializacija):''}
-      ${cp.veiklos&&cp.veiklos.length?ri2('Paslaugos',(cp.veiklos||[]).join(', ')):''}
-      ${cp.regionai&&cp.regionai.length?ri2('Regionai',(cp.regionai||[]).join(', ')):''}
-      ${cp.maxProjektoVerte?ri2('Max projekto vertė',cp.maxProjektoVerte):''}
-      ${cp.apyvarta?ri2('Apyvarta',cp.apyvarta):''}
+      ${cp.finansinesStiprybe?ri2('Finansinė stiprybė',cp.finansinesStiprybe):''}
       ${cp.patirtis?ri2('Patirtis',cp.patirtis):''}
-      ${cp.viesPirkPatirtis?ri2('VP patirtis',cp.viesPirkPatirtis):''}
-      ${cp.sertifikatai?ri2('Sertifikatai',Array.isArray(cp.sertifikatai)?cp.sertifikatai.join(', '):cp.sertifikatai):''}
-      ${(cp.stiprybes&&cp.stiprybes.length)?ri2('Stiprybės',(cp.stiprybes||[]).join(', ')):''}
+      ${cp.sertifikatai?ri2('Sertifikatai',cp.sertifikatai):''}
+      ${cp.stiprybės&&cp.stiprybės.length?ri2('Stiprybės',(cp.stiprybės||[]).join(', ')):''}
+      ${cp.tipinieKonkursai?ri2('Tinka konkursams',cp.tipinieKonkursai):''}
       ${(()=>{
-        const fields=[cp.name,cp.sector,cp.specializacija||cp.activity,cp.patirtis,cp.sertifikatai,cp.apyvarta||cp.maxProjektoVerte,(cp.stiprybes&&cp.stiprybes.length)||(cp.veiklos&&cp.veiklos.length),cp.profilioSantrauka];
+        const fields=[cp.name,cp.sector,cp.specializacija,cp.patirtis,cp.sertifikatai,cp.finansinesStiprybe||cp.revenue,cp.stiprybės&&cp.stiprybės.length,cp.profilioSantrauka];
         const filled=fields.filter(Boolean).length;
         const pct=Math.round((filled/fields.length)*100);
         const color=pct>=75?'var(--success)':pct>=40?'var(--warn)':'var(--danger)';
@@ -4402,81 +4403,6 @@ function showAIProgress(targetEl, useAgents){
 function openSecurity(){ document.getElementById('security-modal').style.display='flex'; }
 function openAIPolicy(){ document.getElementById('aipolicy-modal').style.display='flex'; }
 function openRoadmap(){ document.getElementById('roadmap-modal').style.display='flex'; }
-
-async function aiSuggestSector(){
-  const activity = (document.getElementById('ob-activity')?.value||'').trim();
-  if(activity.length < 15){
-    toast('Pirma aprašykite savo veiklą (bent kelis sakinius)', 'warn');
-    return;
-  }
-  const btn = document.getElementById('ob-ai-suggest');
-  const status = document.getElementById('ob-ai-suggest-status');
-  const sugg = document.getElementById('ob-ai-suggestion');
-  btn.disabled = true;
-  status.textContent = '🤖 AI analizuoja jūsų veiklą...';
-  const tok = localStorage.getItem(TK);
-  try {
-    const r = await fetch(API+'/api/onboarding', {
-      method: 'POST',
-      headers: {'Content-Type':'application/json','Authorization':'Bearer '+tok},
-      body: JSON.stringify({ step: 'suggest-sector', activity })
-    });
-    const d = await r.json();
-    if(d.sektorius){
-      // AI gali pasiūlyti kelias sritis (masyvas) arba vieną
-      const suggested = Array.isArray(d.sektoriai) ? d.sektoriai : [d.sektorius];
-      obSelectedSectors = [];
-      suggested.forEach(s => {
-        const match = OB_SEKTORIAI.find(o => o === s || o.toLowerCase() === (s||'').toLowerCase());
-        if(match && !obSelectedSectors.includes(match)) obSelectedSectors.push(match);
-      });
-      if(obSelectedSectors.length === 0) obSelectedSectors.push('Kita');
-      document.getElementById('ob-sector').value = obSelectedSectors.join(', ');
-      if(typeof renderSectorChips === 'function') renderSectorChips();
-      // Update activity with refined version if provided
-      if(d.aprasymas){
-        document.getElementById('ob-activity').value = d.aprasymas;
-      }
-      // Show suggestion
-      sugg.style.display = 'block';
-      sugg.innerHTML = '✅ <strong>AI pažymėjo sritis:</strong> ' + obSelectedSectors.join(', ') +
-        (d.veiklos && d.veiklos.length ? '<br><br><strong>Atpažintos veiklos:</strong> ' + d.veiklos.join(', ') : '') +
-        (d.paaiskinimas ? '<br><br><span style="color:var(--text2)">' + d.paaiskinimas + '</span>' : '');
-      status.textContent = '';
-      toast('AI pasiūlė tinkamą sritį', 'success');
-    } else {
-      status.textContent = '';
-      toast('Nepavyko nustatyti. Pasirinkite sritį rankiniu būdu.', 'warn');
-    }
-  } catch(e){
-    status.textContent = '';
-    toast('Klaida: ' + e.message, 'error');
-  } finally {
-    btn.disabled = false;
-  }
-}
-
-// Sektorių daugybinis pasirinkimas (chips)
-const OB_SEKTORIAI = ['Statybos ir remontas','IT ir programinė įranga','Medicinos įranga ir farmacija','Švietimas ir mokymai','Valymo paslaugos','Maisto tiekimas ir maitinimas','Transportas ir logistika','Konsultacijos ir tyrimai','Inžinerinės paslaugos','Aplinkosauga ir želdynas','Saugos ir apsaugos paslaugos','Kita'];
-let obSelectedSectors = [];
-
-function renderSectorChips(){
-  const wrap = document.getElementById('ob-sectors-chips');
-  if(!wrap) return;
-  wrap.innerHTML = OB_SEKTORIAI.map(s => {
-    const sel = obSelectedSectors.includes(s);
-    return '<button type="button" class="ob-sector-chip" data-sector="'+s+'" onclick="toggleSector(\''+s.replace(/'/g,"\\'")+'\')" style="padding:8px 14px;border-radius:20px;font-size:12px;cursor:pointer;font-family:Inter,sans-serif;border:1px solid '+(sel?'var(--blue3)':'var(--border)')+';background:'+(sel?'rgba(59,130,246,.15)':'var(--card)')+';color:'+(sel?'var(--text)':'var(--text2)')+';font-weight:'+(sel?'600':'400')+'">'+(sel?'✓ ':'')+s+'</button>';
-  }).join('');
-}
-
-function toggleSector(s){
-  const i = obSelectedSectors.indexOf(s);
-  if(i >= 0) obSelectedSectors.splice(i, 1);
-  else obSelectedSectors.push(s);
-  // Update hidden input (comma-separated)
-  document.getElementById('ob-sector').value = obSelectedSectors.join(', ');
-  renderSectorChips();
-}
 </script>
 
 <!-- AI CHAT WIDGET -->
