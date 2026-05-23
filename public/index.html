@@ -1108,8 +1108,13 @@ footer{background:var(--navy2);border-top:1px solid var(--border);padding:48px 3
           <option>Inžinerinės paslaugos</option>
           <option>Aplinkosauga ir želdynas</option>
           <option>Saugos ir apsaugos paslaugos</option>
-          <option>Kita</option>
+          <option>Kita (aprašykite žemiau)</option>
         </select>
+      </div>
+      <div class="fg">
+        <label>Trumpai aprašykite savo veiklą <span style="color:var(--text3);font-weight:400">(svarbiausia AI tikslumui)</span></label>
+        <textarea class="inp" id="ob-activity" rows="3" placeholder="Pvz. Teikiame patalpų valymo ir teritorijų priežiūros paslaugas Vilniaus ir Kauno regionuose. Specializuojamės biurų ir medicininių įstaigų valyme. Turime 3 brigadas." style="resize:none;font-size:13px"></textarea>
+        <p style="font-size:11px;color:var(--text3);margin-top:6px">💡 Kuo detaliau aprašysite (paslaugos, regionai, pajėgumai, patirtis) — tuo tiksliau AI vertins konkursus</p>
       </div>
       <div class="onboard-actions">
         <button class="onboard-skip" onclick="skipOnboarding()">Praleisti</button>
@@ -2178,7 +2183,7 @@ async function obStep1Next(){
     const r=await fetch(API+'/api/onboarding',{
       method:'POST',
       headers:{'Content-Type':'application/json','Authorization':'Bearer '+tok},
-      body:JSON.stringify({step:'questions',sector,name:company})
+      body:JSON.stringify({step:'questions',sector,name:company,activity:document.getElementById('ob-activity')?.value?.trim()||''})
     });
     const d=await r.json();
     obQuestions=d.questions||[];
@@ -2227,7 +2232,7 @@ async function obStep2Next(){
     const r=await fetch(API+'/api/onboarding',{
       method:'POST',
       headers:{'Content-Type':'application/json','Authorization':'Bearer '+tok},
-      body:JSON.stringify({step:'profile',sector,name:company,answers:obAnswers})
+      body:JSON.stringify({step:'profile',sector,name:company,answers:obAnswers,activity:document.getElementById('ob-activity')?.value?.trim()||''})
     });
     const d=await r.json();
     const profile=d.profile||{name:company,sector};
