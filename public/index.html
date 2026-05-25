@@ -2403,6 +2403,24 @@ function checkTextQuality(text,fileSize){
   if(alphaNum/text.length<0.35)return false;
   return true;
 }
+// Raktažodžių filtravimas — palieka tik svarbius puslapius (sutaupo ~70% konteksto)
+function filterRelevantPages(text){
+  if(!text || text.length < 20000) return text; // mažiems dokumentams nereikia
+  const keywords = /kvalifikacij|reikalav|apyvarta|baud|sertifikat|terminas|pasiūlym|vertinim|garantij|sąlyg|tiekėj|patirt|licencij|dokument|kaina|atitik/i;
+  // Skaidom pagal puslapių žymeklius
+  const pages = text.split(/(?=\[Psl\. \d+\])/);
+  if(pages.length < 3) return text;
+  const relevant = pages.filter(p => keywords.test(p) || p.length < 100);
+  const filtered = relevant.join('\n');
+  // Jei filtravimas paliko per mažai — grąžinam originalą
+  return filtered.length > 1000 ? filtered : text;
+}
+
+// Skenuoto PDF aptikimas
+function isScannedDocument(text){
+  return !text || text.replace(/\[Psl\. \d+\]/g,'').trim().length < 200;
+}
+
 async function extPDF(f){
   const ab=await f.arrayBuffer();
   const pdf=await pdfjsLib.getDocument({data:ab}).promise;
@@ -2410,7 +2428,8 @@ async function extPDF(f){
   for(let i=1;i<=pdf.numPages;i++){
     const pg=await pdf.getPage(i);
     const content=await pg.getTextContent();
-    t+=content.items.map(item=>item.str).join(' ')+'\n';
+    // Puslapio žymeklis — leidžia AI cituoti [Psl. X]
+    t+='\n[Psl. '+i+']\n'+content.items.map(item=>item.str).join(' ')+'\n';
   }
   if(checkTextQuality(t,f.size))return t;
   // OCR fallback
@@ -2561,6 +2580,19 @@ async function startAn(){
       loading.style.display='none';
       toast('Nepavyko ištraukti teksto iš failų. Įsitikinkite, kad failai neužrakinti ir nėra tušti.', 'error', 9000);
       return;
+    }
+    // Skenuoto dokumento aptikimas (punktas #5)
+    if(typeof isScannedDocument==='function' && isScannedDocument(combined)){
+      loading.style.display='none';
+      if(window.aiProg && window.aiProg.stop) window.aiProg.stop();
+      toast('Šis dokumentas atrodo skenuotas kaip paveikslėlis (nėra tekstinio sluoksnio). Įkelkite tekstinį PDF failą.', 'error', 11000);
+      return;
+    }
+    // Raktažodžių filtravimas dideliems dokumentams (punktas #3 — sutaupo kontekstą)
+    if(typeof filterRelevantPages==='function'){
+      const before=combined.length;
+      combined=filterRelevantPages(combined);
+      if(combined.length < before) console.log('Kontekstas sumažintas:', before, '→', combined.length);
     }
     extText=combined;
     updSZ(combined);
