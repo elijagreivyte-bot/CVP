@@ -24,6 +24,10 @@ function contextToText(ctx) {
   if (typeof ctx === 'string') return ctx;
   // ctx yra analizės result objektas
   let t = '';
+  // PILNAS DOKUMENTŲ TEKSTAS — svarbiausias šaltinis (jei yra)
+  if (ctx._fullText && ctx._fullText.trim().length > 50) {
+    t += '═══ PILNAS PIRKIMO DOKUMENTŲ TEKSTAS ═══\n' + ctx._fullText + '\n\n═══ AI ANALIZĖS SANTRAUKA (pagalbinė) ═══\n';
+  }
   if (ctx.pavadinimas) t += `Pirkimo pavadinimas: ${ctx.pavadinimas}\n`;
   if (ctx.perkanciojiOrganizacija) t += `Perkančioji organizacija: ${ctx.perkanciojiOrganizacija}\n`;
   if (ctx.pirkimoTipas) t += `Pirkimo tipas: ${ctx.pirkimoTipas}\n`;
@@ -53,7 +57,6 @@ function contextToText(ctx) {
   if (Array.isArray(ctx.pasleptosNuostatos)) t += `Paslėptos nuostatos: ${ctx.pasleptosNuostatos.join('; ')}\n`;
   if (ctx.strategija) t += `Strategija: ${ctx.strategija}\n`;
   if (ctx.isViso) t += `Išvada: ${ctx.isViso}\n`;
-  if (ctx._fullText) t += `\nPilnas dokumento tekstas:\n${ctx._fullText}\n`;
   return t;
 }
 
@@ -105,7 +108,7 @@ module.exports = async (req, res) => {
       systemPrompt = 'Tu esi viešųjų pirkimų ekspertas. Generuoji profesionalų klausimų raštą perkančiajai organizacijai lietuvių kalba. Rašyk dalykiškai, mandagiai, konkrečiai.';
     } else {
       // GROUNDED CHAT režimas
-      const kontekstas = contextToText(context).slice(0, 40000);
+      const kontekstas = contextToText(context).slice(0, 60000);
       if (!kontekstas || kontekstas.trim().length < 20) {
         return res.status(400).json({ error: 'Pirmiausia atlikite konkurso analizę — tada galėsite apie jį klausti.' });
       }
