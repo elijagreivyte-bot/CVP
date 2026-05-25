@@ -156,6 +156,8 @@ Grąžink TIKSLIAI tokios struktūros JSON (visi laukai privalomi, jei nėra inf
   "bendraVerte": "numatoma vertė su valiuta arba Nenurodyta",
   "cpt": "pagrindinis BVPŽ kodas",
   "score": 65,
+  "verdiktas": "TINKA / SVARSTYTINA / NEREKOMENDUOJAMA",
+  "verdiktoPriezastys": ["trumpa priežastis 1", "priežastis 2", "priežastis 3"],
   "scoreLabel": "Aukšta tikimybė / Vidutinė tikimybė / Žema tikimybė",
   "scorePaaiskinimas": "2-3 sakiniai kodėl būtent toks balas šiai įmonei",
   "terminai": {
@@ -170,7 +172,8 @@ Grąžink TIKSLIAI tokios struktūros JSON (visi laukai privalomi, jei nėra inf
     "darbuotojai": "reikalavimai darbuotojams",
     "patirtis": "reikalaujama patirtis",
     "sertifikatai": "reikalaujami sertifikatai",
-    "finansinis": "finansiniai reikalavimai"
+    "finansinis": "finansiniai reikalavimai",
+    "reikalavimai": [{"reikalavimas": "konkretus kvalifikacinis reikalavimas", "atitinka": "TINKA / NETINKA / ABEJOTINA", "puslapis": 0, "citata": "trumpa citata iš dokumento jei radai"}]
   },
   "finansinesSalygos": {
     "avansas": "ar mokamas avansas",
@@ -181,7 +184,7 @@ Grąžink TIKSLIAI tokios struktūros JSON (visi laukai privalomi, jei nėra inf
   "vertinimoKriterijai": [
     {"kriterijus": "pvz. Kaina", "svoris": "60%"}
   ],
-  "rizikos": ["konkreti rizika 1", "rizika 2", "rizika 3"],
+  "rizikos": [{"rizika": "konkreti rizika", "lygis": "AUKŠTA / VIDUTINĖ / ŽEMA", "puslapis": 0, "citata": "trumpa tiksli citata iš dokumento (iki 15 žodžių) jei radai, kitaip tuščia"}],
   "galimybes": ["galimybė 1", "galimybė 2"],
   "pasleptosNuostatos": ["nepalanki nuostata jei yra"],
   "strategija": "konkreti laimėjimo strategija šiai įmonei (1 pastraipa)",
@@ -192,7 +195,11 @@ Grąžink TIKSLIAI tokios struktūros JSON (visi laukai privalomi, jei nėra inf
     {"dokumentas": "reikalingas dokumentas", "pastaba": "komentaras"}
   ],
   "isViso": "galutinė išvada ar verta dalyvauti ir kodėl (2-3 sakiniai)"
-}`;
+}
+
+SVARBU dėl citatų ir verdikto:
+- verdiktas: TINKA (žalia) jei atitinka esminius kriterijus; SVARSTYTINA (geltona) jei trūksta dalies; NEREKOMENDUOJAMA (raudona) jei kritinis neatitikimas.
+- Kur randi reikalavimą ar riziką dokumente, įrašyk "puslapis" (numerį jei matomas) ir "citata" (trumpa tiksli ištrauka iki 15 žodžių). Jei nematai puslapio — rašyk 0, citata tuščia. Tai leidžia vartotojui pasitikrinti originale.`;
 
     const aiRes = await callClaude(system, userMsg, 4000);
     const result = parseJSON(aiRes, null);
