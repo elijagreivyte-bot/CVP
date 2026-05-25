@@ -82,7 +82,9 @@ module.exports = async (req, res) => {
   const user = verifyToken(req);
   if (!user) return res.status(401).json({ error: 'Neprisijungta' });
   if (!ANTHROPIC_API_KEY) return res.status(500).json({ error: 'AI nepasiekiamas' });
-  if (user.plan === 'free') {
+  // BETA režimas — chat prieinamas visiems testuotojams
+  const BETA_MODE = true;
+  if (!BETA_MODE && user.plan === 'free') {
     return res.status(403).json({ error: 'AI asistentas prieinamas Pro ir Komanda planuose' });
   }
 
