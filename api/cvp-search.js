@@ -1,4 +1,8 @@
+const { asyncHandler, authError, validationError, serverError } = require('../middleware/errorHandler');
+const { validate, cvpSearchSchema } = require('../validation/analyzeSchema');
 const jwt = require('jsonwebtoken');
+const { logger } = require('../middleware/logger');
+
 const JWT_SECRET = process.env.JWT_SECRET || 'bidwise-secret-2025';
 
 function verifyToken(req) {
@@ -8,16 +12,28 @@ function verifyToken(req) {
   try { return jwt.verify(token, JWT_SECRET); } catch { return null; }
 }
 
-module.exports = async (req, res) => {
+function fmt(d) {
+  if (!d) return '–';
+  try {
+    const dt = new Date(d);
+    if (isNaN(dt)) return String(d).slice(0, 10);
+    return dt.toLocaleDateString('lt-LT') + (dt.getHours() ? ' ' + dt.toLocaleTimeString('lt-LT', {hour:'2-digit',minute:'2-digit'}) : '');
+  } catch { return String(d).slice(0, 10); }
+}
+
+module.exports = asyncHandler(async (req, res) => {
   res.setHeader('Access-Control-Allow-Origin', '*');
   res.setHeader('Access-Control-Allow-Headers', 'Content-Type, Authorization');
   if (req.method === 'OPTIONS') return res.status(200).end();
-  if (req.method !== 'GET') return res.status(405).json({ error: 'Metodas neleidžiamas' });
+  if (req.method !== 'GET') throw validationError([{ field: 'method', message: 'GET required' }]);
 
   const user = verifyToken(req);
-  if (!user) return res.status(401).json({ error: 'Neprisijungta' });
+  if (!user) throw authError('Neprisijungta');
 
-  const { q = '', cpv = '', min = '', max = '', page = '1' } = req.query;
+  const validation = validate(req.query, cvpSearchSchema);
+  if (validation.error) throw validationError(validation.details);
+  const { q = '', cpv = '', min = '', max = '', page = '1' } = validation.value;
+
   const pageNum = Math.max(1, parseInt(page)) - 1;
   const searchUrl = `https://viesiejipirkimai.lt/epps/searchNotices.do?searchText=${encodeURIComponent(q)}&noticeType=CONTRACT_NOTICE`;
 
@@ -49,25 +65,19 @@ module.exports = async (req, res) => {
         type: p.procedureType || p.procurementType || '–'
       }));
 
+      logger.info('CVP search completed', { userId: user.id, query: q, results: mapped.length });
       return res.status(200).json({
         procurements: mapped,
         total: data.totalElements || data.total || mapped.length,
         page: pageNum + 1
       });
-    } catch (e) { console.warn('CVP endpoint failed:', e.message); }
+    } catch (e) {
+      logger.warn('CVP endpoint failed:', e.message);
+    }
   }
 
-  // API unavailable — return link to portal
+  logger.warn('CVP API unavailable', { query: q });
   return res.status(200).json({
     procurements: [], total: 0, apiUnavailable: true, searchUrl
   });
-};
-
-function fmt(d) {
-  if (!d) return '–';
-  try {
-    const dt = new Date(d);
-    if (isNaN(dt)) return String(d).slice(0, 10);
-    return dt.toLocaleDateString('lt-LT') + (dt.getHours() ? ' ' + dt.toLocaleTimeString('lt-LT', {hour:'2-digit',minute:'2-digit'}) : '');
-  } catch { return String(d).slice(0, 10); }
-}
+});

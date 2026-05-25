@@ -1,5 +1,8 @@
+const { asyncHandler, authError, validationError, serverError } = require('../middleware/errorHandler');
+const { validate, chatRequestSchema } = require('../validation/analyzeSchema');
 const { createClient } = require('@supabase/supabase-js');
 const jwt = require('jsonwebtoken');
+const { logger } = require('../middleware/logger');
 
 const JWT_SECRET = process.env.JWT_SECRET || 'bidwise-secret-2025';
 
@@ -10,45 +13,36 @@ function verifyToken(req) {
   try { return jwt.verify(token, JWT_SECRET); } catch { return null; }
 }
 
-module.exports = async (req, res) => {
+module.exports = asyncHandler(async (req, res) => {
   res.setHeader('Access-Control-Allow-Origin', '*');
   res.setHeader('Access-Control-Allow-Headers', 'Content-Type, Authorization');
   if (req.method === 'OPTIONS') return res.status(200).end();
-  if (req.method !== 'POST') return res.status(405).json({ error: 'Metodas neleidžiamas' });
+  if (req.method !== 'POST') throw validationError([{ field: 'method', message: 'POST required' }]);
 
   const user = verifyToken(req);
-  if (!user) return res.status(401).json({ error: 'Prisijunkite norėdami tęsti' });
+  if (!user) throw authError('Prisijunkite norėdami tęsti');
 
-  const { messages, context, mode } = req.body || {};
-  // messages = [{role:'user'|'assistant', content:'...'}]
-  // context = analysis result JSON (optional)
-  // mode = 'chat' | 'letter' | 'supplier'
+  const validation = validate(req.body || {}, chatRequestSchema);
+  if (validation.error) throw validationError(validation.details);
+  const { messages, context, mode } = validation.value;
 
-  if (!messages || !messages.length) {
-    return res.status(400).json({ error: 'Žinutės būtinos' });
-  }
+  if (!process.env.ANTHROPIC_API_KEY) throw serverError('ANTHROPIC_API_KEY nenustatytas');
 
-  if (!process.env.ANTHROPIC_API_KEY) {
-    return res.status(500).json({ error: 'ANTHROPIC_API_KEY nenustatytas' });
-  }
-
-  // Check plan for assistant feature
   let plan = 'free';
   if (process.env.SUPABASE_URL && process.env.SUPABASE_SERVICE_KEY) {
     try {
       const supabase = createClient(process.env.SUPABASE_URL, process.env.SUPABASE_SERVICE_KEY);
       const { data } = await supabase.from('users').select('plan').eq('id', user.id).single();
       if (data) plan = data.plan || 'free';
-    } catch (e) { console.error('DB error:', e.message); }
+    } catch (e) {
+      logger.warn('DB error on plan check:', e.message);
+    }
   }
 
-  // Letter and supplier modes are available to all (they're part of analysis)
-  // Chat/assistant mode requires pro or team
   if (mode === 'chat' && plan === 'free') {
-    return res.status(403).json({ error: 'AI asistentas prieinamas tik Pro ir Komanda planams.' });
+    throw validationError([{ field: 'mode', message: 'AI asistentas prieinamas tik Pro ir Komanda planams.' }]);
   }
 
-  // Build system prompt based on mode
   let systemPrompt = 'Tu esi viešųjų pirkimų ekspertas Lietuvoje. Atsakyk lietuvių kalba, glaustai ir konkrečiai.';
 
   if (context) {
@@ -82,7 +76,7 @@ Taisyklės:
         'anthropic-version': '2023-06-01'
       },
       body: JSON.stringify({
-        model: 'claude-sonnet-4-6',
+        model: 'claude-3-5-sonnet-20241022',
         max_tokens: 4000,
         temperature: mode === 'chat' ? 0.3 : 0,
         system: systemPrompt,
@@ -92,16 +86,17 @@ Taisyklės:
 
     if (!response.ok) {
       const err = await response.text();
-      return res.status(500).json({ error: 'AI klaida: ' + err.slice(0, 200) });
+      throw serverError('AI klaida: ' + err.slice(0, 200));
     }
 
     const data = await response.json();
     const text = data.content?.[0]?.text || '';
 
+    logger.info('Chat completed', { userId: user.id, mode });
     return res.status(200).json({ text, plan });
 
-  } catch (e) {
-    console.error('Chat error:', e.message);
-    return res.status(500).json({ error: 'Serverio klaida: ' + e.message });
+  } catch (error) {
+    logger.error('Chat error:', error);
+    throw error;
   }
-};
+});
