@@ -1974,6 +1974,17 @@ footer{background:var(--navy2);border-top:1px solid var(--border);padding:48px 3
   </div>
 </div>
 
+<!-- SOURCE CONTEXT SIDE PANEL -->
+<div id="source-panel" style="position:fixed;top:0;right:-440px;width:420px;max-width:90vw;height:100vh;background:#0d1740;border-left:1px solid var(--border);box-shadow:-8px 0 32px rgba(0,0,0,.4);z-index:400;transition:right .3s ease;overflow-y:auto;padding:28px 24px">
+  <button onclick="closeSource()" style="position:absolute;top:16px;right:16px;background:none;border:none;color:var(--text2);font-size:22px;cursor:pointer">×</button>
+  <div style="font-size:11px;font-weight:700;letter-spacing:1.5px;text-transform:uppercase;color:var(--blue3);margin-bottom:14px">📄 Šaltinio kontekstas</div>
+  <h3 id="source-title" style="font-family:Sora,sans-serif;font-size:16px;font-weight:700;margin-bottom:16px;line-height:1.4"></h3>
+  <div id="source-page" style="font-size:12px;color:var(--text2);margin-bottom:12px"></div>
+  <div id="source-quote" style="background:rgba(0,0,0,.3);border-left:3px solid var(--blue3);border-radius:8px;padding:16px;font-size:14px;line-height:1.7;color:var(--text);font-style:italic"></div>
+  <p style="font-size:11px;color:var(--text3);margin-top:16px;line-height:1.6">💡 Tai AI ištraukta citata iš jūsų įkelto dokumento. Visada pasitikrinkite originalų dokumentą prieš priimdami sprendimą.</p>
+</div>
+<div id="source-overlay" onclick="closeSource()" style="position:fixed;inset:0;background:rgba(6,13,42,.5);z-index:399;display:none"></div>
+
 <!-- LOADING -->
 <div id="loading">
   <div style="width:100%;max-width:560px;padding:0 24px">
@@ -2644,6 +2655,13 @@ function renderResult(r){
       </div>
     </div>
 
+    ${r.verdiktas?(()=>{
+      const v=r.verdiktas.toUpperCase();
+      const cfg=v.includes('NEREKOM')?{c:'#ef4444',bg:'rgba(239,68,68,.1)',ic:'🔴',t:'Nerekomenduojama'}:(v.includes('SVARST')||v.includes('SĄLYG'))?{c:'#f59e0b',bg:'rgba(245,158,11,.1)',ic:'🟡',t:'Svarstytina'}:{c:'#10b981',bg:'rgba(16,185,129,.1)',ic:'🟢',t:'Tinka'};
+      const priez=(r.verdiktoPriezastys||[]).map(p=>'<li style="margin:2px 0">'+p+'</li>').join('');
+      return '<div style="background:'+cfg.bg+';border:1px solid '+cfg.c+';border-radius:12px;padding:16px 20px;margin:14px 0"><div style="display:flex;align-items:center;gap:10px;margin-bottom:'+(priez?'10px':'0')+'"><span style="font-size:22px">'+cfg.ic+'</span><span style="font-family:Sora,sans-serif;font-size:17px;font-weight:800;color:'+cfg.c+'">'+cfg.t+'</span></div>'+(priez?'<ul style="margin:0;padding-left:18px;font-size:13px;color:var(--text);line-height:1.6">'+priez+'</ul>':'')+'</div>';
+    })():''}
+
     <div style="background:rgba(245,158,11,.06);border:1px solid rgba(245,158,11,.2);border-radius:10px;padding:12px 16px;margin:14px 0;font-size:12px;color:var(--text2);line-height:1.6">
       ⚠️ <strong style="color:var(--text)">DI rekomendacija:</strong> Šis įvertinimas sugeneruotas dirbtinio intelekto ir yra rekomendacinio pobūdžio. Jis remiasi tik įkeltais dokumentais ir jūsų profiliu. <strong style="color:var(--text)">Galutinį sprendimą priimkite patys</strong>, patikrinę originalius pirkimo dokumentus.
     </div>
@@ -2671,7 +2689,12 @@ function renderResult(r){
     <div class="r-cards">
       <div class="r-card">
         <h4>⚠️ Rizikos</h4>
-        <ul class="r-list r-list-risk">${(r.rizikos||[]).map(x=>`<li>${x}</li>`).join('')}</ul>
+        <ul class="r-list r-list-risk">${(r.rizikos||[]).map(x=>{
+          if(typeof x==='string') return '<li>'+x+'</li>';
+          const lygisColor = x.lygis==='AUKŠTA'?'#ef4444':x.lygis==='VIDUTINĖ'?'#f59e0b':'#10b981';
+          const cite = (x.citata||x.puslapis) ? '<button onclick="showSource('+JSON.stringify(JSON.stringify({t:x.rizika,c:x.citata||'',p:x.puslapis||0})).replace(/"/g,'&quot;')+')" style="background:rgba(59,130,246,.12);border:1px solid rgba(59,130,246,.25);color:var(--blue3);font-size:10px;padding:2px 8px;border-radius:10px;cursor:pointer;margin-left:6px;font-family:Inter,sans-serif">📄 '+(x.puslapis?'Psl. '+x.puslapis:'Šaltinis')+'</button>' : '';
+          return '<li><span style="display:inline-block;width:8px;height:8px;border-radius:50%;background:'+lygisColor+';margin-right:6px"></span>'+(x.rizika||x)+cite+'</li>';
+        }).join('')}</ul>
       </div>
       <div class="r-card">
         <h4>✅ Galimybės</h4>
@@ -4561,6 +4584,28 @@ function toggleSector(s){
 function openDPA(){ document.getElementById('dpa-modal').style.display='flex'; }
 function openCookiePolicy(){ document.getElementById('cookie-policy-modal').style.display='flex'; }
 function openSLA(){ document.getElementById('sla-modal').style.display='flex'; }
+
+function showSource(dataStr){
+  let d;
+  try { d = JSON.parse(dataStr); } catch(e){ d = {t:'Šaltinis', c:'', p:0}; }
+  document.getElementById('source-title').textContent = d.t || 'Šaltinis';
+  document.getElementById('source-page').textContent = d.p ? ('Dokumento puslapis: ' + d.p) : 'Puslapis nenurodytas dokumente';
+  const q = document.getElementById('source-quote');
+  if(d.c && d.c.trim()){
+    q.textContent = '„' + d.c + '"';
+    q.style.display = 'block';
+  } else {
+    q.textContent = 'AI neištraukė tikslios citatos šiam punktui. Patikrinkite originalų dokumentą.';
+    q.style.display = 'block';
+    q.style.fontStyle = 'normal';
+  }
+  document.getElementById('source-panel').style.right = '0';
+  document.getElementById('source-overlay').style.display = 'block';
+}
+function closeSource(){
+  document.getElementById('source-panel').style.right = '-440px';
+  document.getElementById('source-overlay').style.display = 'none';
+}
 </script>
 
 <!-- AI CHAT WIDGET -->
