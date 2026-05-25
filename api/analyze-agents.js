@@ -187,6 +187,7 @@ Grąžink TIKSLIAI tokios struktūros JSON (visi laukai privalomi, jei nėra inf
   "rizikos": [{"rizika": "konkreti rizika", "lygis": "AUKŠTA / VIDUTINĖ / ŽEMA", "puslapis": 0, "citata": "trumpa tiksli citata iš dokumento (iki 15 žodžių) jei radai, kitaip tuščia"}],
   "galimybes": ["galimybė 1", "galimybė 2"],
   "pasleptosNuostatos": ["nepalanki nuostata jei yra"],
+  "klausimaiPerkanciajai": ["klausimas perkančiajai dėl neaiškios sąlygos", "klausimas dėl reikalavimo patikslinimo"],
   "strategija": "konkreti laimėjimo strategija šiai įmonei (1 pastraipa)",
   "prioritetiniaiZingsniai": [
     {"terminas": "Iki kada", "zingsnis": "ką padaryti"}
@@ -198,6 +199,7 @@ Grąžink TIKSLIAI tokios struktūros JSON (visi laukai privalomi, jei nėra inf
 }
 
 SVARBU dėl citatų ir verdikto:
+- klausimaiPerkanciajai: pateik 2-4 konkrečius klausimus kuriuos verta užduoti perkančiajai organizacijai (dėl neaiškių sąlygų, dviprasmiškų reikalavimų, trūkstamos informacijos).
 - verdiktas: TINKA (žalia) jei atitinka esminius kriterijus; SVARSTYTINA (geltona) jei trūksta dalies; NEREKOMENDUOJAMA (raudona) jei kritinis neatitikimas.
 - Kur randi reikalavimą ar riziką dokumente, įrašyk "puslapis" (numerį jei matomas) ir "citata" (trumpa tiksli ištrauka iki 15 žodžių). Jei nematai puslapio — rašyk 0, citata tuščia. Tai leidžia vartotojui pasitikrinti originale.`;
 
