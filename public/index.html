@@ -2072,7 +2072,19 @@ footer{background:var(--navy2);border-top:1px solid var(--border);padding:48px 3
 
 <script>
 // ── CONFIG ──
-const API='';
+const BETA_MODE = true; // BETA: visi gauna PRO funkcijas
+  const API='';
+
+  // Saugus JSON parsinimas — apsaugo nuo "Unexpected token" klaidų kai API grąžina HTML (404/500)
+  async function safeJson(r){
+    const txt = await r.text();
+    try { return JSON.parse(txt); }
+    catch(e){
+      // API grąžino ne JSON (greičiausiai 404 ar serverio klaidos puslapį)
+      console.error('Ne JSON atsakymas iš serverio:', txt.slice(0,120));
+      return { error: r.status===404 ? 'Funkcija dar nepasiekiama (404)' : ('Serverio klaida ('+r.status+')'), _notJson:true };
+    }
+  }
 const TK='cvp_token';
 const UK='cvp_user';
 pdfjsLib.GlobalWorkerOptions.workerSrc='https://cdnjs.cloudflare.com/ajax/libs/pdf.js/3.11.174/pdf.worker.min.js';
@@ -2122,7 +2134,7 @@ function showApp(){
   const tok=localStorage.getItem(TK);
   if(tok){
     fetch(API+'/api/projects',{headers:{'Authorization':'Bearer '+tok}})
-      .then(r=>r.json()).then(d=>{projects=d.projects||[];refreshProjSelector();}).catch(()=>{});
+      .then(r=>safeJson(r)).then(d=>{projects=d.projects||[];refreshProjSelector();}).catch(()=>{});
   }
 }
 
@@ -2182,7 +2194,7 @@ async function doLogin(){
   if(!email||!pass)return se('l-err','Užpildykite visus laukus');
   try{
     const r=await fetch(API+'/api/login',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({email,password:pass})});
-    const d=await r.json();
+    const d=await safeJson(r);
     if(!r.ok)return se('l-err',d.error||'Prisijungimo klaida');
     localStorage.setItem(TK,d.token);
     localStorage.setItem(UK,JSON.stringify(d.user));
@@ -2203,7 +2215,7 @@ async function doRegister(){
   if(pass.length<6)return se('r-err','Min. 6 simboliai');
   try{
     const r=await fetch(API+'/api/register',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({name,email,password:pass})});
-    const d=await r.json();
+    const d=await safeJson(r);
     if(!r.ok)return se('r-err',d.error||'Registracijos klaida');
     localStorage.setItem(TK,d.token);
     localStorage.setItem(UK,JSON.stringify(d.user));
@@ -2308,7 +2320,7 @@ async function obStep1Next(){
       headers:{'Content-Type':'application/json','Authorization':'Bearer '+tok},
       body:JSON.stringify({step:'questions',sector,name:company,activity:document.getElementById('ob-activity')?.value?.trim()||''})
     });
-    const d=await r.json();
+    const d=await safeJson(r);
     obQuestions=d.questions||[];
     renderObQuestions(obQuestions);
     document.getElementById('ob-step2-sub').textContent='Atsakykite į šiuos klausimus — AI sukurs jūsų įmonės profilį.';
@@ -2357,7 +2369,7 @@ async function obStep2Next(){
       headers:{'Content-Type':'application/json','Authorization':'Bearer '+tok},
       body:JSON.stringify({step:'profile',sector,name:company,answers:obAnswers,activity:document.getElementById('ob-activity')?.value?.trim()||''})
     });
-    const d=await r.json();
+    const d=await safeJson(r);
     const profile=d.profile||{name:company,sector};
     // Backend jau išsaugojo į DB. Užtikrinam name+sector ir atnaujinam curUser.
     profile.name = profile.name || company;
@@ -2647,7 +2659,7 @@ async function startAn(){
         clientContext
       })
     });
-    const d=await r.json();
+    const d=await safeJson(r);
     if(!r.ok){
       loading.style.display='none';
       if(r.status===403){document.getElementById('pm').classList.add('open');}
@@ -2832,7 +2844,7 @@ async function renderHist(){
   const tok=localStorage.getItem(TK);
   try{
     const r=await fetch(API+'/api/history',{headers:{'Authorization':'Bearer '+tok}});
-    const d=await r.json();
+    const d=await safeJson(r);
     allAnalyses=d.analyses||[];
     filterHistory();
   }catch(e){document.getElementById('hc').innerHTML='<p style="color:var(--text2)">Klaida kraunant istoriją</p>'}
@@ -2917,7 +2929,7 @@ async function renderAcc(){
   const tok=localStorage.getItem(TK);
   try{
     const r=await fetch(API+'/api/profile',{headers:{'Authorization':'Bearer '+tok}});
-    const d=await r.json();
+    const d=await safeJson(r);
     if(d.user){curUser={...curUser,...d.user};localStorage.setItem(UK,JSON.stringify(curUser));updSB();}
   }catch(e){}
   const u=curUser||{};
@@ -2983,8 +2995,8 @@ async function renderProjects(){
       fetch(API+'/api/projects',{headers:{'Authorization':'Bearer '+tok}}),
       fetch(API+'/api/history',{headers:{'Authorization':'Bearer '+tok}})
     ]);
-    const dp=await rp.json();
-    const da=await ra.json();
+    const dp=await safeJson(rp);
+    const da=await safeJson(ra);
     projects=dp.projects||[];
     const analyses=da.analyses||[];
     allAnalyses=analyses; // keep in sync
@@ -3122,7 +3134,7 @@ async function createProject(){
       body:JSON.stringify({name,description:desc})
     });
     let d={};
-    try{d=await r.json();}catch(je){d={error:'Serverio atsakymas neįskaitomas ('+r.status+')'}}
+    try{d=await safeJson(r);}catch(je){d={error:'Serverio atsakymas neįskaitomas ('+r.status+')'}}
     if(!r.ok){
       let msg=d.error||'Serverio klaida ('+r.status+')';
       if(r.status===401)msg='Sesija pasibaigė — atsijunkite ir prisijunkite iš naujo';
@@ -3171,7 +3183,7 @@ async function goChk(){
   const tok=localStorage.getItem(TK);
   try{
     const r=await fetch(API+'/api/checkout',{method:'POST',headers:{'Content-Type':'application/json','Authorization':'Bearer '+tok},body:JSON.stringify({plan:selPlan})});
-    const d=await r.json();
+    const d=await safeJson(r);
     if(d.url)window.location.href=d.url;
     else alert(d.error||'Mokėjimo klaida');
   }catch(e){alert('Klaida: '+e.message)}
@@ -3189,7 +3201,7 @@ async function sendEmail(){
   try{
     const r=await fetch(API+'/api/send-email',{method:'POST',headers:{'Content-Type':'application/json','Authorization':'Bearer '+tok},body:JSON.stringify({to,result:curResult})});
     if(r.ok){eo.classList.add('show');}
-    else{const d=await r.json();ee.textContent=d.error||'Klaida';ee.classList.add('show');}
+    else{const d=await safeJson(r);ee.textContent=d.error||'Klaida';ee.classList.add('show');}
   }catch(e){ee.textContent='Klaida: '+e.message+'. Patikrinkite ar RESEND_API_KEY pridėtas į Vercel.';ee.classList.add('show')}
 }
 
@@ -3480,7 +3492,7 @@ Pagarbiai,
       headers:{'Content-Type':'application/json','Authorization':'Bearer '+tok},
       body:JSON.stringify({messages:[{role:'user',content:prompt}],mode:'letter'})
     });
-    const data=await r.json();
+    const data=await safeJson(r);
     if(!r.ok)throw new Error(data.error||'Klaida');
     const text=data.text||'Klaida generuojant raštą';
     window._letterText=text;
@@ -3546,7 +3558,7 @@ Grąžink TIK JSON be markdown, tokios struktūros:
       headers:{'Content-Type':'application/json','Authorization':'Bearer '+tok},
       body:JSON.stringify({messages:[{role:'user',content:prompt}],mode:'supplier'})
     });
-    const data=await r.json();
+    const data=await safeJson(r);
     if(!r.ok){content.innerHTML='<p style="color:var(--danger);font-size:13px">'+( data.error||'Klaida')+'</p>';return;}
     let result=null;
     try{
@@ -3695,7 +3707,7 @@ async function sendChat(){
       headers:{'Content-Type':'application/json','Authorization':'Bearer '+tok},
       body: JSON.stringify({messages: chatHistory, context: chatContext, mode:'chat'})
     });
-    const data = await r.json();
+    const data = await safeJson(r);
     const t = document.getElementById('cm-thinking');
     if(t) t.remove();
     if(!r.ok){
@@ -4057,7 +4069,7 @@ KONKURSO REIKALAVIMAI:
 Atsakyk: TINKA ✅ / NETINKA ❌ / ABEJOTINA ⚠️ — po vieną sakinį kiekvienam reikalavimui.`;
   try{
     const r = await fetch(API+'/api/chat',{method:'POST',headers:{'Content-Type':'application/json','Authorization':'Bearer '+tok},body:JSON.stringify({messages:[{role:'user',content:prompt}],mode:'chat'})});
-    const data = await r.json();
+    const data = await safeJson(r);
     const text = data.text||'Klaida';
     res.innerHTML = `<div style="background:rgba(0,0,0,.2);border-radius:10px;padding:16px;font-size:13px;color:var(--text);line-height:1.7;white-space:pre-wrap">${text.replace(/</g,'&lt;')}</div>
       <div style="display:flex;gap:10px;margin-top:16px">
@@ -4079,7 +4091,7 @@ async function setReminderFromResult(){
   const tok = localStorage.getItem(TK);
   try{
     const r = await fetch(API+'/api/reminders',{method:'POST',headers:{'Content-Type':'application/json','Authorization':'Bearer '+tok},body:JSON.stringify({deadline, title:curResult.pavadinimas||'Konkursas'})});
-    const d = await r.json();
+    const d = await safeJson(r);
     if(r.ok) alert('✅ Priminimai nustatyti! Gausite el. laišką 7 d. ir 1 d. prieš terminą ('+deadline+')');
     else toast('Klaida: '+(d.error||'Nepavyko'));
   } catch(e){ alert('Klaida: '+e.message); }
@@ -4125,7 +4137,7 @@ async function sendFullChat(){
   const tok = localStorage.getItem(TK);
   try{
     const r = await fetch(API+'/api/chat',{method:'POST',headers:{'Content-Type':'application/json','Authorization':'Bearer '+tok},body:JSON.stringify({messages:chatHistory,context:chatContext,mode:'chat'})});
-    const data = await r.json();
+    const data = await safeJson(r);
     const t = document.getElementById('asst-thinking'); if(t) t.remove();
     if(!r.ok){
       if(r.status===403) msgs.innerHTML += '<div class="cm cm-ai" style="color:var(--warn)">🔒 AI asistentas prieinamas tik Pro ir Komanda planams.<button onclick="selP(&quot;pro&quot;);goChk()" style="background:var(--grad);border:none;color:#fff;padding:4px 12px;border-radius:6px;cursor:pointer;font-size:12px;margin-left:8px">Gauti Pro →</button></div>';
@@ -4151,7 +4163,7 @@ async function sendFullChat(){
 function openChat(result){
   chatContext = result;
   chatHistory = [];
-  const pro = (curUser && (curUser.plan==='pro' || curUser.plan==='team'));
+  const pro = (curUser && (BETA_MODE || curUser.plan==='pro' || curUser.plan==='team'));
   const msgs = document.getElementById('chat-msgs');
   const label = document.getElementById('chat-context-label');
   const noAn = document.getElementById('chat-no-analysis');
@@ -4183,7 +4195,7 @@ async function deleteAnalysis(id){
       allAnalyses = allAnalyses.filter(a => a.id !== id);
       filterHistory();
     } else {
-      const d = await r.json();
+      const d = await safeJson(r);
       toast('Klaida: '+(d.error||'Nepavyko ištrinti'));
     }
   } catch(e){ alert('Klaida: '+e.message); }
@@ -4233,7 +4245,7 @@ async function renderDashboard(){
   // Fetch analyses
   try {
     const r = await fetch(API+'/api/history',{headers:{'Authorization':'Bearer '+tok}});
-    const d = await r.json();
+    const d = await safeJson(r);
     const items = d.analyses || [];
     renderDashStats(items);
     renderDashDistribution(items);
@@ -4373,7 +4385,7 @@ async function markOutcome(outcome){
     const tok = localStorage.getItem(TK);
     try {
       const r = await fetch(API+'/api/history',{headers:{'Authorization':'Bearer '+tok}});
-      const d = await r.json();
+      const d = await safeJson(r);
       const latest = (d.analyses||[])[0];
       if(latest) await trackOutcome(latest.id, outcome);
     } catch(e){ console.error(e); }
@@ -4598,7 +4610,7 @@ async function aiSuggestSector(){
       headers: {'Content-Type':'application/json','Authorization':'Bearer '+tok},
       body: JSON.stringify({ step: 'suggest-sector', activity })
     });
-    const d = await r.json();
+    const d = await safeJson(r);
     if(d.sektorius){
       // AI gali pasiūlyti kelias sritis (masyvas) arba vieną
       const suggested = Array.isArray(d.sektoriai) ? d.sektoriai : [d.sektorius];
