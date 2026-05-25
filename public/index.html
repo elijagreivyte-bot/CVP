@@ -1705,7 +1705,8 @@ footer{background:var(--navy2);border-top:1px solid var(--border);padding:48px 3
         📋 Kontekstas: <span id="asst-ctx-label" style="color:var(--text);font-weight:600"></span>
         <button onclick="pg('analyze')" style="background:none;border:none;color:var(--blue3);cursor:pointer;font-size:12px;margin-left:12px;font-family:Inter,sans-serif">← Keisti analizę</button>
       </div>
-      <div id="asst-msgs" style="background:var(--card);border:1px solid var(--border);border-radius:14px;padding:16px;min-height:320px;max-height:480px;overflow-y:auto;display:flex;flex-direction:column;gap:10px;margin-bottom:10px">
+      <div style="background:rgba(59,130,246,.08);border:1px solid rgba(59,130,246,.15);border-radius:8px;padding:8px 14px;font-size:11px;color:var(--text2);text-align:center;margin-bottom:10px">🔒 Apribotas režimas: AI atsako tik pagal analizuojamo konkurso dokumentus — nenaudoja interneto ar bendrų žinių</div>
+        <div id="asst-msgs" style="background:var(--card);border:1px solid var(--border);border-radius:14px;padding:16px;min-height:320px;max-height:480px;overflow-y:auto;display:flex;flex-direction:column;gap:10px;margin-bottom:10px">
         <div class="cm cm-ai">Sveiki! Aš galiu atsakyti į klausimus apie šį konkursą — reikalavimus, terminus, rizikas ar strategiją.</div>
       </div>
       <div style="display:flex;gap:8px">
@@ -4628,7 +4629,8 @@ function closeSource(){
       <p>AI asistentas prieinamas tik <strong>Pro</strong> ir <strong>Komanda</strong> planams.</p>
       <button class="btn btn-primary btn-sm" onclick="selP('pro');goChk()">Gauti Pro →</button>
     </div>
-    <div id="chat-msgs" class="chat-msgs" style="display:none">
+    <div style="background:rgba(59,130,246,.08);border-bottom:1px solid var(--border);padding:8px 14px;font-size:11px;color:var(--text2);text-align:center">🔒 Apribotas režimas: AI atsako tik pagal šio konkurso dokumentus</div>
+      <div id="chat-msgs" class="chat-msgs" style="display:none">
       <div class="cm cm-ai">Sveiki! Aš galiu atsakyti į klausimus apie šį konkursą — reikalavimus, terminus, rizikas ar strategiją. Kuo galiu padėti?</div>
     </div>
     <div class="chat-inp" id="chat-input-area" style="display:none">
