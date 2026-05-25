@@ -2705,6 +2705,8 @@ async function startAn(){
     setTimeout(()=>{
       loading.style.display='none';
       curResult=d.result;
+      // Pridedam pilną dokumentų tekstą — kad AI asistentas galėtų atsakyti iš tikrų dokumentų
+      if(curResult && extText) curResult._fullText = extText;
       renderResult(d.result);
     },600);
   }catch(e){
