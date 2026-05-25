@@ -1823,7 +1823,8 @@ footer{background:var(--navy2);border-top:1px solid var(--border);padding:48px 3
   <div style="background:#0d1740;border:1px solid var(--border);border-radius:20px;width:100%;max-width:560px">
     <div style="padding:24px 28px 16px;border-bottom:1px solid var(--border)">
       <h3 style="font-family:Sora,sans-serif;font-size:19px;font-weight:800;margin-bottom:4px">⚡ Greitas tinkamumo patikrinimas</h3>
-      <p style="font-size:13px;color:var(--text2)">Įveskite savo duomenis — per 10 sekundžių pamatysite ar verta gilintis</p>
+      <div id="elig-profile-note" style="display:none;background:rgba(16,185,129,.08);border:1px solid rgba(16,185,129,.2);border-radius:8px;padding:8px 12px;margin-top:10px;font-size:12px;color:var(--text2)">✓ Užpildyta iš jūsų įmonės profilio — galite koreguoti jei reikia</div>
+        <p style="font-size:13px;color:var(--text2)">Įveskite savo duomenis — per 10 sekundžių pamatysite ar verta gilintis</p>
     </div>
     <div style="padding:24px 28px" id="elig-form">
       <div class="fg"><label>Metinė apyvarta (EUR)</label><input class="inp" id="elig-revenue" type="number" placeholder="pvz. 500000"></div>
@@ -2074,6 +2075,24 @@ footer{background:var(--navy2);border-top:1px solid var(--border);padding:48px 3
 // ── CONFIG ──
 const BETA_MODE = true; // BETA: visi gauna PRO funkcijas
   const API='';
+
+  // Saugiai paverčia rizikas/reikalavimus (objektus ar tekstą) į tekstą
+  function listToText(arr, sep){
+    sep = sep || '; ';
+    if(!arr) return '';
+    if(typeof arr === 'string') return arr;
+    if(!Array.isArray(arr)){
+      // gali būti objektas {rizikos:[...]} — bandome ištraukti masyvą
+      if(arr.rizikos) arr = arr.rizikos;
+      else if(arr.reikalavimai) arr = arr.reikalavimai;
+      else return String(arr);
+    }
+    return arr.map(x => {
+      if(typeof x === 'string') return x;
+      if(x && typeof x === 'object') return x.rizika || x.reikalavimas || x.tekstas || x.pavadinimas || JSON.stringify(x);
+      return String(x);
+    }).join(sep);
+  }
 
   // Saugus JSON parsinimas — apsaugo nuo "Unexpected token" klaidų kai API grąžina HTML (404/500)
   async function safeJson(r){
@@ -3537,7 +3556,7 @@ Techniniai reikalavimai: ${curResult.techninieReikalavimai||''}
 Vertinimo kriterijai: ${(curResult.vertinimoKriterijai||[]).map(k=>k.kriterijus+' '+k.svoris).join(', ')}
 Būtini dokumentai: ${(curResult.butinaiIttraukti||[]).map(d=>d.dokumentas||d).join(', ')}
 Kvalifikacija: Apyvarta: ${curResult.kvalifikacija?.apyvarta||'–'}, Patirtis: ${curResult.kvalifikacija?.patirtis||'–'}, Sertifikatai: ${curResult.kvalifikacija?.sertifikatai||'–'}
-Rizikos: ${(curResult.rizikos||[]).join('; ')}
+Rizikos: ${listToText(curResult.rizikos)}
 
 Grąžink TIK JSON be markdown, tokios struktūros:
 {
@@ -4036,6 +4055,20 @@ function openEligCheck(){
   if(!curResult){ toast('Pirmiausia atlikite analizę', 'warn'); return; }
   document.getElementById('elig-form').style.display = 'block';
   document.getElementById('elig-result').style.display = 'none';
+  // Automatiškai užpildom iš įmonės profilio jei yra
+  const cp = (curUser && curUser.company_profile) || {};
+  const rev = document.getElementById('elig-revenue');
+  const emp = document.getElementById('elig-employees');
+  const exp = document.getElementById('elig-exp');
+  const certs = document.getElementById('elig-certs');
+  if(rev && !rev.value) rev.value = cp.apyvarta || cp.maxProjektoVerte || '';
+  if(emp && !emp.value) emp.value = cp.darbuotojai || '';
+  if(exp && !exp.value) exp.value = cp.patirtis || '';
+  if(certs && !certs.value) certs.value = Array.isArray(cp.sertifikatai) ? cp.sertifikatai.join(', ') : (cp.sertifikatai || '');
+  // Jei profilis užpildytas — parodom pranešimą
+  const hasProfile = cp.apyvarta || cp.darbuotojai || cp.patirtis || (cp.sertifikatai && cp.sertifikatai.length);
+  const note = document.getElementById('elig-profile-note');
+  if(note) note.style.display = hasProfile ? 'block' : 'none';
   document.getElementById('elig-modal').style.display = 'flex';
 }
 
