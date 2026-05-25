@@ -21,7 +21,8 @@ module.exports = async (req, res) => {
     const valid = await bcrypt.compare(password, user.password_hash);
     if (!valid) return res.status(401).json({ error: 'Neteisingas el. paštas arba slaptažodis' });
 
-    const token = jwt.sign({ id: user.id, email: user.email }, JWT_SECRET, { expiresIn: '30d' });
+    // plan įtraukiamas į JWT — reikalingas chat.js ir kitų funkcijų patikroms
+    const token = jwt.sign({ id: user.id, email: user.email, plan: user.plan }, JWT_SECRET, { expiresIn: '30d' });
     return res.status(200).json({
       token,
       user: { id: user.id, name: user.name, email: user.email, plan: user.plan, free_analyses_left: user.free_analyses_left, subscription_end: user.subscription_end, company_profile: user.company_profile }
