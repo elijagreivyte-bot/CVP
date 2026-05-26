@@ -2077,6 +2077,26 @@ footer{background:var(--navy2);border-top:1px solid var(--border);padding:48px 3
 const BETA_MODE = true; // BETA: visi gauna PRO funkcijas
   const API='';
 
+  // Paverčia AI markdown (**bold**, ###, sąrašus) į gražų HTML chat'e
+  function fmtChat(text){
+    if(!text) return '';
+    // 1. Escape HTML (saugumas)
+    let h = text.replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;');
+    // 2. Antraštės ### / ## → paryškinta
+    h = h.replace(/^#{1,4}\s*(.+)$/gm, '<strong style="display:block;margin:8px 0 4px">$1</strong>');
+    // 3. **bold** → <strong>
+    h = h.replace(/\*\*([^*]+)\*\*/g, '<strong>$1</strong>');
+    // 4. Sąrašo punktai "- " arba "* " eilutės pradžioje → •
+    h = h.replace(/^[\-\*]\s+(.+)$/gm, '<span style="display:block;padding-left:14px;text-indent:-10px">• $1</span>');
+    // 5. Atskyrikliai ---
+    h = h.replace(/^---+$/gm, '<hr style="border:none;border-top:1px solid var(--border);margin:8px 0">');
+    // 6. Likę nauji eilučių lūžiai
+    h = h.replace(/\n/g, '<br>');
+    // Sutvarkom dvigubus <br> po blokinių elementų
+    h = h.replace(/(<\/span>|<hr[^>]*>)<br>/g, '$1');
+    return h;
+  }
+
   // Saugiai paverčia rizikas/reikalavimus (objektus ar tekstą) į tekstą
   function listToText(arr, sep){
     sep = sep || '; ';
@@ -3741,7 +3761,7 @@ async function sendChat(){
     } else {
       const text = data.text || '';
       chatHistory.push({role:'assistant', content:text});
-      msgs.innerHTML += `<div class="cm cm-ai">${text.replace(/</g,'&lt;').replace(/\n/g,'<br>')}</div>`;
+      msgs.innerHTML += `<div class="cm cm-ai">${fmtChat(text)}</div>`;
     }
   } catch(e){
     const t = document.getElementById('cm-thinking');
@@ -4146,7 +4166,7 @@ function initAssistant(){
   if(lbl) lbl.textContent = (curResult.pavadinimas||'Dabartinė analizė').slice(0,60);
   const msgs = document.getElementById('asst-msgs');
   if(msgs && chatHistory.length > 0){
-    msgs.innerHTML = chatHistory.map(m=>`<div class="cm ${m.role==='user'?'cm-user':'cm-ai'}">${m.content.replace(/</g,'&lt;').replace(/\n/g,'<br>')}</div>`).join('');
+    msgs.innerHTML = chatHistory.map(m=>`<div class="cm ${m.role==='user'?'cm-user':'cm-ai'}">${fmtChat(m.content)}</div>`).join('');
     msgs.scrollTop = msgs.scrollHeight;
   }
 }
@@ -4181,7 +4201,7 @@ async function sendFullChat(){
     } else {
       const text = data.text||'';
       chatHistory.push({role:'assistant',content:text});
-      msgs.innerHTML += `<div class="cm cm-ai">${text.replace(/</g,'&lt;').replace(/\n/g,'<br>')}</div>`;
+      msgs.innerHTML += `<div class="cm cm-ai">${fmtChat(text)}</div>`;
     }
   } catch(e){
     const t = document.getElementById('asst-thinking'); if(t) t.remove();
