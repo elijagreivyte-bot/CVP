@@ -4,7 +4,10 @@
 // letter režimas: generuoja klausimų raštą perkančiajai
 // ═══════════════════════════════════════════════════════════
 const jwt = require('jsonwebtoken');
-const { CVP_KNOWLEDGE } = require('./cvp-knowledge');
+// Atsparus žinių bazės įkėlimas — jei failo nėra, naudojam tuščią (nelūžta)
+let CVP_KNOWLEDGE = '';
+try { CVP_KNOWLEDGE = require('./cvp-knowledge').CVP_KNOWLEDGE || ''; }
+catch (e) { console.warn('cvp-knowledge.js nerastas, tęsiam be jo'); }
 
 const JWT_SECRET = process.env.JWT_SECRET || 'bidwise-secret-2025';
 const ANTHROPIC_API_KEY = process.env.ANTHROPIC_API_KEY;
