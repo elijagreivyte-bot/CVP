@@ -5,6 +5,9 @@
 // ═══════════════════════════════════════════════════════════
 const jwt = require('jsonwebtoken');
 const { createClient } = require('@supabase/supabase-js');
+let CVP_KNOWLEDGE = '';
+try { CVP_KNOWLEDGE = require('./cvp-knowledge').CVP_KNOWLEDGE || ''; }
+catch (e) { console.warn('cvp-knowledge.js nerastas, tęsiam be jo'); }
 
 const JWT_SECRET = process.env.JWT_SECRET || 'bidwise-secret-2025';
 const ANTHROPIC_API_KEY = process.env.ANTHROPIC_API_KEY;
@@ -134,7 +137,9 @@ module.exports = async (req, res) => {
     }
     const profileCtx = buildProfileContext(profile);
 
-    const system = `Tu esi Bidwise AI — ekspertų komanda viešųjų pirkimų analizei (dokumentų, kvalifikacijos, kainodaros, rizikų ir strategijos analitikai). Analizuok lietuviškai. Būk objektyvus ir nuoseklus — tam pačiam dokumentui visada duok tą patį tikimybės balą. Grąžink TIK JSON, be jokio papildomo teksto.`;
+    const system = `Tu esi Bidwise AI — ekspertų komanda viešųjų pirkimų analizei (dokumentų, kvalifikacijos, kainodaros, rizikų ir strategijos analitikai). Analizuok lietuviškai. Būk objektyvus ir nuoseklus — tam pačiam dokumentui visada duok tą patį tikimybės balą. Grąžink TIK JSON, be jokio papildomo teksto.
+
+${CVP_KNOWLEDGE}`;
 
     const userMsg = `${profileCtx.contextText}
 
