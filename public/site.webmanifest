@@ -1,0 +1,13 @@
+{
+  "name": "Bidwise AI",
+  "short_name": "Bidwise AI",
+  "description": "AI viešųjų pirkimų konkursų analizė",
+  "icons": [
+    { "src": "/icon-192.png", "sizes": "192x192", "type": "image/png" },
+    { "src": "/icon-512.png", "sizes": "512x512", "type": "image/png" }
+  ],
+  "theme_color": "#1a56db",
+  "background_color": "#060d2a",
+  "display": "standalone",
+  "start_url": "/"
+}
