@@ -2161,7 +2161,7 @@ const BETA_MODE = true; // BETA: visi gauna PRO funkcijas
   }
 const TK='cvp_token';
 const UK='cvp_user';
-pdfjsLib.GlobalWorkerOptions.workerSrc='https://cdnjs.cloudflare.com/ajax/libs/pdf.js/3.11.174/pdf.worker.min.js';
+/* pdf.js worker konfigūruojamas extPDF viduje (po defer) */
 
 // ── STATE ──
 let files=[],extText='',curResult=null,selPlan='monthly',curUser=null,currentProject=null,projects=[],allAnalyses=[];
@@ -2555,6 +2555,11 @@ function isScannedDocument(text){
 }
 
 async function extPDF(f){
+  // Užtikrinam, kad pdf.js worker sukonfigūruotas (biblioteka kraunama defer)
+  if(typeof pdfjsLib==='undefined'){ throw new Error('PDF biblioteka dar nepasiekiama, palaukite sekundę ir bandykite vėl'); }
+  if(!pdfjsLib.GlobalWorkerOptions.workerSrc){
+    pdfjsLib.GlobalWorkerOptions.workerSrc='https://cdnjs.cloudflare.com/ajax/libs/pdf.js/3.11.174/pdf.worker.min.js';
+  }
   const ab=await f.arrayBuffer();
   const pdf=await pdfjsLib.getDocument({data:ab}).promise;
   let t='';
