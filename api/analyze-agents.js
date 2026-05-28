@@ -233,6 +233,14 @@ SVARBU dėl citatų ir verdikto:
 
   } catch (e) {
     console.error('Analizės klaida:', e);
-    return res.status(500).json({ error: 'Analizės klaida: ' + e.message });
+    let msg = e.message || 'Nežinoma klaida';
+    if (e.name === 'AbortError' || msg.includes('per ilgai')) {
+      msg = 'Analizė užtruko per ilgai. Dokumentas per didelis — pabandykite įkelti tik svarbiausius failus (techninę specifikaciją ir pirkimo sąlygas), ne visą ZIP.';
+    } else if (msg.includes('429') || msg.toLowerCase().includes('overload') || msg.includes('529')) {
+      msg = 'AI serveris šiuo metu perkrautas. Palaukite minutę ir bandykite vėl.';
+    } else if (msg.includes('401') || msg.includes('403')) {
+      msg = 'Autentifikacijos klaida. Atsijunkite ir prisijunkite iš naujo.';
+    }
+    return res.status(500).json({ error: msg });
   }
 };
