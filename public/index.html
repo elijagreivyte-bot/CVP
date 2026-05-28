@@ -4,7 +4,7 @@
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width,initial-scale=1.0">
 <title>CVP konkursų analizė su AI | Viešieji pirkimai ir CPV paieška | Bidwise AI</title>
-<meta name="description" content="AI platforma viešųjų pirkimų konkursų analizei Lietuvoje. Raskite CVP konkursus pagal CPV kodus, analizuokite konkurentus ir įvertinkite laimėjimo tikimybę.">
+<meta name="description" content="AI platforma viešųjų pirkimų konkursų analizei Lietuvoje. Analizuokite CVP konkurso dokumentus, įvertinkite kvalifikaciją, rizikas ir laimėjimo tikimybę pagal CPV kodus.">
 <meta name="keywords" content="CVP konkursai, viešieji pirkimai, CPV kodai, BVPŽ kodai, VPT konkursai, konkursų paieška, viešųjų pirkimų analizė, pirkimų AI, tiekėjų analizė, konkursų laimėjimas">
 <meta name="robots" content="index, follow">
 <meta name="author" content="Bidwise AI">
@@ -19,7 +19,7 @@
 <!-- Open Graph -->
 <meta property="og:type" content="website">
 <meta property="og:title" content="Bidwise AI | CVP konkursų paieška ir viešųjų pirkimų analizė">
-<meta property="og:description" content="AI platforma viešųjų pirkimų konkursų analizei. Raskite konkursus pagal CPV kodus, įvertinkite laimėjimo tikimybę ir analizuokite konkurentus.">
+<meta property="og:description" content="AI platforma viešųjų pirkimų konkursų analizei. Analizuokite konkurso dokumentus, įvertinkite laimėjimo tikimybę ir kvalifikaciją pagal CPV kodus, identifikuokite konkurentus.">
 <meta property="og:locale" content="lt_LT">
 <meta property="og:url" content="https://www.bidwiseai.lt/">
 <meta property="og:site_name" content="Bidwise AI">
@@ -595,9 +595,9 @@ footer{background:var(--navy2);border-top:1px solid var(--border);padding:48px 3
 <!-- SEO turinys paieškos sistemoms -->
 <div style="position:absolute;width:1px;height:1px;overflow:hidden;clip:rect(0,0,0,0)" aria-hidden="false">
   <h1>LT CVP konkursų navigatorius — viešieji pirkimai ir CPV paieška</h1>
-  <p>Bidwise AI yra dirbtinio intelekto platforma viešųjų pirkimų ir CVP konkursų analizei Lietuvoje. Mūsų sistema padeda rasti viešuosius pirkimus pagal CPV ir BVPŽ kodus, įvertinti konkurso laimėjimo tikimybę, analizuoti konkurentus ir laimėtus pirkimus VPT duomenyse. Naudokite konkursų paiešką, viešųjų pirkimų analizę ir tiekėjų vertinimą vienoje vietoje.</p>
+  <p>Bidwise AI yra dirbtinio intelekto platforma viešųjų pirkimų ir CVP konkursų analizei Lietuvoje. Mūsų sistema analizuoja viešųjų pirkimų dokumentus: išskiria kvalifikacinius reikalavimus, terminus ir rizikas, įvertina jūsų įmonės atitikimą pagal CPV ir BVPŽ kodus bei apskaičiuoja konkurso laimėjimo tikimybę. Vietoje rankinio dokumentų skaitymo gaukite struktūruotą analizę ir konkrečias rekomendacijas, ką daryti prieš teikiant pasiūlymą.</p>
   <h2>Viešųjų pirkimų konkursų paieška pagal CPV kodus</h2>
-  <p>Raskite VPT konkursus, analizuokite pirkimų dokumentus su AI, gaukite laimėjimo strategiją. Pirkimų AI asistentas atsako į klausimus apie konkretų konkursą.</p>
+  <p>Analizuokite VPT konkursų dokumentus su AI, įvertinkite kvalifikaciją ir rizikas, gaukite laimėjimo strategiją. Pirkimų AI asistentas atsako į klausimus apie konkretų konkursą.</p>
 </div>
 
 <!-- ═══════════════════ LANDING ═══════════════════ -->
@@ -3347,6 +3347,7 @@ async function goChk(){
     const r=await fetch(API+'/api/checkout',{method:'POST',headers:{'Content-Type':'application/json','Authorization':'Bearer '+tok},body:JSON.stringify({plan:selPlan})});
     const d=await safeJson(r);
     if(d.url)window.location.href=d.url;
+    else if(d.beta)alert(d.message||'Beta testavimo metu Pro prieiga suteikiama nemokamai.');
     else alert(d.error||'Mokėjimo klaida');
   }catch(e){alert('Klaida: '+e.message)}
 }
