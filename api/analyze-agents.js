@@ -57,16 +57,46 @@ async function callClaude(system, user, maxTokens = 4000) {
 }
 
 function parseJSON(text, fallback = {}) {
+  if (!text) return fallback;
+  let clean = text.replace(/```json|```/g, '').trim();
+  const start = clean.indexOf('{');
+  if (start >= 0) clean = clean.slice(start);
+  // 1 bandymas: pilnas JSON
   try {
-    let clean = text.replace(/```json|```/g, '').trim();
-    const start = clean.indexOf('{');
     const end = clean.lastIndexOf('}');
-    if (start >= 0 && end > start) clean = clean.slice(start, end + 1);
-    return JSON.parse(clean);
-  } catch (e) {
-    console.error('JSON parse failed:', e.message);
-    return fallback;
+    if (end > 0) return JSON.parse(clean.slice(0, end + 1));
+  } catch (e) { /* tęsiam į taisymą */ }
+  // 2 bandymas: jei JSON nukirptas (per max_tokens) — taisom
+  // Strategija: nukerpam iki paskutinio "saugaus" taško (po pilno elemento), tada uždarom skliaustus
+  function tryClose(s) {
+    const stack = []; let inStr = false, esc = false;
+    for (let i = 0; i < s.length; i++) {
+      const ch = s[i];
+      if (esc) { esc = false; continue; }
+      if (ch === '\\') { esc = true; continue; }
+      if (ch === '"') { inStr = !inStr; continue; }
+      if (inStr) continue;
+      if (ch === '{' || ch === '[') stack.push(ch);
+      else if (ch === '}' || ch === ']') stack.pop();
+    }
+    let out = s;
+    if (inStr) out += '"';
+    // uždarom likusius atvirus skliaustus teisinga (atvirkštine) tvarka
+    for (let i = stack.length - 1; i >= 0; i--) {
+      out += stack[i] === '{' ? '}' : ']';
+    }
+    return out;
   }
+  // Nukerpam nebaigtą uodegą: ieškom paskutinio } arba ] ir bandom nuo ten
+  for (let cut = clean.length; cut > 0; cut = clean.lastIndexOf('}', cut - 1)) {
+    let candidate = clean.slice(0, cut);
+    // pašalinam kabantį kablelį
+    candidate = candidate.replace(/,\s*$/, '');
+    try { return JSON.parse(tryClose(candidate)); } catch (e) { /* bandom trumpesnį */ }
+    if (cut <= 1) break;
+  }
+  console.error('JSON parse failed: nepavyko sutaisyti');
+  return fallback;
 }
 
 function buildProfileContext(profile) {
@@ -208,7 +238,7 @@ SVARBU dėl citatų ir verdikto:
 - verdiktas: TINKA (žalia) jei atitinka esminius kriterijus; SVARSTYTINA (geltona) jei trūksta dalies; NEREKOMENDUOJAMA (raudona) jei kritinis neatitikimas.
 - Kur randi reikalavimą ar riziką dokumente, įrašyk "puslapis" (numerį jei matomas) ir "citata" (trumpa tiksli ištrauka iki 15 žodžių). Jei nematai puslapio — rašyk 0, citata tuščia. Tai leidžia vartotojui pasitikrinti originale.`;
 
-    const aiRes = await callClaude(system, userMsg, 4000);
+    const aiRes = await callClaude(system, userMsg, 8000);
     const result = parseJSON(aiRes, null);
 
     if (!result || !result.pavadinimas) {
