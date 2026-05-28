@@ -9,7 +9,7 @@
 <meta name="robots" content="index, follow">
 <meta name="author" content="Bidwise AI">
 <meta name="language" content="Lithuanian">
-<link rel="canonical" href="https://www.bidwiseai.lt/">
+<link rel="canonical" href="https://bidwiseai.lt/">
 <link rel="icon" type="image/x-icon" href="/favicon.ico">
 <link rel="icon" type="image/png" sizes="32x32" href="/favicon-32x32.png">
 <link rel="icon" type="image/png" sizes="16x16" href="/favicon-16x16.png">
@@ -345,7 +345,7 @@ footer{background:var(--navy2);border-top:1px solid var(--border);padding:48px 3
 
 /* MAIN */
 .main-wrap{margin-left:260px;flex:1;min-height:100vh}
-.main{padding:40px 40px;max-width:1000px}
+.main{padding:40px 48px;max-width:1400px;margin:0 auto}
 .pg-h{font-family:'Sora',sans-serif;font-size:28px;font-weight:800;margin-bottom:8px}
 .pg-sub{font-size:14px;color:var(--text2);margin-bottom:32px}
 
@@ -889,7 +889,7 @@ footer{background:var(--navy2);border-top:1px solid var(--border);padding:48px 3
       </p>
       <p style="font-size:13px;color:var(--text2);line-height:1.7">
         Tradiciškai tai užima <strong>15–30 valandų darbo</strong> (~750–1500€ vertės laiko).<br>
-        Bidwise AI Pro plane viskas atliekama už <strong>49€/mėn.</strong> — sutaupote <strong>700€+ kas mėnesį</strong> ir laimite daugiau konkursų dėl gilesnės analizės.
+        Bidwise AI Pro plane viskas atliekama už <strong>29€/mėn.</strong> — sutaupote <strong>700€+ kas mėnesį</strong> ir laimite daugiau konkursų dėl gilesnės analizės.
       </p>
     </div>
   </div>
@@ -920,7 +920,7 @@ footer{background:var(--navy2);border-top:1px solid var(--border);padding:48px 3
       <div class="price-card featured">
         <div class="price-pop">🔥 POPULIARIAUSIAS</div>
         <div class="price-name">Pro</div>
-        <div class="price-amount">49€ <small>/mėn.</small></div>
+        <div class="price-amount">29€ <small>/mėn.</small></div>
         <div class="price-period">vienas vartotojas</div>
         <ul class="price-features">
           <li><span>✓</span> <strong>Neribota analizių</strong></li>
@@ -1004,7 +1004,7 @@ footer{background:var(--navy2);border-top:1px solid var(--border);padding:48px 3
           <span>Kas atsitinka jei išnaudoju nemokamas 3 analizes?</span>
           <span style="color:var(--blue3);font-size:20px;font-weight:300">+</span>
         </summary>
-        <p style="margin-top:14px;font-size:13px;color:var(--text2);line-height:1.7">Galėsite peržiūrėti senas analizes nemokamai, bet naujų — ne. Pereiti į Pro planą (49€/mėn) galite bet kada — gausite neribotas analizes, AI asistentą, PDF eksportą, klausimų raštus ir prioritetinį palaikymą.</p>
+        <p style="margin-top:14px;font-size:13px;color:var(--text2);line-height:1.7">Galėsite peržiūrėti senas analizes nemokamai, bet naujų — ne. Pereiti į Pro planą (29€/mėn) galite bet kada — gausite neribotas analizes, AI asistentą, PDF eksportą, klausimų raštus ir prioritetinį palaikymą.</p>
       </details>
       <details style="background:var(--card);border:1px solid var(--border);border-radius:14px;padding:18px 22px">
         <summary style="font-size:15px;font-weight:700;color:var(--text);cursor:pointer;font-family:Sora,sans-serif;list-style:none;display:flex;justify-content:space-between;align-items:center">
@@ -1334,7 +1334,7 @@ footer{background:var(--navy2);border-top:1px solid var(--border);padding:48px 3
       <h3>4. Pro planas ir mokėjimai</h3>
       <ul>
         <li>Pro planas suteikia neribotą analizių skaičių</li>
-        <li>Standartinė Pro kaina: 49 EUR/mėn. Komanda planas: 99 EUR/mėn.</li>
+        <li>Standartinė Pro kaina: 29 EUR/mėn. Komanda planas: 59 EUR/mėn.</li>
         <li>BETA testavimo laikotarpiu gali būti taikoma speciali arba nemokama kaina</li>
         <li>Mokėjimai tvarkomi per saugius mokėjimo tarpininkus</li>
         <li>Prenumerata atnaujinama automatiškai iki atšaukimo</li>
@@ -1397,13 +1397,13 @@ footer{background:var(--navy2);border-top:1px solid var(--border);padding:48px 3
       <span class="sn-icon">📊</span> Pradžia
     </button>
     <button class="sn on" id="sn-analyze" onclick="pg('analyze')">
-      <span class="sn-icon">🔍</span> Nova analizė
+      <span class="sn-icon">🔍</span> Nauja analizė
     </button>
     <button class="sn" id="sn-cvp" onclick="pg('cvp')">
       <span class="sn-icon">🇱🇹</span> CVP.lt paieška
     </button>
     <button class="sn" id="sn-assistant" onclick="pg('assistant')">
-      <span class="sn-icon">💬</span> AI Asistentas <span style="font-size:9px;background:rgba(124,58,237,.2);color:var(--purple2);padding:2px 6px;border-radius:8px;margin-left:4px">PRO</span>
+      <span class="sn-icon">💬</span> AI Asistentas <span id="nav-pro-badge" style="font-size:9px;background:rgba(124,58,237,.2);color:var(--purple2);padding:2px 6px;border-radius:8px;margin-left:4px">PRO</span>
     </button>
     <button class="sn" id="sn-projects" onclick="pg('projects')">
       <span class="sn-icon">📁</span> Projektai
@@ -1442,7 +1442,7 @@ footer{background:var(--navy2);border-top:1px solid var(--border);padding:48px 3
 
   <!-- ANALYZE PAGE -->
   <div id="pg-analyze">
-    <h1 class="pg-h">Nova analizė</h1>
+    <h1 class="pg-h">Nauja analizė</h1>
     <p class="pg-sub">Įkelkite iki 10 failų (PDF, Word, TXT) arba ZIP archyvą</p>
     <div class="tip">💡 <strong>Patarimas:</strong> Įkelkite pirkimo sąlygas, techninę specifikaciją ir kvalifikacijos reikalavimus. Brėžinių įkelti nebūtina — jie neturi teksto kurį AI galėtų analizuoti.</div>
     <div style="background:rgba(59,130,246,.05);border:1px solid rgba(59,130,246,.15);border-radius:10px;padding:14px 18px;margin-bottom:20px;display:flex;align-items:center;gap:12px;flex-wrap:wrap">
@@ -1468,7 +1468,7 @@ footer{background:var(--navy2);border-top:1px solid var(--border);padding:48px 3
       <input type="file" id="fi" multiple accept=".pdf,.docx,.doc,.txt,.zip" onchange="addF(this.files)">
       <div class="drop-icon">📁</div>
       <h3>Nuvilkite failus arba spustelėkite</h3>
-      <p>PDF · Word (.docx) · TXT · ZIP · Maks. 10 failų</p>
+      <p>PDF · Word (.docx) · TXT · ZIP · Maks. 10 failų · iki 25 MB</p>
       <p style="font-size:11px;color:var(--blue3);margin-top:8px">💡 Įkelkite VISĄ pirkimo dokumentų ZIP iš CVP (ne tik skelbimą) — kad AI matytų technines specifikacijas ir kvalifikacinius reikalavimus</p>
     </div>
     <div class="file-list" id="fl"></div>
@@ -1704,7 +1704,7 @@ footer{background:var(--navy2);border-top:1px solid var(--border);padding:48px 3
         <div style="display:flex;flex-direction:column;gap:12px">
           <div style="display:flex;gap:12px;align-items:flex-start"><div style="background:rgba(59,130,246,.15);color:var(--blue3);width:24px;height:24px;border-radius:50%;display:flex;align-items:center;justify-content:center;font-size:12px;font-weight:700;flex-shrink:0">1</div><p style="font-size:13px;color:var(--text2);line-height:1.6">Atidarykite <strong>Sutarčių duomenis</strong> ir filtruokite pagal BVPŽ kodą arba perkančiąją organizaciją</p></div>
           <div style="display:flex;gap:12px;align-items:flex-start"><div style="background:rgba(59,130,246,.15);color:var(--blue3);width:24px;height:24px;border-radius:50%;display:flex;align-items:center;justify-content:center;font-size:12px;font-weight:700;flex-shrink:0">2</div><p style="font-size:13px;color:var(--text2);line-height:1.6">Pažiūrėkite <strong>kas laimėjo panašius konkursus</strong> ir už kokią kainą — tai parodys realų rinkos lygį</p></div>
-          <div style="display:flex;gap:12px;align-items:flex-start"><div style="background:rgba(59,130,246,.15);color:var(--blue3);width:24px;height:24px;border-radius:50%;display:flex;align-items:center;justify-content:center;font-size:12px;font-weight:700;flex-shrink:0">3</div><p style="font-size:13px;color:var(--text2);line-height:1.6">Pastebėkite <strong>laimėtojų kainodaron tendencijas</strong> — ar laimi pigiausi, ar geriausios kokybės</p></div>
+          <div style="display:flex;gap:12px;align-items:flex-start"><div style="background:rgba(59,130,246,.15);color:var(--blue3);width:24px;height:24px;border-radius:50%;display:flex;align-items:center;justify-content:center;font-size:12px;font-weight:700;flex-shrink:0">3</div><p style="font-size:13px;color:var(--text2);line-height:1.6">Pastebėkite <strong>laimėtojų kainodaros tendencijas</strong> — ar laimi pigiausi, ar geriausios kokybės</p></div>
           <div style="display:flex;gap:12px;align-items:flex-start"><div style="background:rgba(16,185,129,.15);color:var(--success);width:24px;height:24px;border-radius:50%;display:flex;align-items:center;justify-content:center;font-size:12px;font-weight:700;flex-shrink:0">4</div><p style="font-size:13px;color:var(--text2);line-height:1.6">Grįžkite į <strong>Bidwise analizę</strong> ir pritaikykite žinias formuodami konkurencingą pasiūlymą</p></div>
         </div>
       </div>
@@ -2076,7 +2076,7 @@ footer{background:var(--navy2);border-top:1px solid var(--border);padding:48px 3
     <h3>Nemokamos analizės baigėsi</h3>
     <p>Panaudojote visas 3 nemokamas analizes. Atnaujinkite į Pro planą norėdami tęsti.</p>
     <div class="upg-prices">
-      <button class="upg-btn on" id="pm-mo" onclick="selP('pro')">Pro – 49€ / mėn.</button>
+      <button class="upg-btn on" id="pm-mo" onclick="selP('pro')">Pro – 29€ / mėn.</button>
       <button class="upg-btn" id="pm-yr" onclick="selP('team')">Komanda – 99€ / mėn.<br><small style="color:var(--text2)">Iki 5 vartotojų</small></button>
     </div>
     <button class="btn btn-primary" style="width:100%;justify-content:center" onclick="goChk()">Gauti Pro →</button>
@@ -2178,6 +2178,12 @@ function showApp(){
   document.getElementById('app').classList.add('open');
   updSB();
   pg('dashboard');
+  // Paslepiam PRO ženkliuką jei vartotojas turi prieigą (pro/team/beta)
+  const proBadge=document.getElementById('nav-pro-badge');
+  if(proBadge){
+    const hasPro = BETA_MODE || (curUser && (curUser.plan==='pro'||curUser.plan==='team'));
+    proBadge.style.display = hasPro ? 'none' : '';
+  }
   // Always show chat bubble in app
   const cw=document.getElementById('chat-wrap');
   if(cw)cw.classList.add('open');
@@ -2190,6 +2196,11 @@ function showApp(){
 }
 
 function pg(n){
+  // Apsauga: neleisti palikti onboarding'o kol AI kuria profilį
+  if(window.obCreating){
+    if(!confirm('AI vis dar kuria jūsų profilį. Ar tikrai norite išeiti? Profilis gali likti nesukurtas.')) return;
+    window.obCreating = false;
+  }
   ['dashboard','analyze','projects','history','account','cvp','assistant'].forEach(p=>{
     const el=document.getElementById('pg-'+p);
     if(el)el.classList.toggle('hidden',p!==n);
@@ -2412,7 +2423,8 @@ async function obStep2Next(){
   const company=document.getElementById('ob-company').value.trim();
   const sector=document.getElementById('ob-sector').value;
   obGoStep(3);
-  document.getElementById('ob-profile-preview').innerHTML='<div style="display:flex;align-items:center;gap:12px;color:var(--text2)"><div class="spin"></div><span>AI kuria jūsų profilį...</span></div>';
+  window.obCreating = true;  // blokuojam navigaciją kol AI kuria
+  document.getElementById('ob-profile-preview').innerHTML='<div style="display:flex;align-items:center;gap:12px;color:var(--text2)"><div class="spin"></div><span>AI kuria jūsų profilį... (nepalikite šio lango)</span></div>';
   const tok=localStorage.getItem(TK);
   try{
     const r=await fetch(API+'/api/onboarding',{
@@ -2433,9 +2445,11 @@ async function obStep2Next(){
       ((profile.stiprybes&&profile.stiprybes.length)?'<br><br><strong style="color:var(--text)">Stiprybės:</strong> '+profile.stiprybes.join(', '):'');
     // Atnaujinam account puslapį jei jis matomas
     if(typeof renderAcc==='function') renderAcc();
+    window.obCreating = false;
     if(typeof toast==='function') toast('Profilis išsaugotas! Analizės bus personalizuotos.', 'success');
   }catch(e){
     const profile={name:company,sector,klausimynas:obAnswers,activity:document.getElementById('ob-activity')?.value?.trim()||''};
+    window.obCreating = false;
     document.getElementById('ob-profile-preview').textContent='Profilis išsaugotas (baziniai duomenys).';
     if(curUser){curUser.company_profile=profile;localStorage.setItem(UK,JSON.stringify(curUser));}
     if(typeof renderAcc==='function') renderAcc();
@@ -2600,7 +2614,7 @@ function updSZ(text){
   fill.style.width=pct+'%';
   fill.className='sz-fill '+(pct<60?'sz-ok':pct<90?'sz-warn':'sz-over');
   const kb=Math.round(bytes/1024);
-  document.getElementById('szh').textContent=`${kb} KB teksto ištraukta${pct>=100?' (limitas pasiektas – tekstas sutrumpintas)':''}`;
+  document.getElementById('szh').textContent=`${kb} KB teksto ištraukta${pct>=100?' (pakankamai analizei)':''}`;
 }
 
 // ── ANALYZE ──
@@ -3015,7 +3029,13 @@ async function renderAcc(){
         const filled=fields.filter(Boolean).length;
         const pct=Math.round((filled/fields.length)*100);
         const color=pct>=75?'var(--success)':pct>=40?'var(--warn)':'var(--danger)';
-        return '<div style="margin:12px 0 6px"><div style="display:flex;justify-content:space-between;font-size:11px;color:var(--text2);margin-bottom:4px"><span>Profilio išsamumas</span><span style=\"color:'+color+';font-weight:700\">'+pct+'%</span></div><div style=\"height:6px;background:var(--card2);border-radius:4px;overflow:hidden\"><div style=\"height:100%;width:'+pct+'%;background:'+color+';border-radius:4px;transition:width .4s\"></div></div></div>';
+        const missing=[];
+        if(!cp.patirtis) missing.push('patirtį');
+        if(!cp.sertifikatai) missing.push('sertifikatus');
+        if(!(cp.apyvarta||cp.maxProjektoVerte)) missing.push('apyvartą');
+        if(!cp.profilioSantrauka) missing.push('veiklos aprašymą');
+        const guide=(pct<100&&missing.length)?'<div style=\"font-size:11px;color:var(--text3);margin-top:6px\">💡 Užpildykite '+missing.slice(0,3).join(', ')+' tikslesnei analizei</div>':'';
+        return '<div style="margin:12px 0 6px"><div style="display:flex;justify-content:space-between;font-size:11px;color:var(--text2);margin-bottom:4px"><span>Profilio išsamumas</span><span style=\"color:'+color+';font-weight:700\">'+pct+'%</span></div><div style=\"height:6px;background:var(--card2);border-radius:4px;overflow:hidden\"><div style=\"height:100%;width:'+pct+'%;background:'+color+';border-radius:4px;transition:width .4s\"></div></div>'+guide+'</div>';
       })()}
       ${cp.profilioSantrauka?`<div style="background:rgba(16,185,129,.05);border:1px solid rgba(16,185,129,.15);border-radius:10px;padding:12px;margin-top:8px;font-size:12px;color:var(--text2);line-height:1.6"><strong style="color:var(--success)">AI profilio santrauka:</strong><br>${cp.profilioSantrauka}</div>`:''}
       <button class="btn btn-outline btn-sm" style="margin-top:14px" onclick="openOnboardingEdit()">✏️ ${cp.profilioSantrauka?'Atnaujinti profilį':'Užpildyti profilį'}</button>
@@ -3026,7 +3046,7 @@ async function renderAcc(){
       <h3>🚀 Atnaujinti į Pro</h3>
       <p style="font-size:13px;color:var(--text2);margin-bottom:20px">Neribota analizių, įmonės profilis, prioritetinis palaikymas.</p>
       <div style="display:flex;gap:12px;flex-wrap:wrap">
-        <button class="btn btn-primary" onclick="selP('pro');goChk()">Pro – 49€ / mėn.</button>
+        <button class="btn btn-primary" onclick="selP('pro');goChk()">Pro – 29€ / mėn.</button>
         <button class="btn btn-outline" onclick="selP('team');goChk()">Komanda – 99€ / mėn.</button>
       </div>
     </div>`:''}
@@ -3410,7 +3430,7 @@ function exportPDF(){
           <span>Kas atsitinka jei išnaudoju nemokamas 3 analizes?</span>
           <span style="color:var(--blue3);font-size:20px;font-weight:300">+</span>
         </summary>
-        <p style="margin-top:14px;font-size:13px;color:var(--text2);line-height:1.7">Galėsite peržiūrėti senas analizes nemokamai, bet naujų — ne. Pereiti į Pro planą (49€/mėn) galite bet kada — gausite neribotas analizes, AI asistentą, PDF eksportą, klausimų raštus ir prioritetinį palaikymą.</p>
+        <p style="margin-top:14px;font-size:13px;color:var(--text2);line-height:1.7">Galėsite peržiūrėti senas analizes nemokamai, bet naujų — ne. Pereiti į Pro planą (29€/mėn) galite bet kada — gausite neribotas analizes, AI asistentą, PDF eksportą, klausimų raštus ir prioritetinį palaikymą.</p>
       </details>
       <details style="background:var(--card);border:1px solid var(--border);border-radius:14px;padding:18px 22px">
         <summary style="font-size:15px;font-weight:700;color:var(--text);cursor:pointer;font-family:Sora,sans-serif;list-style:none;display:flex;justify-content:space-between;align-items:center">
@@ -4621,7 +4641,7 @@ const AI_STEPS = [
   'Nuskaitomas tekstas (OCR jei reikia)...',
   '🤖 Agentas 1: dokumentų struktūros analizė',
   '🤖 Agentas 2: kvalifikacijos reikalavimų tikrinimas',
-  '🤖 Agentas 3: kainodaron strategija',
+  '🤖 Agentas 3: kainodaros strategija',
   '🤖 Agentas 4: rizikų ir paslėptų sąlygų paieška',
   '🤖 Agentas 5: laimėjimo tikimybės sintezė',
   'Generuojama personalizuota strategija...',
