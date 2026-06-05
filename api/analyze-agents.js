@@ -230,11 +230,19 @@ Grąžink TIKSLIAI tokios struktūros JSON (visi laukai privalomi, jei nėra inf
   "butinaiIttraukti": [
     {"dokumentas": "reikalingas dokumentas", "pastaba": "komentaras"}
   ],
-  "isViso": "galutinė išvada ar verta dalyvauti ir kodėl (2-3 sakiniai)"
+  "isViso": "galutinė išvada ar verta dalyvauti ir kodėl (2-3 sakiniai)",
+  "presetQuestions": [
+    "5 konkretūs klausimai, kuriuos tiekėjas norėtų užduoti AI apie ŠĮ konkretų konkursą",
+    "pvz. 'Ar atitinkame 3 metų patirties reikalavimą?' o ne 'Kokie reikalavimai?'",
+    "klausimai turi būti specifiški šio konkurso turiniui — apie konkrečius sertifikatus, terminus, baudas, vertinimo punktus",
+    "klausimas 4",
+    "klausimas 5"
+  ]
 }
 
 SVARBU dėl citatų ir verdikto:
 - klausimaiPerkanciajai: pateik 2-4 konkrečius klausimus kuriuos verta užduoti perkančiajai organizacijai (dėl neaiškių sąlygų, dviprasmiškų reikalavimų, trūkstamos informacijos).
+- presetQuestions: pateik TIKSLIAI 5 konkrečius klausimus, kuriuos tiekėjas norėtų užduoti AI asistentui apie ŠĮ konkretų konkursą. Tai turi būti specifiniai šio dokumento turiniui — paminėk konkrečius reikalavimus, sertifikatus, terminus iš šio konkurso. Pvz. NE "Kokie kvalifikaciniai reikalavimai?" o "Ar atitinkame 5 metų patirties statybos darbuose reikalavimą?". NE "Kokia kaina?" o "Kiek kainuos 10,000 EUR užstatas mūsų įmonei?".
 - verdiktas: TINKA (žalia) jei atitinka esminius kriterijus; SVARSTYTINA (geltona) jei trūksta dalies; NEREKOMENDUOJAMA (raudona) jei kritinis neatitikimas.
 - Kur randi reikalavimą ar riziką dokumente, įrašyk "puslapis" (numerį jei matomas) ir "citata" (trumpa tiksli ištrauka iki 15 žodžių). Jei nematai puslapio — rašyk 0, citata tuščia. Tai leidžia vartotojui pasitikrinti originale.`;
 
@@ -250,11 +258,17 @@ SVARBU dėl citatų ir verdikto:
 
     if (process.env.SUPABASE_URL) {
       const supabase = createClient(process.env.SUPABASE_URL, process.env.SUPABASE_SERVICE_KEY);
+      // doc_text apribojam iki 200KB (apie 50K tokenų) — saugumui ir vietai
+      const docTextSafe = (documentText || '').slice(0, 200000);
+      const presetQs = Array.isArray(result.presetQuestions) ? result.presetQuestions.slice(0, 5) : [];
       const { data: saved } = await supabase.from('analyses').insert({
         user_id: user.id,
         document_name: documentName || result.pavadinimas || 'Analizė',
         score: result.score,
-        result_json: result
+        result_json: result,
+        doc_text: docTextSafe,
+        preset_questions: presetQs,
+        chat_messages: []
       }).select('id').single();
       if (saved) result._analysisId = saved.id;
     }
