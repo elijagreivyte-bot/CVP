@@ -616,6 +616,7 @@ footer{background:var(--navy2);border-top:1px solid var(--border);padding:48px 3
     <a class="btn-ghost" onclick="landingScroll('kaip-veikia')">Kaip veikia</a>
     <a class="btn-ghost" onclick="landingScroll('kainos')">Kainos</a>
     <a class="btn-ghost" onclick="landingScroll('faq')">DUK</a>
+    <a class="btn-ghost" href="/blog/">Blogas</a>
     <button class="btn-ghost" onclick="openAuth('login')">Prisijungti</button>
     <button class="btn btn-primary btn-sm" onclick="openAuth('register')">Pradėti nemokamai →</button>
   </div>
@@ -624,6 +625,7 @@ footer{background:var(--navy2);border-top:1px solid var(--border);padding:48px 3
   </div>
 </nav>
 <div class="mob-nav" id="mob-nav">
+  <a class="btn btn-outline" style="width:100%;text-align:center" href="/blog/">Blogas</a>
   <button class="btn btn-outline" style="width:100%" onclick="openAuth('login')">Prisijungti</button>
   <button class="btn btn-primary" style="width:100%" onclick="openAuth('register')">Pradėti nemokamai →</button>
 </div>
@@ -1125,6 +1127,10 @@ footer{background:var(--navy2);border-top:1px solid var(--border);padding:48px 3
             <a href="#cpv-kodai" style="font-size:12px;color:var(--blue3);text-decoration:none;background:var(--card2);padding:4px 10px;border-radius:6px">BVPŽ kodai</a>
             <a href="#faq" style="font-size:12px;color:var(--blue3);text-decoration:none;background:var(--card2);padding:4px 10px;border-radius:6px">Viešieji pirkimai</a>
             <a href="#faq" style="font-size:12px;color:var(--blue3);text-decoration:none;background:var(--card2);padding:4px 10px;border-radius:6px">DUK</a>
+            <a href="/blog/cpv-kodai.html" style="font-size:12px;color:var(--blue3);text-decoration:none;background:var(--card2);padding:4px 10px;border-radius:6px">📝 Kas yra CPV kodai</a>
+            <a href="/blog/kaip-laimeti-viesaji-pirkima.html" style="font-size:12px;color:var(--blue3);text-decoration:none;background:var(--card2);padding:4px 10px;border-radius:6px">📝 Kaip laimėti pirkimą</a>
+            <a href="/blog/daznos-klaidos.html" style="font-size:12px;color:var(--blue3);text-decoration:none;background:var(--card2);padding:4px 10px;border-radius:6px">📝 Dažnos klaidos</a>
+            <a href="/blog/" style="font-size:12px;color:#fff;text-decoration:none;background:linear-gradient(135deg,#1a56db,#7c3aed);padding:4px 10px;border-radius:6px;font-weight:600">Visi straipsniai →</a>
           </div>
         </div>
         <div style="display:flex;align-items:center;gap:8px;margin-top:14px;font-size:12px;color:var(--text2)">
@@ -2843,6 +2849,15 @@ async function startAn(){
       // Pridedam pilną dokumentų tekstą — kad AI asistentas galėtų atsakyti iš tikrų dokumentų
       if(curResult && extText) curResult._fullText = extText;
       renderResult(d.result);
+      // Reset chat istorijos ir parodom preset klausimus
+      chatHistory = [];
+      const cm = document.getElementById('chat-msgs');
+      if(cm) cm.innerHTML = '';
+      const noAn = document.getElementById('chat-no-analysis');
+      if(noAn) noAn.style.display = 'none';
+      if(d.result && Array.isArray(d.result.presetQuestions) && d.result.presetQuestions.length > 0){
+        renderPresetChips(d.result.presetQuestions);
+      }
     },600);
   }catch(e){
     loading.style.display='none';
@@ -2989,10 +3004,18 @@ function ri(k,v,extraClass=''){
   return `<div class="r-item"><span class="r-item-k">${k}</span><span class="r-item-v ${extraClass}">${v}</span></div>`;
 }
 
-function loadH(result){
+function loadH(result, analysisId){
   curResult=result;
   pg('analyze');
-  setTimeout(()=>renderResult(result),100);
+  setTimeout(()=>{
+    renderResult(result);
+    // Pakraunam chat istoriją + doc_text + preset klausimus iš DB
+    const id = analysisId || (result && (result._analysisId || result.id));
+    if(id){
+      if(curResult) curResult._analysisId = id;
+      loadChatHistoryFor(id);
+    }
+  },100);
 }
 
 // ── HISTORY ──
@@ -3257,7 +3280,11 @@ function toggleProjAnalyses(pid){
 
 function loadAnalysisById(id){
   const a=window._projAnalyses&&window._projAnalyses[id];
-  if(a&&a.result_json)loadH(a.result_json);
+  if(a&&a.result_json){
+    // Užtikrinam, kad result turi analysisId chat'ui
+    if(!a.result_json._analysisId) a.result_json._analysisId = id;
+    loadH(a.result_json, id);
+  }
 }
 
 function selectProjAndAnalyze(id,name){
@@ -3856,42 +3883,192 @@ async function sendChat(){
   // Hide no-analysis placeholder
   const noAn = document.getElementById('chat-no-analysis');
   if(noAn) noAn.style.display = 'none';
+  // Slėpti preset klausimus po pirmo siuntimo
+  const presetBox = document.getElementById('chat-preset-chips');
+  if(presetBox) presetBox.style.display = 'none';
   msgs.style.display = 'flex';
 
   chatHistory.push({role:'user', content:q});
   msgs.innerHTML += `<div class="cm cm-user">${q.replace(/</g,'&lt;')}</div>`;
-  msgs.innerHTML += `<div class="cm cm-thinking" id="cm-thinking">⏳ Galvoju...</div>`;
+  msgs.innerHTML += `<div class="cm cm-thinking" id="cm-thinking">💭 Galvoju...</div>`;
   msgs.scrollTop = msgs.scrollHeight;
 
   const tok = localStorage.getItem(TK);
+  // analysisId — perduodam jei yra, kad backend galėtų išsaugoti istoriją
+  const analysisId = (curResult && (curResult._analysisId || curResult.id)) || null;
+
   try{
     const r = await fetch(API+'/api/chat',{
       method:'POST',
       headers:{'Content-Type':'application/json','Authorization':'Bearer '+tok},
-      body: JSON.stringify({messages: chatHistory, context: chatContext, mode:'chat'})
+      body: JSON.stringify({
+        messages: chatHistory,
+        context: chatContext,
+        mode:'chat',
+        analysisId: analysisId,
+        stream: true
+      })
     });
-    const data = await safeJson(r);
-    const t = document.getElementById('cm-thinking');
-    if(t) t.remove();
+
     if(!r.ok){
+      // Streaming HTTP klaida (pvz 401/403/500 prieš atidarant stream)
+      const t1 = document.getElementById('cm-thinking');
+      if(t1) t1.remove();
+      let errMsg = 'Nežinoma klaida';
+      try { const d = await r.json(); errMsg = d.error || errMsg; } catch {}
       if(r.status===403){
         msgs.innerHTML += '<div class="cm cm-ai" style="color:var(--warn)">🔒 AI asistentas prieinamas tik Pro ir Komanda planams.<br><button onclick="selP(&quot;pro&quot;);goChk()" style="background:var(--grad);border:none;color:#fff;padding:6px 14px;border-radius:6px;cursor:pointer;font-size:12px;margin-top:6px">Gauti Pro →</button></div>';
       } else {
-        msgs.innerHTML += `<div class="cm cm-ai" style="color:var(--danger)">Klaida: ${data.error||'Nežinoma'}</div>`;
+        msgs.innerHTML += `<div class="cm cm-ai" style="color:var(--danger)">Klaida: ${errMsg}</div>`;
       }
+      return;
+    }
+
+    // STREAMING SKAITYMAS
+    const reader = r.body.getReader();
+    const decoder = new TextDecoder();
+    let buffer = '';
+    let assistantText = '';
+    let aiDivCreated = false;
+    let aiDivId = 'ai-msg-' + Date.now();
+
+    while(true){
+      const {done, value} = await reader.read();
+      if(done) break;
+      buffer += decoder.decode(value, {stream:true});
+      const lines = buffer.split('\n');
+      buffer = lines.pop() || '';
+      for(const line of lines){
+        if(!line.startsWith('data: ')) continue;
+        const payload = line.slice(6).trim();
+        if(!payload || payload === '[DONE]') continue;
+        try {
+          const ev = JSON.parse(payload);
+          if(ev.error){
+            const t2 = document.getElementById('cm-thinking');
+            if(t2) t2.remove();
+            msgs.innerHTML += `<div class="cm cm-ai" style="color:var(--danger)">Klaida: ${ev.error}</div>`;
+            continue;
+          }
+          if(ev.text){
+            // Pirmo chunk'o gavimas — pakeičiam "Galvoju..." į pradinį AI div
+            if(!aiDivCreated){
+              const t3 = document.getElementById('cm-thinking');
+              if(t3) t3.remove();
+              const aiDiv = document.createElement('div');
+              aiDiv.className = 'cm cm-ai';
+              aiDiv.id = aiDivId;
+              msgs.appendChild(aiDiv);
+              aiDivCreated = true;
+            }
+            assistantText += ev.text;
+            const aiDiv = document.getElementById(aiDivId);
+            if(aiDiv) aiDiv.innerHTML = fmtChat(assistantText);
+            msgs.scrollTop = msgs.scrollHeight;
+          }
+          if(ev.done){
+            // Galutinis tekstas (gali būti tikslesnis nei sumuotas)
+            if(ev.fullText && ev.fullText.length > assistantText.length){
+              assistantText = ev.fullText;
+              const aiDiv = document.getElementById(aiDivId);
+              if(aiDiv) aiDiv.innerHTML = fmtChat(assistantText);
+            }
+          }
+        } catch(e) { /* skip malformed line */ }
+      }
+    }
+
+    // Pridėti į vietinę istoriją (DB savaime išsaugo backend'e)
+    if(assistantText){
+      chatHistory.push({role:'assistant', content: assistantText});
     } else {
-      const text = data.text || '';
-      chatHistory.push({role:'assistant', content:text});
-      msgs.innerHTML += `<div class="cm cm-ai">${fmtChat(text)}</div>`;
+      const t4 = document.getElementById('cm-thinking');
+      if(t4) t4.remove();
+      msgs.innerHTML += `<div class="cm cm-ai" style="color:var(--danger)">Atsakymas tuščias. Bandykit dar kartą.</div>`;
     }
   } catch(e){
-    const t = document.getElementById('cm-thinking');
-    if(t) t.remove();
+    const t5 = document.getElementById('cm-thinking');
+    if(t5) t5.remove();
     msgs.innerHTML += `<div class="cm cm-ai" style="color:var(--danger)">Ryšio klaida: ${e.message}</div>`;
   } finally {
     if(btn) btn.disabled = false;
     msgs.scrollTop = msgs.scrollHeight;
   }
+}
+
+// Siunčia preset klausimą iš chip mygtuko (kaip jei vartotojas įrašytų ir paspaustų)
+function sendPresetQuestion(question){
+  const inp = document.getElementById('chat-q');
+  if(!inp) return;
+  inp.value = question;
+  sendChat();
+}
+
+// Pakrauna chat istoriją + preset klausimus atidarius seną analizę
+async function loadChatHistoryFor(analysisId){
+  if(!analysisId) return;
+  const tok = localStorage.getItem(TK);
+  try {
+    const r = await fetch(API+'/api/chat-history?analysisId='+encodeURIComponent(analysisId), {
+      headers: { 'Authorization': 'Bearer ' + tok }
+    });
+    const d = await safeJson(r);
+    if(!r.ok) return;
+
+    const msgs = document.getElementById('chat-msgs');
+    const noAn = document.getElementById('chat-no-analysis');
+
+    // Atstatom chatHistory iš DB
+    chatHistory = Array.isArray(d.messages) ? d.messages.map(m => ({role:m.role, content:m.content})) : [];
+
+    // Atvaizduojam žinutes UI
+    if(msgs){
+      msgs.innerHTML = '';
+      if(chatHistory.length > 0){
+        if(noAn) noAn.style.display = 'none';
+        msgs.style.display = 'flex';
+        chatHistory.forEach(m => {
+          if(m.role === 'user'){
+            msgs.innerHTML += `<div class="cm cm-user">${(m.content||'').replace(/</g,'&lt;')}</div>`;
+          } else {
+            msgs.innerHTML += `<div class="cm cm-ai">${fmtChat(m.content||'')}</div>`;
+          }
+        });
+        msgs.scrollTop = msgs.scrollHeight;
+      }
+    }
+
+    // Atstatom doc_text į curResult kad chat veiktų (toliau)
+    if(d.doc_text && curResult && !curResult._fullText){
+      curResult._fullText = d.doc_text;
+    }
+
+    // Parodom preset klausimus jei dar nebuvo pokalbio
+    if(chatHistory.length === 0 && Array.isArray(d.preset_questions) && d.preset_questions.length > 0){
+      renderPresetChips(d.preset_questions);
+    }
+  } catch(e){ console.warn('chat history load:', e); }
+}
+
+// Atvaizduoja preset klausimų chip mygtukus chat'e
+function renderPresetChips(questions){
+  if(!Array.isArray(questions) || questions.length === 0) return;
+  let box = document.getElementById('chat-preset-chips');
+  if(!box){
+    const msgs = document.getElementById('chat-msgs');
+    if(!msgs || !msgs.parentElement) return;
+    box = document.createElement('div');
+    box.id = 'chat-preset-chips';
+    box.style.cssText = 'padding:10px 12px;border-top:1px solid var(--border);display:flex;flex-wrap:wrap;gap:6px;background:var(--card2)';
+    msgs.parentElement.insertBefore(box, msgs.nextSibling);
+  }
+  box.style.display = 'flex';
+  box.innerHTML = '<div style="width:100%;font-size:11px;color:var(--text2);margin-bottom:4px;font-weight:600">💡 Greiti klausimai apie šį konkursą:</div>' +
+    questions.slice(0,5).map(q => {
+      const safe = String(q).replace(/'/g,"\\'").replace(/"/g,'&quot;');
+      const display = String(q).replace(/</g,'&lt;');
+      return `<button onclick="sendPresetQuestion('${safe}')" style="background:var(--card);border:1px solid var(--border);color:var(--text);padding:6px 12px;border-radius:14px;cursor:pointer;font-size:12px;text-align:left;max-width:100%;line-height:1.3" onmouseover="this.style.borderColor='var(--blue3)'" onmouseout="this.style.borderColor='var(--border)'">${display}</button>`;
+    }).join('');
 }
 
 
