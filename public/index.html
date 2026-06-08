@@ -470,24 +470,50 @@ footer{background:var(--navy2);border-top:1px solid var(--border);padding:48px 3
 #app.open .chat-wrap{display:block}
 .chat-bubble{width:56px;height:56px;border-radius:50%;background:var(--grad);border:none;cursor:pointer;font-size:24px;box-shadow:0 4px 20px rgba(26,86,219,.4);transition:all .2s;display:flex;align-items:center;justify-content:center}
 .chat-bubble:hover{transform:scale(1.1)}
-.chat-panel{position:absolute;bottom:68px;right:0;width:380px;background:var(--navy2);border:1px solid var(--border);border-radius:20px;box-shadow:0 20px 60px rgba(0,0,0,.5);display:none;flex-direction:column;overflow:hidden;max-height:520px}
+.chat-panel{position:absolute;bottom:68px;right:0;width:460px;background:rgba(13,23,64,.96);backdrop-filter:blur(20px);-webkit-backdrop-filter:blur(20px);border:1px solid var(--border);border-radius:20px;box-shadow:0 24px 80px rgba(0,0,0,.6),0 0 0 1px rgba(124,156,255,.05);display:none;flex-direction:column;overflow:hidden;max-height:640px;transition:width .25s ease,height .25s ease,max-height .25s ease,bottom .25s ease,right .25s ease,transform .25s ease}
 .chat-panel.show{display:flex}
-.chat-hdr{padding:16px 18px;border-bottom:1px solid var(--border);display:flex;justify-content:space-between;align-items:center;flex-shrink:0}
+.chat-panel.fullscreen{position:fixed;width:min(960px,94vw);max-height:none;height:92vh;bottom:4vh;right:3vw;left:auto;border-radius:24px}
+.chat-hdr{padding:14px 18px;border-bottom:1px solid var(--border);display:flex;justify-content:space-between;align-items:center;flex-shrink:0;gap:10px}
 .chat-hdr h4{font-family:Sora,sans-serif;font-size:14px;font-weight:700;margin:0}
 .chat-hdr p{font-size:11px;color:var(--text2);margin:0}
-.chat-msgs{flex:1;overflow-y:auto;padding:16px;display:flex;flex-direction:column;gap:10px;min-height:200px}
-.cm{max-width:88%;padding:10px 14px;border-radius:12px;font-size:13px;line-height:1.6}
-.cm-user{background:var(--grad);color:#fff;align-self:flex-end;border-bottom-right-radius:4px}
-.cm-ai{background:rgba(255,255,255,.06);color:var(--text);align-self:flex-start;border-bottom-left-radius:4px}
-.cm-thinking{color:var(--text2);font-style:italic;animation:pulse 1.5s infinite}
-.chat-inp{padding:12px 14px;border-top:1px solid var(--border);display:flex;gap:8px;flex-shrink:0}
-.chat-inp textarea{flex:1;background:rgba(255,255,255,.05);border:1px solid var(--border);border-radius:10px;color:var(--text);font-family:Inter,sans-serif;font-size:13px;padding:8px 12px;outline:none;resize:none;line-height:1.5;max-height:80px}
-.chat-inp textarea:focus{border-color:var(--blue3)}
-.chat-inp button{background:var(--grad);border:none;color:#fff;width:38px;height:38px;border-radius:10px;cursor:pointer;font-size:16px;flex-shrink:0;align-self:flex-end}
-.chat-inp button:disabled{opacity:.5;cursor:not-allowed}
+.chat-hdr-actions{display:flex;gap:4px;align-items:center}
+.chat-hdr-btn{background:none;border:none;color:var(--text2);cursor:pointer;font-size:16px;padding:6px 8px;border-radius:8px;transition:all .15s}
+.chat-hdr-btn:hover{background:rgba(255,255,255,.08);color:var(--text)}
+.chat-msgs{flex:1;overflow-y:auto;padding:16px;display:flex;flex-direction:column;gap:8px;min-height:200px;scroll-behavior:smooth}
+.chat-msgs::-webkit-scrollbar{width:6px}
+.chat-msgs::-webkit-scrollbar-thumb{background:rgba(255,255,255,.1);border-radius:3px}
+.cm{max-width:88%;padding:10px 14px;border-radius:14px;font-size:13px;line-height:1.6;animation:cmSlideIn .25s ease-out}
+.chat-panel.fullscreen .cm{font-size:14px;max-width:80%}
+@keyframes cmSlideIn{from{opacity:0;transform:translateY(8px)}to{opacity:1;transform:translateY(0)}}
+.cm-user{background:var(--grad);color:#fff;align-self:flex-end;border-bottom-right-radius:5px;box-shadow:0 2px 8px rgba(124,58,237,.25)}
+.cm-ai{background:rgba(255,255,255,.06);color:var(--text);align-self:flex-start;border-bottom-left-radius:5px;border:1px solid rgba(255,255,255,.03)}
+.cm-thinking{color:var(--text2);font-style:italic;background:rgba(255,255,255,.04);align-self:flex-start;padding:12px 16px;border-radius:14px;border-bottom-left-radius:5px;display:flex;align-items:center;gap:10px}
+.cm-dots{display:inline-flex;gap:4px;align-items:center}
+.cm-dots span{width:7px;height:7px;background:var(--blue3);border-radius:50%;animation:cmBounce 1.4s infinite ease-in-out;box-shadow:0 0 8px rgba(124,156,255,.5)}
+.cm-dots span:nth-child(2){animation-delay:.15s}
+.cm-dots span:nth-child(3){animation-delay:.3s}
+@keyframes cmBounce{0%,80%,100%{transform:scale(.5);opacity:.4}40%{transform:scale(1);opacity:1}}
+.cm-act-row{display:flex;gap:4px;align-self:flex-start;margin-top:-2px;margin-bottom:4px;padding-left:4px;opacity:0;transition:opacity .2s;animation:cmSlideIn .3s ease-out}
+.chat-msgs:hover .cm-act-row,.cm-act-row:hover,.cm-act-row.show{opacity:1}
+.chat-act-btn{background:rgba(255,255,255,.05);border:1px solid rgba(255,255,255,.05);color:var(--text2);font-size:11px;padding:4px 9px;border-radius:7px;cursor:pointer;transition:all .15s;display:inline-flex;align-items:center;gap:4px;font-family:inherit}
+.chat-act-btn:hover{background:rgba(255,255,255,.12);color:var(--text);border-color:rgba(124,156,255,.3)}
+.chat-act-btn.voted{background:rgba(124,156,255,.2);color:var(--blue3);border-color:rgba(124,156,255,.4)}
+.chat-inp{padding:14px;border-top:1px solid var(--border);display:flex;gap:10px;flex-shrink:0;align-items:flex-end;background:rgba(0,0,0,.15)}
+.chat-inp textarea{flex:1;background:rgba(255,255,255,.05);border:1px solid var(--border);border-radius:12px;color:var(--text);font-family:Inter,sans-serif;font-size:14px;padding:12px 14px;outline:none;resize:none;line-height:1.5;min-height:60px;max-height:240px;transition:border-color .15s,box-shadow .15s}
+.chat-panel.fullscreen .chat-inp textarea{min-height:80px;max-height:320px;font-size:15px}
+.chat-inp textarea:focus{border-color:var(--blue3);box-shadow:0 0 0 3px rgba(124,156,255,.1)}
+.chat-inp button{background:var(--grad);border:none;color:#fff;width:42px;height:42px;border-radius:12px;cursor:pointer;font-size:18px;flex-shrink:0;transition:transform .15s,box-shadow .15s;box-shadow:0 2px 8px rgba(124,58,237,.3)}
+.chat-inp button:hover:not(:disabled){transform:translateY(-1px);box-shadow:0 4px 12px rgba(124,58,237,.4)}
+.chat-inp button:disabled{opacity:.4;cursor:not-allowed;transform:none}
 .chat-pro-wall{text-align:center;padding:28px 20px}
 .chat-pro-wall p{font-size:13px;color:var(--text2);margin-bottom:16px;line-height:1.6}
-@media(max-width:768px){.chat-panel{width:calc(100vw - 32px);right:-8px}}
+#chat-preset-chips{padding:12px 14px;border-top:1px solid var(--border);display:flex;flex-wrap:wrap;gap:6px;background:rgba(0,0,0,.1)}
+.chat-preset-btn{background:rgba(124,156,255,.08);border:1px solid rgba(124,156,255,.2);color:var(--text);padding:7px 12px;border-radius:14px;cursor:pointer;font-size:12px;text-align:left;line-height:1.3;transition:all .15s;font-family:inherit}
+.chat-preset-btn:hover{background:rgba(124,156,255,.18);border-color:var(--blue3);transform:translateY(-1px)}
+@media(max-width:768px){
+  .chat-panel{width:calc(100vw - 24px);right:-8px;max-height:75vh}
+  .chat-panel.fullscreen{width:100vw;height:100vh;bottom:0;right:0;border-radius:0}
+}
 
 /* RESPONSIVE */
 @media(max-width:768px){
@@ -516,7 +542,7 @@ footer{background:var(--navy2);border-top:1px solid var(--border);padding:48px 3
 .file-list { max-height: 280px; overflow-y: auto; padding-right: 4px; scrollbar-width: thin; }
 .file-list::-webkit-scrollbar { width: 6px; }
 .file-list::-webkit-scrollbar-thumb { background: rgba(255,255,255,.1); border-radius: 3px; }
-#chat-q, #asst-q { max-height: 120px; min-height: 38px; resize: none; transition: height .15s; }
+#chat-q, #asst-q { max-height: 240px; min-height: 60px; resize: none; transition: height .15s; }
 
 /* Sklandus perėjimas */
 #landing, #app { transition: opacity .25s ease; }
@@ -3890,7 +3916,7 @@ async function sendChat(){
 
   chatHistory.push({role:'user', content:q});
   msgs.innerHTML += `<div class="cm cm-user">${q.replace(/</g,'&lt;')}</div>`;
-  msgs.innerHTML += `<div class="cm cm-thinking" id="cm-thinking">💭 Galvoju...</div>`;
+  msgs.innerHTML += `<div class="cm-thinking" id="cm-thinking"><span class="cm-dots"><span></span><span></span><span></span></span><span>Galvoju...</span></div>`;
   msgs.scrollTop = msgs.scrollHeight;
 
   const tok = localStorage.getItem(TK);
@@ -3981,6 +4007,8 @@ async function sendChat(){
     // Pridėti į vietinę istoriją (DB savaime išsaugo backend'e)
     if(assistantText){
       chatHistory.push({role:'assistant', content: assistantText});
+      // Pridėti veiksmų eilutę po AI atsakymo
+      if(aiDivCreated) appendChatActions(aiDivId);
     } else {
       const t4 = document.getElementById('cm-thinking');
       if(t4) t4.remove();
@@ -4027,11 +4055,19 @@ async function loadChatHistoryFor(analysisId){
       if(chatHistory.length > 0){
         if(noAn) noAn.style.display = 'none';
         msgs.style.display = 'flex';
-        chatHistory.forEach(m => {
+        chatHistory.forEach((m, idx) => {
           if(m.role === 'user'){
             msgs.innerHTML += `<div class="cm cm-user">${(m.content||'').replace(/</g,'&lt;')}</div>`;
           } else {
-            msgs.innerHTML += `<div class="cm cm-ai">${fmtChat(m.content||'')}</div>`;
+            const msgId = 'hist-ai-' + idx;
+            msgs.innerHTML += `<div class="cm cm-ai" id="${msgId}">${fmtChat(m.content||'')}</div>`;
+            // Veiksmų eilutė pridedama po kiekvieno AI atsakymo
+            const rowId = 'act-' + msgId;
+            msgs.innerHTML += `<div class="cm-act-row show" id="${rowId}">
+              <button class="chat-act-btn" onclick="chatCopy('${msgId}')" title="Kopijuoti">📋</button>
+              <button class="chat-act-btn" data-vote="up" onclick="chatFeedback('${rowId}','up')" title="Naudingas">👍</button>
+              <button class="chat-act-btn" data-vote="down" onclick="chatFeedback('${rowId}','down')" title="Nenaudingas">👎</button>
+            </div>`;
           }
         });
         msgs.scrollTop = msgs.scrollHeight;
@@ -4059,7 +4095,6 @@ function renderPresetChips(questions){
     if(!msgs || !msgs.parentElement) return;
     box = document.createElement('div');
     box.id = 'chat-preset-chips';
-    box.style.cssText = 'padding:10px 12px;border-top:1px solid var(--border);display:flex;flex-wrap:wrap;gap:6px;background:var(--card2)';
     msgs.parentElement.insertBefore(box, msgs.nextSibling);
   }
   box.style.display = 'flex';
@@ -4067,8 +4102,123 @@ function renderPresetChips(questions){
     questions.slice(0,5).map(q => {
       const safe = String(q).replace(/'/g,"\\'").replace(/"/g,'&quot;');
       const display = String(q).replace(/</g,'&lt;');
-      return `<button onclick="sendPresetQuestion('${safe}')" style="background:var(--card);border:1px solid var(--border);color:var(--text);padding:6px 12px;border-radius:14px;cursor:pointer;font-size:12px;text-align:left;max-width:100%;line-height:1.3" onmouseover="this.style.borderColor='var(--blue3)'" onmouseout="this.style.borderColor='var(--border)'">${display}</button>`;
+      return `<button class="chat-preset-btn" onclick="sendPresetQuestion('${safe}')">${display}</button>`;
     }).join('');
+}
+
+// === CHAT v2 PATOGUMO FUNKCIJOS ===
+
+// Fullscreen perjungimas
+function toggleChatFullscreen(){
+  const panel = document.getElementById('chat-panel');
+  if(!panel) return;
+  panel.classList.toggle('fullscreen');
+  const btn = document.getElementById('chat-fs-btn');
+  if(btn) btn.title = panel.classList.contains('fullscreen') ? 'Sumažinti' : 'Išplėsti';
+  // Auto-focus input
+  setTimeout(()=>{
+    const inp = document.getElementById('chat-q');
+    if(inp) inp.focus();
+    const msgs = document.getElementById('chat-msgs');
+    if(msgs) msgs.scrollTop = msgs.scrollHeight;
+  }, 280);
+}
+
+// Išvalyti pokalbį (tik UI; DB istorija lieka)
+function clearChat(){
+  if(!chatHistory || chatHistory.length === 0) return;
+  if(!confirm('Išvalyti šio pokalbio žinutes iš ekrano?\n(DB istorija išliks — galėsite ją vėl pamatyti atidarius analizę iš naujo)')) return;
+  chatHistory = [];
+  const msgs = document.getElementById('chat-msgs');
+  if(msgs){
+    msgs.innerHTML = '<div class="cm cm-ai">Sveiki! Galiu atsakyti į klausimus apie šį konkursą — reikalavimus, terminus, rizikas ar strategiją. Kuo galiu padėti?</div>';
+  }
+  // Vėl parodom preset chips, jei jie buvo
+  const presetBox = document.getElementById('chat-preset-chips');
+  if(presetBox && curResult && Array.isArray(curResult.presetQuestions) && curResult.presetQuestions.length > 0){
+    presetBox.style.display = 'flex';
+  }
+}
+
+// Kopijuoti AI atsakymą
+function chatCopy(msgId){
+  const el = document.getElementById(msgId);
+  if(!el) return;
+  const text = (el.innerText || el.textContent || '').trim();
+  if(!text) return;
+  navigator.clipboard.writeText(text).then(()=>{
+    if(typeof toast === 'function') toast('Nukopijuota į iškarpinę', 'success', 2000);
+  }).catch(()=>{
+    // Fallback
+    const ta = document.createElement('textarea');
+    ta.value = text; document.body.appendChild(ta); ta.select();
+    try { document.execCommand('copy'); if(typeof toast === 'function') toast('Nukopijuota', 'success', 2000); } catch {}
+    document.body.removeChild(ta);
+  });
+}
+
+// Pergeneruoti paskutinį AI atsakymą
+function chatRegenerate(){
+  if(!chatHistory || chatHistory.length < 2) return;
+  // Pašalinam paskutinę AI žinutę iš history
+  if(chatHistory[chatHistory.length-1].role === 'assistant'){
+    chatHistory.pop();
+  }
+  // Paimam paskutinį user klausimą
+  const lastUser = chatHistory[chatHistory.length-1];
+  if(!lastUser || lastUser.role !== 'user') return;
+  // Pašalinam ir jį (sendChat vėl pridės)
+  chatHistory.pop();
+  // Pašalinam UI elementus (paskutinį AI atsakymą + jo veiksmų eilutę + paskutinį user msg)
+  const msgs = document.getElementById('chat-msgs');
+  if(msgs){
+    // Pašalinam paskutinę veiksmų eilutę (jei yra)
+    const lastActRow = msgs.querySelector('.cm-act-row:last-of-type');
+    if(lastActRow) lastActRow.remove();
+    // Paskutinį AI atsakymą
+    const aiMsgs = msgs.querySelectorAll('.cm-ai');
+    if(aiMsgs.length > 0) aiMsgs[aiMsgs.length-1].remove();
+    // Paskutinį user msg
+    const userMsgs = msgs.querySelectorAll('.cm-user');
+    if(userMsgs.length > 0) userMsgs[userMsgs.length-1].remove();
+  }
+  // Vėl siunčiam tą patį klausimą
+  const inp = document.getElementById('chat-q');
+  if(inp){
+    inp.value = lastUser.content;
+    sendChat();
+  }
+}
+
+// Atsiliepimas 👍/👎 (vizualus; vėliau galima prijungti į API)
+function chatFeedback(rowId, vote){
+  const row = document.getElementById(rowId);
+  if(!row) return;
+  row.querySelectorAll('.chat-act-btn').forEach(b => {
+    if(b.dataset.vote){
+      b.classList.remove('voted');
+      if(b.dataset.vote === vote) b.classList.add('voted');
+    }
+  });
+}
+
+// Pridėti veiksmų eilutę po AI atsakymo (kopijuoti / pergeneruoti / 👍 / 👎)
+function appendChatActions(msgId){
+  const aiDiv = document.getElementById(msgId);
+  if(!aiDiv || !aiDiv.parentElement) return;
+  // Jei jau yra veiksmų eilutė šiai žinutei — nedublikuojam
+  if(aiDiv.nextSibling && aiDiv.nextSibling.classList && aiDiv.nextSibling.classList.contains('cm-act-row')) return;
+  const rowId = 'act-' + msgId;
+  const row = document.createElement('div');
+  row.className = 'cm-act-row show';
+  row.id = rowId;
+  row.innerHTML = `
+    <button class="chat-act-btn" onclick="chatCopy('${msgId}')" title="Kopijuoti">📋</button>
+    <button class="chat-act-btn" onclick="chatRegenerate()" title="Pergeneruoti atsakymą">🔄</button>
+    <button class="chat-act-btn" data-vote="up" onclick="chatFeedback('${rowId}','up')" title="Naudingas">👍</button>
+    <button class="chat-act-btn" data-vote="down" onclick="chatFeedback('${rowId}','down')" title="Nenaudingas">👎</button>
+  `;
+  aiDiv.parentElement.insertBefore(row, aiDiv.nextSibling);
 }
 
 
@@ -5056,7 +5206,11 @@ function closeSource(){
         <h4>💬 AI Asistentas</h4>
         <p id="chat-context-label">Klauskite apie šį konkursą</p>
       </div>
-      <button onclick="toggleChat()" style="background:none;border:none;color:var(--text2);cursor:pointer;font-size:18px;padding:4px">✕</button>
+      <div class="chat-hdr-actions">
+        <button class="chat-hdr-btn" onclick="clearChat()" title="Išvalyti pokalbį">🗑️</button>
+        <button class="chat-hdr-btn" id="chat-fs-btn" onclick="toggleChatFullscreen()" title="Išplėsti / Sumažinti">⛶</button>
+        <button class="chat-hdr-btn" onclick="toggleChat()" title="Uždaryti">✕</button>
+      </div>
     </div>
     <div id="chat-no-analysis" style="text-align:center;padding:20px 16px">
       <div style="font-size:28px;margin-bottom:8px">📄</div>
