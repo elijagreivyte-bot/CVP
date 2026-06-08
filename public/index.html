@@ -431,6 +431,11 @@ footer{background:var(--navy2);border-top:1px solid var(--border);padding:48px 3
 .acc-grid{display:grid;grid-template-columns:1fr 1fr;gap:20px}
 .acc-card{background:var(--card);border:1px solid var(--border);border-radius:16px;padding:24px}
 .acc-card h3{font-family:'Sora',sans-serif;font-size:15px;font-weight:700;margin-bottom:16px}
+.acc-action-btn{display:flex;align-items:center;justify-content:space-between;padding:12px 14px;background:rgba(255,255,255,.03);border:1px solid var(--border);border-radius:10px;color:var(--text);font-size:13px;cursor:pointer;transition:all .15s;font-family:inherit;text-align:left;width:100%}
+.acc-action-btn:hover:not(:disabled){background:rgba(124,156,255,.08);border-color:var(--blue3)}
+.acc-action-btn:disabled{opacity:.55;cursor:not-allowed}
+.acc-soon{font-size:10px;color:var(--text2);background:rgba(245,158,11,.15);color:var(--warn);padding:3px 8px;border-radius:6px;font-weight:600;letter-spacing:.3px}
+.roadmap-item{background:rgba(255,255,255,.02);border:1px solid var(--border);border-radius:10px;padding:14px}
 
 /* MODAL */
 .modal{position:fixed;inset:0;z-index:300;background:rgba(6,13,42,.9);display:none;align-items:center;justify-content:center;padding:24px}
@@ -470,7 +475,7 @@ footer{background:var(--navy2);border-top:1px solid var(--border);padding:48px 3
 #app.open .chat-wrap{display:block}
 .chat-bubble{width:56px;height:56px;border-radius:50%;background:var(--grad);border:none;cursor:pointer;font-size:24px;box-shadow:0 4px 20px rgba(26,86,219,.4);transition:all .2s;display:flex;align-items:center;justify-content:center}
 .chat-bubble:hover{transform:scale(1.1)}
-.chat-panel{position:absolute;bottom:68px;right:0;width:500px;background:rgba(13,23,64,.96);backdrop-filter:blur(20px);-webkit-backdrop-filter:blur(20px);border:1px solid var(--border);border-radius:20px;box-shadow:0 24px 80px rgba(0,0,0,.6),0 0 0 1px rgba(124,156,255,.05);display:none;flex-direction:column;overflow:hidden;max-height:680px;transition:width .25s ease,height .25s ease,max-height .25s ease,bottom .25s ease,right .25s ease,transform .25s ease}
+.chat-panel{position:absolute;bottom:68px;right:0;width:500px;background:rgba(13,23,64,.96);backdrop-filter:blur(20px);-webkit-backdrop-filter:blur(20px);border:1px solid var(--border);border-radius:20px;box-shadow:0 24px 80px rgba(0,0,0,.6),0 0 0 1px rgba(124,156,255,.05);display:none;flex-direction:column;overflow:hidden;max-height:min(680px,calc(100vh - 120px));transition:width .25s ease,height .25s ease,max-height .25s ease,bottom .25s ease,right .25s ease,transform .25s ease}
 .chat-panel.show{display:flex}
 .chat-panel.fullscreen{position:fixed;width:min(1000px,95vw);max-height:none;height:94vh;bottom:3vh;right:2.5vw;left:auto;border-radius:24px}
 .chat-hdr{padding:14px 18px;border-bottom:1px solid var(--border);display:flex;justify-content:space-between;align-items:center;flex-shrink:0;gap:10px}
@@ -2420,6 +2425,16 @@ function doLogout(){
   localStorage.removeItem(TK);
   localStorage.removeItem(UK);
   curUser=null;files=[];extText='';curResult=null;
+  // Visiškai uždarom chat'ą — niekas neturi likti matomas po atsijungimo
+  chatHistory=[];
+  const cw=document.getElementById('chat-wrap');
+  if(cw){ cw.classList.remove('open'); }
+  const cp=document.getElementById('chat-panel');
+  if(cp){ cp.classList.remove('show'); cp.classList.remove('fullscreen'); }
+  const cm=document.getElementById('chat-msgs');
+  if(cm){ cm.innerHTML=''; cm.style.display='none'; }
+  const pcb=document.getElementById('chat-preset-chips');
+  if(pcb) pcb.style.display='none';
   document.getElementById('app').classList.remove('open');
   document.getElementById('landing').style.display='block';
 }
@@ -3152,57 +3167,204 @@ async function renderAcc(){
     if(d.user){curUser={...curUser,...d.user};localStorage.setItem(UK,JSON.stringify(curUser));updSB();}
   }catch(e){}
   const u=curUser||{};
-  const pro=u.plan==='pro';
+  const pro=u.plan==='pro' || u.plan==='team';
+  const planLabel = u.plan==='team' ? 'Komanda' : (u.plan==='pro' ? 'Pro' : 'Nemokamas');
   const cp=u.company_profile||{};
+
+  // Profilio užpildymo checklist
+  const profileItems = [
+    { key:'name', label:'Įmonės pavadinimas', filled: !!cp.name },
+    { key:'sector', label:'Veiklos sritis', filled: !!cp.sector },
+    { key:'activity', label:'Veikla / specializacija', filled: !!(cp.specializacija||cp.activity) },
+    { key:'patirtis', label:'Patirtis (metai veikloje)', filled: !!cp.patirtis },
+    { key:'sertifikatai', label:'Sertifikatai', filled: !!(cp.sertifikatai && (Array.isArray(cp.sertifikatai)?cp.sertifikatai.length:cp.sertifikatai)) },
+    { key:'apyvarta', label:'Metinė apyvarta', filled: !!(cp.apyvarta||cp.maxProjektoVerte) },
+    { key:'regionai', label:'Aptarnaujami regionai', filled: !!(cp.regionai && cp.regionai.length) },
+    { key:'paslaugos', label:'Paslaugos / produktai', filled: !!(cp.veiklos && cp.veiklos.length) },
+    { key:'santrauka', label:'AI veiklos santrauka', filled: !!cp.profilioSantrauka }
+  ];
+  const filledCount = profileItems.filter(p => p.filled).length;
+  const profilePct = Math.round((filledCount/profileItems.length)*100);
+  const pctColor = profilePct>=75?'var(--success)':profilePct>=40?'var(--warn)':'var(--danger)';
+
+  const checklistHtml = profileItems.map(p =>
+    `<div style="display:flex;align-items:center;gap:10px;padding:7px 0;font-size:13px;color:${p.filled?'var(--text)':'var(--text2)'}">
+      <span style="font-size:14px">${p.filled?'✅':'⭕'}</span>
+      <span style="flex:1">${p.label}</span>
+      ${!p.filled?'<button onclick="openOnboardingEdit()" style="background:none;border:none;color:var(--blue3);font-size:12px;cursor:pointer;padding:2px 6px">+ Pridėti</button>':''}
+    </div>`
+  ).join('');
+
   document.getElementById('ac').innerHTML=`
+    <!-- 1. ASMENINĖ INFORMACIJA -->
     <div class="acc-card">
       <h3>👤 Asmeninė informacija</h3>
-      ${ri2('Vardas',u.name)}
-      ${ri2('El. paštas',u.email)}
-      ${ri2('Planas',pro?'Pro':'Nemokamas')}
-      ${!pro?ri2('Likusios analizės',(u.free_analyses_left??3)+'/3'):''}
+      <div style="display:flex;align-items:center;gap:14px;padding:8px 0 16px;border-bottom:1px solid var(--border);margin-bottom:14px">
+        <div style="width:48px;height:48px;border-radius:50%;background:var(--grad);color:#fff;display:flex;align-items:center;justify-content:center;font-weight:700;font-size:18px;font-family:Sora,sans-serif;flex-shrink:0">${(u.name||u.email||'?').charAt(0).toUpperCase()}</div>
+        <div style="flex:1;min-width:0">
+          <div style="font-weight:600;font-size:14px">${u.name||'Be vardo'}</div>
+          <div style="font-size:12px;color:var(--text2);overflow:hidden;text-overflow:ellipsis;white-space:nowrap">${u.email||'–'}</div>
+        </div>
+      </div>
+      ${ri2('Planas',`<span style="color:${pro?'var(--success)':'var(--text)'};font-weight:600">${planLabel}</span>${pro?' ✨':''}`)}
+      ${!pro?ri2('Likusios analizės',`<span style="color:${(u.free_analyses_left??3)>0?'var(--text)':'var(--warn)'};font-weight:600">${u.free_analyses_left??3}/3</span>`):''}
+      <div style="margin-top:18px;display:flex;flex-wrap:wrap;gap:8px">
+        <button class="btn btn-outline btn-sm" onclick="accEdit('name')">✏️ Vardas</button>
+        <button class="btn btn-outline btn-sm" onclick="accEdit('email')">📧 El. paštas</button>
+        <button class="btn btn-outline btn-sm" onclick="accEdit('password')">🔑 Slaptažodis</button>
+      </div>
     </div>
+
+    <!-- 2. ĮMONĖS PROFILIS -->
     <div class="acc-card">
       <h3>🏢 Įmonės profilis</h3>
-      ${ri2('Pavadinimas',cp.name||'–')}
-      ${ri2('Sritis',cp.sector||'–')}
-      ${cp.activity?ri2('Veikla',cp.activity):''}
-      ${cp.specializacija?ri2('Specializacija',cp.specializacija):''}
-      ${cp.veiklos&&cp.veiklos.length?ri2('Paslaugos',(cp.veiklos||[]).join(', ')):''}
-      ${cp.regionai&&cp.regionai.length?ri2('Regionai',(cp.regionai||[]).join(', ')):''}
-      ${cp.maxProjektoVerte?ri2('Max projekto vertė',cp.maxProjektoVerte):''}
-      ${cp.apyvarta?ri2('Apyvarta',cp.apyvarta):''}
-      ${cp.patirtis?ri2('Patirtis',cp.patirtis):''}
-      ${cp.viesPirkPatirtis?ri2('VP patirtis',cp.viesPirkPatirtis):''}
-      ${cp.sertifikatai?ri2('Sertifikatai',Array.isArray(cp.sertifikatai)?cp.sertifikatai.join(', '):cp.sertifikatai):''}
-      ${(cp.stiprybes&&cp.stiprybes.length)?ri2('Stiprybės',(cp.stiprybes||[]).join(', ')):''}
-      ${(()=>{
-        const fields=[cp.name,cp.sector,cp.specializacija||cp.activity,cp.patirtis,cp.sertifikatai,cp.apyvarta||cp.maxProjektoVerte,(cp.stiprybes&&cp.stiprybes.length)||(cp.veiklos&&cp.veiklos.length),cp.profilioSantrauka];
-        const filled=fields.filter(Boolean).length;
-        const pct=Math.round((filled/fields.length)*100);
-        const color=pct>=75?'var(--success)':pct>=40?'var(--warn)':'var(--danger)';
-        const missing=[];
-        if(!cp.patirtis) missing.push('patirtį');
-        if(!cp.sertifikatai) missing.push('sertifikatus');
-        if(!(cp.apyvarta||cp.maxProjektoVerte)) missing.push('apyvartą');
-        if(!cp.profilioSantrauka) missing.push('veiklos aprašymą');
-        const guide=(pct<100&&missing.length)?'<div style=\"font-size:11px;color:var(--text3);margin-top:6px\">💡 Užpildykite '+missing.slice(0,3).join(', ')+' tikslesnei analizei</div>':'';
-        return '<div style="margin:12px 0 6px"><div style="display:flex;justify-content:space-between;font-size:11px;color:var(--text2);margin-bottom:4px"><span>Profilio išsamumas</span><span style=\"color:'+color+';font-weight:700\">'+pct+'%</span></div><div style=\"height:6px;background:var(--card2);border-radius:4px;overflow:hidden\"><div style=\"height:100%;width:'+pct+'%;background:'+color+';border-radius:4px;transition:width .4s\"></div></div>'+guide+'</div>';
-      })()}
-      ${cp.profilioSantrauka?`<div style="background:rgba(16,185,129,.05);border:1px solid rgba(16,185,129,.15);border-radius:10px;padding:12px;margin-top:8px;font-size:12px;color:var(--text2);line-height:1.6"><strong style="color:var(--success)">AI profilio santrauka:</strong><br>${cp.profilioSantrauka}</div>`:''}
-      <button class="btn btn-outline btn-sm" style="margin-top:14px" onclick="openOnboardingEdit()">✏️ ${cp.profilioSantrauka?'Atnaujinti profilį':'Užpildyti profilį'}</button>
-      ${!cp.profilioSantrauka?`<div style="background:rgba(245,158,11,.07);border:1px solid rgba(245,158,11,.2);border-radius:8px;padding:10px 12px;margin-top:10px;font-size:12px;line-height:1.6"><strong style="color:var(--warn)">⚠️ Profilis neužpildytas</strong><br><span style="color:var(--text2)">Užpildykite profilį — AI analizė taps tikslingesnė: atitiks jūsų įmonės pajėgumus, sertifikatus ir patirtį, o laimėjimo tikimybės balas bus apskaičiuotas konkrečiai jums.</span></div>`:''}
-    </div>
-    ${!pro?`
-    <div class="acc-card" style="grid-column:1/-1;background:linear-gradient(135deg,rgba(26,86,219,.08),rgba(124,58,237,.08));border-color:rgba(59,130,246,.2)">
-      <h3>🚀 Atnaujinti į Pro</h3>
-      <p style="font-size:13px;color:var(--text2);margin-bottom:20px">Neribota analizių, įmonės profilis, prioritetinis palaikymas.</p>
-      <div style="display:flex;gap:12px;flex-wrap:wrap">
-        <button class="btn btn-primary" onclick="selP('pro');goChk()">Pro – 29€ / mėn.</button>
-        <button class="btn btn-outline" onclick="selP('team');goChk()">Komanda – 99€ / mėn.</button>
+      <div style="margin-bottom:12px">
+        <div style="display:flex;justify-content:space-between;font-size:11px;color:var(--text2);margin-bottom:6px">
+          <span>Profilio išsamumas</span>
+          <span style="color:${pctColor};font-weight:700">${profilePct}% (${filledCount}/${profileItems.length})</span>
+        </div>
+        <div style="height:6px;background:var(--card2);border-radius:4px;overflow:hidden">
+          <div style="height:100%;width:${profilePct}%;background:${pctColor};border-radius:4px;transition:width .4s"></div>
+        </div>
       </div>
-    </div>`:''}
+      <div style="background:rgba(255,255,255,.02);border:1px solid var(--border);border-radius:10px;padding:10px 14px;margin-bottom:14px">
+        ${checklistHtml}
+      </div>
+      ${cp.profilioSantrauka?`<div style="background:rgba(16,185,129,.05);border:1px solid rgba(16,185,129,.15);border-radius:10px;padding:12px;margin-bottom:14px;font-size:12px;color:var(--text2);line-height:1.6"><strong style="color:var(--success)">💡 AI profilio santrauka:</strong><br>${cp.profilioSantrauka}</div>`:''}
+      <button class="btn btn-primary btn-sm" style="width:100%;justify-content:center" onclick="openOnboardingEdit()">${profilePct>=75?'✏️ Atnaujinti profilį':'📝 Užpildyti trūkstamą informaciją'}</button>
+      ${profilePct<50?`<div style="background:rgba(245,158,11,.07);border:1px solid rgba(245,158,11,.2);border-radius:8px;padding:10px 12px;margin-top:10px;font-size:11px;line-height:1.6;color:var(--text2)"><strong style="color:var(--warn)">⚠️ Tikslesnė analizė reikalauja išsamesnio profilio.</strong> Įmonės informacija leidžia AI tiksliai įvertinti, ar atitinkate konkurso reikalavimus, ir apskaičiuoti realią laimėjimo tikimybę būtent jūsų įmonei.</div>`:''}
+    </div>
+
+    <!-- 3. MANO PLANAS (užima visą plotį) -->
+    <div class="acc-card" style="grid-column:1/-1">
+      <h3>💎 Mano planas</h3>
+      <div style="display:flex;align-items:center;gap:16px;padding:14px;background:linear-gradient(135deg,rgba(26,86,219,.08),rgba(124,58,237,.08));border:1px solid rgba(124,156,255,.2);border-radius:12px;margin-bottom:18px">
+        <div style="font-size:32px">${pro?'✨':'🆓'}</div>
+        <div style="flex:1">
+          <div style="font-weight:700;font-size:15px;font-family:Sora,sans-serif">Dabartinis planas: ${planLabel}</div>
+          <div style="font-size:12px;color:var(--text2);margin-top:2px">${pro?'Beta režimas: Pro funkcijos nemokamai testavimo metu':'Likusios analizės: '+(u.free_analyses_left??3)+'/3'}</div>
+        </div>
+        ${!pro?'<button class="btn btn-primary" onclick="selP(\'pro\');goChk()">Gauti Pro →</button>':''}
+      </div>
+
+      <!-- Palyginimo lentelė -->
+      <div style="overflow-x:auto;border-radius:10px;border:1px solid var(--border);margin-bottom:16px">
+        <table style="width:100%;border-collapse:collapse;font-size:13px">
+          <thead>
+            <tr style="background:rgba(255,255,255,.03);text-align:left">
+              <th style="padding:12px 14px;font-weight:600;color:var(--text2);font-size:12px">Funkcija</th>
+              <th style="padding:12px 14px;font-weight:600;text-align:center;font-size:12px">Nemokamas</th>
+              <th style="padding:12px 14px;font-weight:600;text-align:center;color:var(--blue3);font-size:12px">Pro · 29€/mėn</th>
+              <th style="padding:12px 14px;font-weight:600;text-align:center;font-size:12px">Komanda · 99€/mėn</th>
+            </tr>
+          </thead>
+          <tbody>
+            <tr style="border-top:1px solid var(--border)"><td style="padding:11px 14px;color:var(--text2)">Analizės per mėnesį</td><td style="padding:11px 14px;text-align:center">3</td><td style="padding:11px 14px;text-align:center;color:var(--success);font-weight:600">Neribota</td><td style="padding:11px 14px;text-align:center;color:var(--success);font-weight:600">Neribota</td></tr>
+            <tr style="border-top:1px solid var(--border)"><td style="padding:11px 14px;color:var(--text2)">AI rekomendacijos ir rizikų vertinimas</td><td style="padding:11px 14px;text-align:center">Ribotos</td><td style="padding:11px 14px;text-align:center">✅ Pilnos</td><td style="padding:11px 14px;text-align:center">✅ Pilnos</td></tr>
+            <tr style="border-top:1px solid var(--border)"><td style="padding:11px 14px;color:var(--text2)">AI asistentas (chat)</td><td style="padding:11px 14px;text-align:center">—</td><td style="padding:11px 14px;text-align:center">✅</td><td style="padding:11px 14px;text-align:center">✅</td></tr>
+            <tr style="border-top:1px solid var(--border)"><td style="padding:11px 14px;color:var(--text2)">Įmonės profilis</td><td style="padding:11px 14px;text-align:center">Bazinis</td><td style="padding:11px 14px;text-align:center">Išsamus</td><td style="padding:11px 14px;text-align:center">Išsamus</td></tr>
+            <tr style="border-top:1px solid var(--border)"><td style="padding:11px 14px;color:var(--text2)">Projektai ir istorija</td><td style="padding:11px 14px;text-align:center">Ribota</td><td style="padding:11px 14px;text-align:center">Neribota</td><td style="padding:11px 14px;text-align:center">Neribota</td></tr>
+            <tr style="border-top:1px solid var(--border)"><td style="padding:11px 14px;color:var(--text2)">Komandos nariai</td><td style="padding:11px 14px;text-align:center">1</td><td style="padding:11px 14px;text-align:center">1</td><td style="padding:11px 14px;text-align:center;color:var(--success);font-weight:600">iki 5</td></tr>
+            <tr style="border-top:1px solid var(--border)"><td style="padding:11px 14px;color:var(--text2)">Palaikymas</td><td style="padding:11px 14px;text-align:center">El. paštu</td><td style="padding:11px 14px;text-align:center">Prioritetinis</td><td style="padding:11px 14px;text-align:center;color:var(--success);font-weight:600">VIP</td></tr>
+          </tbody>
+        </table>
+      </div>
+
+      <div style="background:rgba(59,130,246,.06);border:1px solid rgba(59,130,246,.15);border-radius:10px;padding:12px 14px;font-size:12px;color:var(--text2);line-height:1.6">
+        🎁 <strong style="color:var(--text)">Beta testavimo metu</strong> visiems registruotiems vartotojams suteikiama Pro prieiga nemokamai. Mokėjimai bus įjungti vėliau, prieš tai jus informuosim.
+      </div>
+    </div>
+
+    <!-- 4. SAUGUMAS -->
+    <div class="acc-card">
+      <h3>🔐 Saugumas</h3>
+      <div style="display:flex;flex-direction:column;gap:10px">
+        <button class="acc-action-btn" onclick="accEdit('password')">
+          <span>🔑 Keisti slaptažodį</span>
+          <span style="color:var(--text2);font-size:11px">→</span>
+        </button>
+        <button class="acc-action-btn" disabled>
+          <span>🛡️ Dviejų veiksnių autentifikacija (2FA)</span>
+          <span class="acc-soon">Netrukus</span>
+        </button>
+        <button class="acc-action-btn" disabled>
+          <span>📋 Prisijungimo istorija</span>
+          <span class="acc-soon">Netrukus</span>
+        </button>
+        <button class="acc-action-btn" onclick="if(confirm('Tikrai atsijungti? Reikės prisijungti iš naujo.'))doLogout()">
+          <span style="color:var(--danger)">🚪 Atsijungti</span>
+          <span style="color:var(--text2);font-size:11px">→</span>
+        </button>
+      </div>
+    </div>
+
+    <!-- 5. PAGALBA -->
+    <div class="acc-card">
+      <h3>❓ Pagalba</h3>
+      <div style="display:flex;flex-direction:column;gap:10px">
+        <a href="mailto:pagalba@bidwiseai.lt?subject=Pagalba%20-%20Bidwise%20AI" class="acc-action-btn" style="text-decoration:none">
+          <span>📧 Susisiekti su pagalba</span>
+          <span style="color:var(--text2);font-size:11px">pagalba@bidwiseai.lt</span>
+        </a>
+        <a href="mailto:pagalba@bidwiseai.lt?subject=Klaidos%20pranešimas%20-%20Bidwise%20AI&body=Aprašykite,%20kas%20nutiko:%0A%0A%0AVeiksmai,%20kuriuos%20atlikote:%0A%0A%0ANaudotojo%20ID:%20${u.id||'(prisijungę)'}%0AEl.%20paštas:%20${u.email||''}" class="acc-action-btn" style="text-decoration:none">
+          <span>🐛 Pranešti apie klaidą</span>
+          <span style="color:var(--text2);font-size:11px">→</span>
+        </a>
+        <a href="mailto:pagalba@bidwiseai.lt?subject=Funkcijos%20pasiūlymas%20-%20Bidwise%20AI&body=Pasiūlymas:%0A%0A%0AKodėl%20būtų%20naudinga:" class="acc-action-btn" style="text-decoration:none">
+          <span>💡 Pasiūlyti funkciją</span>
+          <span style="color:var(--text2);font-size:11px">→</span>
+        </a>
+        <a href="/#faq" class="acc-action-btn" style="text-decoration:none">
+          <span>📖 DUK</span>
+          <span style="color:var(--text2);font-size:11px">→</span>
+        </a>
+      </div>
+    </div>
+
+    <!-- 6. ROADMAP — sąžiningai apie tai, kas ateina -->
+    <div class="acc-card" style="grid-column:1/-1;background:linear-gradient(135deg,rgba(245,158,11,.04),rgba(124,58,237,.04));border-color:rgba(245,158,11,.15)">
+      <h3>🚧 Netrukus</h3>
+      <p style="font-size:12px;color:var(--text2);margin-bottom:14px;line-height:1.6">Šios funkcijos kuriamos ir bus pridėtos artimiausiomis savaitėmis. Norite kažko prioritetinio? <a href="mailto:pagalba@bidwiseai.lt?subject=Funkcijos%20pasiūlymas" style="color:var(--blue3)">Praneškite mums →</a></p>
+      <div style="display:grid;grid-template-columns:repeat(auto-fit,minmax(220px,1fr));gap:12px">
+        <div class="roadmap-item">
+          <div style="font-size:18px;margin-bottom:4px">📬</div>
+          <div style="font-weight:600;font-size:13px;margin-bottom:2px">El. pašto pranešimai</div>
+          <div style="font-size:11px;color:var(--text2)">Analizės rezultatai, terminų priminimai</div>
+        </div>
+        <div class="roadmap-item">
+          <div style="font-size:18px;margin-bottom:4px">🔔</div>
+          <div style="font-weight:600;font-size:13px;margin-bottom:2px">Konkursų stebėjimas</div>
+          <div style="font-size:11px;color:var(--text2)">Auto pranešimai apie naujus tinkamus konkursus</div>
+        </div>
+        <div class="roadmap-item">
+          <div style="font-size:18px;margin-bottom:4px">🧾</div>
+          <div style="font-weight:600;font-size:13px;margin-bottom:2px">Sąskaitos faktūros</div>
+          <div style="font-size:11px;color:var(--text2)">PVM, rekvizitai, sąskaitų istorija</div>
+        </div>
+        <div class="roadmap-item">
+          <div style="font-size:18px;margin-bottom:4px">👥</div>
+          <div style="font-weight:600;font-size:13px;margin-bottom:2px">Komandos nariai</div>
+          <div style="font-size:11px;color:var(--text2)">Bendra prieiga prie projektų</div>
+        </div>
+        <div class="roadmap-item">
+          <div style="font-size:18px;margin-bottom:4px">🛡️</div>
+          <div style="font-weight:600;font-size:13px;margin-bottom:2px">2FA ir saugumas</div>
+          <div style="font-size:11px;color:var(--text2)">Dviejų veiksnių autentifikacija</div>
+        </div>
+      </div>
+    </div>
   `;
+}
+
+// Edit account fields (placeholder kol backend neparuoštas)
+function accEdit(field){
+  const labels = {name:'vardas', email:'el. paštas', password:'slaptažodis'};
+  const lbl = labels[field] || field;
+  if(typeof toast === 'function'){
+    toast('🚧 ' + lbl.charAt(0).toUpperCase() + lbl.slice(1) + ' keitimas bus paruoštas netrukus. Tuo metu — parašykite į pagalba@bidwiseai.lt ir pakeisim rankiniu būdu.', 'info', 6000);
+  } else {
+    alert(lbl + ' keitimas bus paruoštas netrukus. Tuo metu — parašykite į pagalba@bidwiseai.lt');
+  }
 }
 
 function ri2(k,v){return `<div class="r-item"><span class="r-item-k">${k}</span><span class="r-item-v">${v||'–'}</span></div>`}
