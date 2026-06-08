@@ -167,7 +167,10 @@ module.exports = async (req, res) => {
     }
     const profileCtx = buildProfileContext(profile);
 
-    const system = `Tu esi Bidwise AI — ekspertų komanda viešųjų pirkimų analizei (dokumentų, kvalifikacijos, kainodaros, rizikų ir strategijos analitikai). Analizuok lietuviškai. Būk objektyvus ir nuoseklus — tam pačiam dokumentui visada duok tą patį tikimybės balą. Grąžink TIK JSON, be jokio papildomo teksto.
+    const system = `Tu esi Bidwise AI ORKESTRATORIUS — koordinuoji 5 specializuotų agentų darbą viešųjų pirkimų analizei. Analizuok lietuviškai. Būk objektyvus ir nuoseklus — tam pačiam dokumentui visada duok tą patį tikimybės balą. Niekur neprasimanyk faktų — jei dokumente nėra informacijos, rašyk "Nenurodyta". Visur, kur įmanoma, naudok citatas ir puslapių numerius. Grąžink TIK JSON, be jokio papildomo teksto, be markdown žymėjimo.
+
+DARBO PRINCIPAS — 5 SPECIALIZUOTI AGENTAI:
+Tu vykdai 5 agentus sekvenciškai vienoje sesijoje, ir tada sujungi jų rezultatus į VIENĄ galutinį JSON. Kiekvienas agentas turi savo specializaciją ir grąžina savo lauko subset'ą. Galutiniame JSON taip pat pridedi "agentReports" lauką su kiekvieno agento statusu (status, summary, confidence).
 
 ${CVP_KNOWLEDGE}`;
 
@@ -180,9 +183,95 @@ ${docText.slice(0, 30000)}
 
 ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
 
-Išanalizuok šį konkursą ${profileCtx.hasProfile ? 'KONKREČIAI šios įmonės kontekste — naudok jos profilį ir klausimyno atsakymus' : '(profilis neužpildytas — bendras objektyvus vertinimas)'}.
+VYKDYK 5 AGENTUS SEKVENCIŠKAI ${profileCtx.hasProfile ? '(naudok įmonės profilį kontekste, kur taikoma)' : '(profilis neužpildytas — bendras objektyvus vertinimas)'}:
 
-Grąžink TIKSLIAI tokios struktūros JSON (visi laukai privalomi, jei nėra informacijos — rašyk "Nenurodyta"):
+
+╔══════════════════════════════════════════════╗
+║ AGENTAS 1: documentsAgent                    ║
+╠══════════════════════════════════════════════╣
+ROLĖ: Pagrindinių pirkimo duomenų ekstraktorius.
+UŽDUOTIS: Iš dokumento ištraukti faktinę informaciją:
+  - pavadinimas, perkančioji organizacija, pirkimo tipas
+  - bendra vertė, BVPŽ/CPV kodas
+  - terminai (pasiūlymo terminas, vokų atplėšimas, klausimai iki, vykdymo trukmė, garantija)
+ŠALTINIS: TIK dokumento tekstas. Nieko neprasimanyk.
+CONFIDENCE: high (0.85+) jei radai visus pagrindinius laukus; mid (0.5-0.85) jei dalis trūksta; low (<0.5) jei tik skelbimas.
+GRĄŽINA JSON laukus: pavadinimas, perkanciojiOrganizacija, pirkimoTipas, bendraVerte, cpt, terminai{}.
+
+
+╔══════════════════════════════════════════════╗
+║ AGENTAS 2: qualificationAgent                ║
+╠══════════════════════════════════════════════╣
+ROLĖ: Kvalifikacinių reikalavimų analitikas.
+UŽDUOTIS: Iš dokumento ištraukti VISUS kvalifikacinius reikalavimus (apyvarta, darbuotojai, patirtis, sertifikatai, finansiniai pajėgumai, įvykdyti projektai).
+ATITIKIMAS: Kiekvieną reikalavimą palygink su įmonės profiliu (jei pateiktas).
+  - TINKA → įmonė aiškiai atitinka
+  - NETINKA → įmonė aiškiai neatitinka (pvz. reikia 5m patirties, įmonė turi 2m)
+  - ABEJOTINA → trūksta informacijos profilyje arba dviprasmiška
+CITATA: Kiekvienam reikalavimui — puslapis (numeris arba 0) + trumpa citata (≤15 žodžių).
+CONFIDENCE: high jei radai aiškius reikalavimus su citatomis; mid jei bendri; low jei tik užuominos.
+GRĄŽINA JSON laukus: kvalifikacija{apyvarta, darbuotojai, patirtis, sertifikatai, finansinis, reikalavimai[]}.
+
+
+╔══════════════════════════════════════════════╗
+║ AGENTAS 3: pricingAgent                      ║
+╠══════════════════════════════════════════════╣
+ROLĖ: Vertinimo kriterijų ir kainodaros įžvalgų analitikas.
+UŽDUOTIS:
+  - Surask vertinimo kriterijus su svoriais (kaina X%, kokybė Y%, ekonominis naudingumas)
+  - Surask finansines sąlygas (avansas, apmokėjimo terminai, baudos, garantinis laikotarpis)
+  - Įvertink: ar pirkimas DAUGIAU kainos varomas (>70% kaina) ar yra kokybinių taškų galimybė
+CONFIDENCE: high jei radai aiškius svorius; mid jei tik kriterijų sąrašą; low jei nieko nerasta.
+GRĄŽINA JSON laukus: vertinimoKriterijai[], finansinesSalygos{}.
+
+
+╔══════════════════════════════════════════════╗
+║ AGENTAS 4: riskAgent                         ║
+╠══════════════════════════════════════════════╣
+ROLĖ: Rizikų ir paslėptų nuostatų detektorius.
+UŽDUOTIS: Surask:
+  - Konkrečias rizikas (neproporcingos baudos, vienašališkos sąlygos, neaiškūs terminai, didelės garantijos, vėluojantis atsiskaitymas, ribojanti specifikacija)
+  - Paslėptas nepalankias nuostatas (gilesnės sutarties sąlygos)
+  - Galimybes (jei matai privalumus konkrečiai šiai įmonei)
+LYGIS: AUKŠTA (gali kainuoti pinigus arba užkirsti kelią), VIDUTINĖ (problemos einant į priekį), ŽEMA (nedidelės nepatogybės).
+CITATA: kiekvienai rizikai — puslapis + citata (≤15 žodžių).
+KLAUSIMAI: Sugeneruok 2-4 konkrečius klausimus perkančiajai organizacijai (dėl neaiškumo, dviprasmiškumo).
+CONFIDENCE: high jei radai aiškias rizikas su citatomis; mid jei tik užuominos; low jei dokumentas labai bendro pobūdžio.
+GRĄŽINA JSON laukus: rizikos[], pasleptosNuostatos[], galimybes[], klausimaiPerkanciajai[].
+
+
+╔══════════════════════════════════════════════╗
+║ AGENTAS 5: strategyAgent                     ║
+╠══════════════════════════════════════════════╣
+ROLĖ: Strategijos ir verdikto sintezatorius.
+UŽDUOTIS: Naudoja PRIEŠ TAI 4 agentų rezultatus, kad sukurtų galutinį verdiktą.
+SCORE APSKAIČIAVIMAS (0-100):
+  - Kvalifikacijos atitikimas (40%): kiek reikalavimų TINKA / NETINKA
+  - Rizikų lygis (25%): kuo daugiau AUKŠTŲ rizikų, tuo mažesnis balas
+  - Vertinimo kriterijai (20%): ar įmonė gali konkuruoti kainoje arba kokybėje
+  - Įmonės pajėgumai (15%): vertė vs įmonės dydis
+  Be profilio — neutralus 50-65 balas, koreguok pagal rizikas/reikalavimus.
+VERDIKTAS:
+  - TINKA (žalia) — balas ≥70, esminiai kriterijai atitinka
+  - SVARSTYTINA (geltona) — balas 40-69, dalies trūksta arba yra rimtų rizikų
+  - NEREKOMENDUOJAMA (raudona) — balas <40 arba kritinis neatitikimas
+PRESET QUESTIONS: Sugeneruok TIKSLIAI 5 konkrečius klausimus, kuriuos tiekėjas norėtų užduoti AI asistentui apie ŠĮ konkrečią konkursą. Klausimai SPECIFIŠKI šio dokumento turiniui — paminėk konkrečius reikalavimus/sertifikatus/sumas iš dokumento. PVZ. NE "Kokie reikalavimai?" o "Ar 3 metų patirties IT diegime reikalavimas mums tinka?".
+GRĄŽINA JSON laukus: score, verdiktas, verdiktoPriezastys[], scoreLabel, scorePaaiskinimas, strategija, prioritetiniaiZingsniai[], butinaiIttraukti[], isViso, presetQuestions[].
+
+
+╔══════════════════════════════════════════════╗
+║ FINALAS: agentReports + SUJUNGIMAS           ║
+╠══════════════════════════════════════════════╣
+Sujunk visų 5 agentų rezultatus į VIENĄ JSON pagal žemiau pateiktą schemą.
+Pridėk laukUS "agentReports" su kiekvieno agento ataskaita:
+  - status: "completed" (jei rado duomenis), "limited" (jei dalis trūksta), "no_data" (jei dokumente nieko nebuvo)
+  - summary: 1 sakinys (max 100 simbolių) — KĄ konkrečiai šis agentas rado
+  - confidence: 0.0-1.0 (kiek pasitiki savo rezultatu — priklauso nuo dokumento išsamumo)
+
+
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+
+GALUTINĖ JSON SCHEMA (visi laukai privalomi, jei nėra duomenų — "Nenurodyta"):
 
 {
   "pavadinimas": "tikslus pirkimo pavadinimas",
@@ -232,19 +321,26 @@ Grąžink TIKSLIAI tokios struktūros JSON (visi laukai privalomi, jei nėra inf
   ],
   "isViso": "galutinė išvada ar verta dalyvauti ir kodėl (2-3 sakiniai)",
   "presetQuestions": [
-    "5 konkretūs klausimai, kuriuos tiekėjas norėtų užduoti AI apie ŠĮ konkretų konkursą",
-    "pvz. 'Ar atitinkame 3 metų patirties reikalavimą?' o ne 'Kokie reikalavimai?'",
-    "klausimai turi būti specifiški šio konkurso turiniui — apie konkrečius sertifikatus, terminus, baudas, vertinimo punktus",
+    "5 konkretūs klausimai apie ŠĮ konkursą — su konkrečiomis sumomis/sertifikatais iš dokumento",
+    "klausimas 2",
+    "klausimas 3",
     "klausimas 4",
     "klausimas 5"
-  ]
+  ],
+  "agentReports": {
+    "documentsAgent": {"status": "completed", "summary": "Ką rado šis agentas (max 100 simb)", "confidence": 0.9},
+    "qualificationAgent": {"status": "completed", "summary": "Ką rado", "confidence": 0.85},
+    "pricingAgent": {"status": "completed", "summary": "Ką rado", "confidence": 0.75},
+    "riskAgent": {"status": "completed", "summary": "Ką rado", "confidence": 0.8},
+    "strategyAgent": {"status": "completed", "summary": "Verdikto pagrindimas", "confidence": 0.85}
+  }
 }
 
-SVARBU dėl citatų ir verdikto:
-- klausimaiPerkanciajai: pateik 2-4 konkrečius klausimus kuriuos verta užduoti perkančiajai organizacijai (dėl neaiškių sąlygų, dviprasmiškų reikalavimų, trūkstamos informacijos).
-- presetQuestions: pateik TIKSLIAI 5 konkrečius klausimus, kuriuos tiekėjas norėtų užduoti AI asistentui apie ŠĮ konkretų konkursą. Tai turi būti specifiniai šio dokumento turiniui — paminėk konkrečius reikalavimus, sertifikatus, terminus iš šio konkurso. Pvz. NE "Kokie kvalifikaciniai reikalavimai?" o "Ar atitinkame 5 metų patirties statybos darbuose reikalavimą?". NE "Kokia kaina?" o "Kiek kainuos 10,000 EUR užstatas mūsų įmonei?".
+VERTINIMO GAIRĖS:
 - verdiktas: TINKA (žalia) jei atitinka esminius kriterijus; SVARSTYTINA (geltona) jei trūksta dalies; NEREKOMENDUOJAMA (raudona) jei kritinis neatitikimas.
-- Kur randi reikalavimą ar riziką dokumente, įrašyk "puslapis" (numerį jei matomas) ir "citata" (trumpa tiksli ištrauka iki 15 žodžių). Jei nematai puslapio — rašyk 0, citata tuščia. Tai leidžia vartotojui pasitikrinti originale.`;
+- Kur randi reikalavimą ar riziką dokumente, įrašyk "puslapis" (numerį jei matomas) ir "citata" (trumpa tiksli ištrauka iki 15 žodžių). Jei nematai puslapio — rašyk 0, citata tuščia.
+- agentReports.summary turi būti KONKRETUS: NE "rado informacijos", o "Rasta 7 kvalifikaciniai reikalavimai, 3 ABEJOTINA" arba "Tik skelbimas — detalūs reikalavimai SAK faile, neįkeltas".
+- agentReports.confidence: žiūrėk realiai į dokumento išsamumą. Jei tik skelbimas — visi agentai turi confidence ~0.3-0.5. Jei pilnas SAK — 0.8-0.95.`;
 
     const aiRes = await callClaude(system, userMsg, 8000);
     const result = parseJSON(aiRes, null);
@@ -255,6 +351,29 @@ SVARBU dėl citatų ir verdikto:
 
     result.score = typeof result.score === 'number' ? result.score : 50;
     result.personalizuota = profileCtx.hasProfile;
+
+    // Apsauga: jei AI negrąžino agentReports (sena versija ar klaida), užpildom default
+    if (!result.agentReports || typeof result.agentReports !== 'object') {
+      result.agentReports = {
+        documentsAgent: { status: 'completed', summary: 'Pagrindiniai pirkimo duomenys ištraukti', confidence: 0.7 },
+        qualificationAgent: { status: 'completed', summary: 'Kvalifikacijos reikalavimai išanalizuoti', confidence: 0.7 },
+        pricingAgent: { status: 'completed', summary: 'Vertinimo kriterijai ir kainodara peržiūrėti', confidence: 0.7 },
+        riskAgent: { status: 'completed', summary: 'Rizikos ir klausimai sugeneruoti', confidence: 0.7 },
+        strategyAgent: { status: 'completed', summary: 'Verdiktas ir strategija parengti', confidence: 0.7 }
+      };
+    } else {
+      // Užtikrinam, kad visi 5 agentai yra (jei AI praleido kažkurį)
+      const defaultAgents = ['documentsAgent','qualificationAgent','pricingAgent','riskAgent','strategyAgent'];
+      defaultAgents.forEach(name => {
+        if (!result.agentReports[name]) {
+          result.agentReports[name] = { status: 'completed', summary: 'Įvykdyta', confidence: 0.7 };
+        } else {
+          // Normalizuojam confidence į intervalą 0-1
+          const c = result.agentReports[name].confidence;
+          if (typeof c !== 'number' || c < 0 || c > 1) result.agentReports[name].confidence = 0.7;
+        }
+      });
+    }
 
     if (process.env.SUPABASE_URL) {
       const supabase = createClient(process.env.SUPABASE_URL, process.env.SUPABASE_SERVICE_KEY);
