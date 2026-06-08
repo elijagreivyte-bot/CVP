@@ -470,20 +470,19 @@ footer{background:var(--navy2);border-top:1px solid var(--border);padding:48px 3
 #app.open .chat-wrap{display:block}
 .chat-bubble{width:56px;height:56px;border-radius:50%;background:var(--grad);border:none;cursor:pointer;font-size:24px;box-shadow:0 4px 20px rgba(26,86,219,.4);transition:all .2s;display:flex;align-items:center;justify-content:center}
 .chat-bubble:hover{transform:scale(1.1)}
-.chat-panel{position:absolute;bottom:68px;right:0;width:460px;background:rgba(13,23,64,.96);backdrop-filter:blur(20px);-webkit-backdrop-filter:blur(20px);border:1px solid var(--border);border-radius:20px;box-shadow:0 24px 80px rgba(0,0,0,.6),0 0 0 1px rgba(124,156,255,.05);display:none;flex-direction:column;overflow:hidden;max-height:640px;transition:width .25s ease,height .25s ease,max-height .25s ease,bottom .25s ease,right .25s ease,transform .25s ease}
+.chat-panel{position:absolute;bottom:68px;right:0;width:500px;background:rgba(13,23,64,.96);backdrop-filter:blur(20px);-webkit-backdrop-filter:blur(20px);border:1px solid var(--border);border-radius:20px;box-shadow:0 24px 80px rgba(0,0,0,.6),0 0 0 1px rgba(124,156,255,.05);display:none;flex-direction:column;overflow:hidden;max-height:680px;transition:width .25s ease,height .25s ease,max-height .25s ease,bottom .25s ease,right .25s ease,transform .25s ease}
 .chat-panel.show{display:flex}
-.chat-panel.fullscreen{position:fixed;width:min(960px,94vw);max-height:none;height:92vh;bottom:4vh;right:3vw;left:auto;border-radius:24px}
+.chat-panel.fullscreen{position:fixed;width:min(1000px,95vw);max-height:none;height:94vh;bottom:3vh;right:2.5vw;left:auto;border-radius:24px}
 .chat-hdr{padding:14px 18px;border-bottom:1px solid var(--border);display:flex;justify-content:space-between;align-items:center;flex-shrink:0;gap:10px}
 .chat-hdr h4{font-family:Sora,sans-serif;font-size:14px;font-weight:700;margin:0}
 .chat-hdr p{font-size:11px;color:var(--text2);margin:0}
 .chat-hdr-actions{display:flex;gap:4px;align-items:center}
 .chat-hdr-btn{background:none;border:none;color:var(--text2);cursor:pointer;font-size:16px;padding:6px 8px;border-radius:8px;transition:all .15s}
 .chat-hdr-btn:hover{background:rgba(255,255,255,.08);color:var(--text)}
-.chat-msgs{flex:1;overflow-y:auto;padding:16px;display:flex;flex-direction:column;gap:8px;min-height:200px;scroll-behavior:smooth}
-.chat-msgs::-webkit-scrollbar{width:6px}
-.chat-msgs::-webkit-scrollbar-thumb{background:rgba(255,255,255,.1);border-radius:3px}
-.cm{max-width:88%;padding:10px 14px;border-radius:14px;font-size:13px;line-height:1.6;animation:cmSlideIn .25s ease-out}
-.chat-panel.fullscreen .cm{font-size:14px;max-width:80%}
+.chat-msgs{flex:1;overflow-y:auto;overflow-x:hidden;padding:16px;display:flex;flex-direction:column;gap:8px;min-height:240px;scroll-behavior:smooth}
+.cm{max-width:88%;padding:11px 15px;border-radius:14px;font-size:13.5px;line-height:1.6;animation:cmSlideIn .25s ease-out;word-wrap:break-word;overflow-wrap:anywhere;word-break:break-word}
+.cm code{background:rgba(0,0,0,.3);padding:1px 6px;border-radius:4px;font-family:Menlo,monospace;font-size:12px;word-break:break-all}
+.chat-panel.fullscreen .cm{font-size:14.5px;max-width:80%}
 @keyframes cmSlideIn{from{opacity:0;transform:translateY(8px)}to{opacity:1;transform:translateY(0)}}
 .cm-user{background:var(--grad);color:#fff;align-self:flex-end;border-bottom-right-radius:5px;box-shadow:0 2px 8px rgba(124,58,237,.25)}
 .cm-ai{background:rgba(255,255,255,.06);color:var(--text);align-self:flex-start;border-bottom-left-radius:5px;border:1px solid rgba(255,255,255,.03)}
@@ -499,10 +498,13 @@ footer{background:var(--navy2);border-top:1px solid var(--border);padding:48px 3
 .chat-act-btn:hover{background:rgba(255,255,255,.12);color:var(--text);border-color:rgba(124,156,255,.3)}
 .chat-act-btn.voted{background:rgba(124,156,255,.2);color:var(--blue3);border-color:rgba(124,156,255,.4)}
 .chat-inp{padding:14px;border-top:1px solid var(--border);display:flex;gap:10px;flex-shrink:0;align-items:flex-end;background:rgba(0,0,0,.15)}
-.chat-inp textarea{flex:1;background:rgba(255,255,255,.05);border:1px solid var(--border);border-radius:12px;color:var(--text);font-family:Inter,sans-serif;font-size:14px;padding:12px 14px;outline:none;resize:none;line-height:1.5;min-height:60px;max-height:240px;transition:border-color .15s,box-shadow .15s}
-.chat-panel.fullscreen .chat-inp textarea{min-height:80px;max-height:320px;font-size:15px}
+.chat-inp textarea{flex:1;background:rgba(255,255,255,.05);border:1px solid var(--border);border-radius:12px;color:var(--text);font-family:Inter,sans-serif;font-size:14px;padding:12px 14px;outline:none;resize:none;line-height:1.5;min-height:72px;max-height:280px;transition:border-color .15s,box-shadow .15s}
+.chat-panel.fullscreen .chat-inp textarea{min-height:100px;max-height:360px;font-size:15px}
 .chat-inp textarea:focus{border-color:var(--blue3);box-shadow:0 0 0 3px rgba(124,156,255,.1)}
+.chat-inp-btns{display:flex;flex-direction:column;gap:6px;align-self:flex-end}
 .chat-inp button{background:var(--grad);border:none;color:#fff;width:42px;height:42px;border-radius:12px;cursor:pointer;font-size:18px;flex-shrink:0;transition:transform .15s,box-shadow .15s;box-shadow:0 2px 8px rgba(124,58,237,.3)}
+.chat-inp button.attach-btn{background:rgba(255,255,255,.08);box-shadow:none;border:1px solid var(--border);font-size:15px;width:42px;height:36px}
+.chat-inp button.attach-btn:hover:not(:disabled){background:rgba(124,156,255,.15);border-color:var(--blue3);transform:none;box-shadow:none}
 .chat-inp button:hover:not(:disabled){transform:translateY(-1px);box-shadow:0 4px 12px rgba(124,58,237,.4)}
 .chat-inp button:disabled{opacity:.4;cursor:not-allowed;transform:none}
 .chat-pro-wall{text-align:center;padding:28px 20px}
@@ -510,8 +512,20 @@ footer{background:var(--navy2);border-top:1px solid var(--border);padding:48px 3
 #chat-preset-chips{padding:12px 14px;border-top:1px solid var(--border);display:flex;flex-wrap:wrap;gap:6px;background:rgba(0,0,0,.1)}
 .chat-preset-btn{background:rgba(124,156,255,.08);border:1px solid rgba(124,156,255,.2);color:var(--text);padding:7px 12px;border-radius:14px;cursor:pointer;font-size:12px;text-align:left;line-height:1.3;transition:all .15s;font-family:inherit}
 .chat-preset-btn:hover{background:rgba(124,156,255,.18);border-color:var(--blue3);transform:translateY(-1px)}
+
+/* === TAMSŪS SCROLLBAR'AI VISAM PUSLAPIUI === */
+*{scrollbar-width:thin;scrollbar-color:rgba(124,156,255,.25) rgba(13,23,64,.4)}
+*::-webkit-scrollbar{width:10px;height:10px}
+*::-webkit-scrollbar-track{background:rgba(13,23,64,.3);border-radius:5px}
+*::-webkit-scrollbar-thumb{background:rgba(124,156,255,.25);border-radius:5px;border:2px solid transparent;background-clip:content-box}
+*::-webkit-scrollbar-thumb:hover{background:rgba(124,156,255,.45);background-clip:content-box;border:2px solid transparent}
+*::-webkit-scrollbar-corner{background:rgba(13,23,64,.3)}
+.chat-msgs::-webkit-scrollbar{width:6px}
+.chat-msgs::-webkit-scrollbar-thumb{background:rgba(255,255,255,.12);background-clip:padding-box;border:none}
+.chat-msgs::-webkit-scrollbar-thumb:hover{background:rgba(255,255,255,.22)}
+
 @media(max-width:768px){
-  .chat-panel{width:calc(100vw - 24px);right:-8px;max-height:75vh}
+  .chat-panel{width:calc(100vw - 24px);right:-8px;max-height:78vh}
   .chat-panel.fullscreen{width:100vw;height:100vh;bottom:0;right:0;border-radius:0}
 }
 
@@ -4221,6 +4235,90 @@ function appendChatActions(msgId){
   aiDiv.parentElement.insertBefore(row, aiDiv.nextSibling);
 }
 
+// Pridėti papildomus dokumentus į esamą chat kontekstą (po analizės)
+async function chatAttachFiles(fileList){
+  if(!fileList || fileList.length === 0) return;
+  if(!curResult){
+    if(typeof toast === 'function') toast('Pirma atlikite konkurso analizę', 'warn', 4000);
+    return;
+  }
+  const analysisId = curResult._analysisId || curResult.id;
+  if(!analysisId){
+    if(typeof toast === 'function') toast('Negalima pridėti — analizė neišsaugota', 'warn', 4000);
+    return;
+  }
+
+  const attachBtn = document.getElementById('chat-attach-btn');
+  const msgs = document.getElementById('chat-msgs');
+  const files = Array.from(fileList);
+  if(attachBtn) attachBtn.disabled = true;
+
+  // System pranešimas chat'e
+  const loaderId = 'attach-loader-' + Date.now();
+  if(msgs){
+    msgs.innerHTML += `<div class="cm cm-thinking" id="${loaderId}"><span class="cm-dots"><span></span><span></span><span></span></span><span>Skaitau ${files.length} papildomą failą...</span></div>`;
+    msgs.scrollTop = msgs.scrollHeight;
+  }
+
+  let combined = '';
+  const failedFiles = [];
+  for(const f of files){
+    let t = '';
+    try {
+      const nm = f.name.toLowerCase();
+      if(nm.endsWith('.pdf')) t = await extPDF(f);
+      else if(nm.endsWith('.docx') || nm.endsWith('.doc')) t = await extDOCX(f);
+      else if(nm.endsWith('.zip')) t = await extZIP(f);
+      else t = await extTXT(f);
+      if(t && t.trim()) combined += `\n\n=== ${f.name} ===\n${t}`;
+      else failedFiles.push(f.name + ' (tuščias)');
+    } catch(e){
+      console.error('Failo skaitymo klaida:', f.name, e);
+      failedFiles.push(f.name);
+    }
+  }
+
+  // Pašalinam loader
+  const loader = document.getElementById(loaderId);
+  if(loader) loader.remove();
+
+  if(!combined || combined.trim().length < 50){
+    if(msgs) msgs.innerHTML += `<div class="cm cm-ai" style="color:var(--warn)">⚠️ Nepavyko ištraukti teksto iš pridėtų failų${failedFiles.length ? ' (' + failedFiles.join(', ') + ')' : ''}.</div>`;
+    if(attachBtn) attachBtn.disabled = false;
+    return;
+  }
+
+  // Atnaujinam curResult._fullText (chat naudoja jį tiesiogiai)
+  if(curResult._fullText){
+    curResult._fullText += '\n\n═══ PAPILDOMI DOKUMENTAI ═══' + combined;
+  } else {
+    curResult._fullText = combined;
+  }
+
+  // Siunčiam į DB, kad ir senesnės sesijos turėtų visus dokumentus
+  const tok = localStorage.getItem(TK);
+  try {
+    await fetch(API + '/api/analysis-update', {
+      method: 'POST',
+      headers: {'Content-Type':'application/json','Authorization':'Bearer '+tok},
+      body: JSON.stringify({ analysisId: analysisId, appendText: combined })
+    });
+  } catch(e){ console.warn('analysis-update nepavyko, bet vietinis kontekstas atnaujintas:', e); }
+
+  // Sėkmingas pranešimas chat'e
+  if(msgs){
+    const fnames = files.map(f => f.name).join(', ');
+    msgs.innerHTML += `<div class="cm cm-ai" style="background:rgba(34,197,94,.1);border-color:rgba(34,197,94,.2)">✓ <strong>Pridėti ${files.length} dokumentai:</strong><br><span style="font-size:12px;color:var(--text2)">${fnames.replace(/</g,'&lt;')}</span><br><br>Dabar galite klausti AI apie šiuos dokumentus.</div>`;
+    msgs.scrollTop = msgs.scrollHeight;
+  }
+  if(typeof toast === 'function') toast('Pridėta ' + files.length + ' dokumentų — AI dabar juos matys', 'success', 4000);
+
+  // Reset input
+  const fi = document.getElementById('chat-attach-input');
+  if(fi) fi.value = '';
+  if(attachBtn) attachBtn.disabled = false;
+}
+
 
 // ══════════════════════════════════
 // CVP.lt GATEWAY
@@ -5227,10 +5325,14 @@ function closeSource(){
       <div class="cm cm-ai">Sveiki! Aš galiu atsakyti į klausimus apie šį konkursą — reikalavimus, terminus, rizikas ar strategiją. Kuo galiu padėti?</div>
     </div>
     <div class="chat-inp" id="chat-input-area" style="display:none">
-      <textarea id="chat-q" placeholder="Klauskite apie konkursą..." rows="1" 
-        oninput="this.style.height='auto';this.style.height=this.scrollHeight+'px'"
+      <input type="file" id="chat-attach-input" multiple accept=".pdf,.doc,.docx,.txt,.zip" style="display:none" onchange="chatAttachFiles(this.files)">
+      <textarea id="chat-q" placeholder="Klauskite apie konkursą... (Shift+Enter — nauja eilutė)" rows="2" 
+        oninput="this.style.height='auto';this.style.height=Math.max(72,this.scrollHeight)+'px'"
         onkeydown="if(event.key==='Enter'&&!event.shiftKey){event.preventDefault();sendChat()}"></textarea>
-      <button onclick="sendChat()" id="chat-send-btn" title="Siųsti">↑</button>
+      <div class="chat-inp-btns">
+        <button onclick="document.getElementById('chat-attach-input').click()" class="attach-btn" id="chat-attach-btn" title="Pridėti dokumentus (PDF, Word, ZIP)">📎</button>
+        <button onclick="sendChat()" id="chat-send-btn" title="Siųsti (Enter)">↑</button>
+      </div>
     </div>
   </div>
   <button class="chat-bubble" onclick="toggleChat()" title="AI Asistentas">💬</button>
