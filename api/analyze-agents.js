@@ -100,44 +100,171 @@ function parseJSON(text, fallback = {}) {
 }
 
 function buildProfileContext(profile) {
-  if (!profile || (!profile.profilioSantrauka && !profile.sector && !profile.name)) {
+  if (!profile || typeof profile !== 'object') {
     return {
       hasProfile: false,
       contextText: 'KLIENTO PROFILIS NEUŽPILDYTAS. Vertink bendrai pagal dokumento turinį. Balą skaičiuok objektyviai pagal reikalavimų sudėtingumą ir konkurencijos lygį.'
     };
   }
+  // Patikra: ar profilis turi pakankamai naudingos informacijos
+  const hasNew = !!(profile.imones_pavadinimas || profile.pagrindinis_sektorius || profile.apyvarta_metai_1);
+  const hasOld = !!(profile.profilioSantrauka || profile.sector || profile.name);
+  if (!hasNew && !hasOld) {
+    return {
+      hasProfile: false,
+      contextText: 'KLIENTO PROFILIS NEUŽPILDYTAS. Vertink bendrai pagal dokumento turinį.'
+    };
+  }
+
   let ctx = 'KLIENTO ĮMONĖS PROFILIS (naudok aktyviai vertindamas atitikimą ir tikimybę):\n\n';
-  if (profile.name) ctx += `• Pavadinimas: ${profile.name}\n`;
-  if (profile.sector) ctx += `• Veiklos sritis: ${profile.sector}\n`;
+
+  // === A. PAGRINDINĖ INFORMACIJA ===
+  ctx += '── A. PAGRINDINĖ INFORMACIJA ──\n';
+  if (profile.imones_pavadinimas || profile.name) ctx += `• Pavadinimas: ${profile.imones_pavadinimas || profile.name}\n`;
+  if (profile.imones_kodas) ctx += `• Įmonės kodas: ${profile.imones_kodas}\n`;
+  if (profile.juridine_forma) ctx += `• Juridinė forma: ${profile.juridine_forma}\n`;
+  if (profile.isikurimo_metai) ctx += `• Įsikūrimo metai: ${profile.isikurimo_metai}\n`;
+  if (profile.darbuotoju_skaicius || profile.darbuotojai) ctx += `• Darbuotojų skaičius: ${profile.darbuotoju_skaicius || profile.darbuotojai}\n`;
+  if (profile.darbuotoju_dinamika) ctx += `• Darbuotojų dinamika 12 mėn.: ${profile.darbuotoju_dinamika}\n`;
+  if (profile.pagrindinis_sektorius || profile.sector) ctx += `• Veiklos sektorius: ${profile.pagrindinis_sektorius || profile.sector}\n`;
   if (profile.activity) ctx += `• Veiklos aprašymas: ${profile.activity}\n`;
   if (profile.specializacija) ctx += `• Specializacija: ${profile.specializacija}\n`;
-  if (Array.isArray(profile.veiklos) && profile.veiklos.length)
-    ctx += `• Teikiamos paslaugos: ${profile.veiklos.join(', ')}\n`;
-  if (Array.isArray(profile.capabilityTags) && profile.capabilityTags.length)
-    ctx += `• Gebėjimai (tags): ${profile.capabilityTags.join(', ')}\n`;
-  if (Array.isArray(profile.regionai) && profile.regionai.length)
-    ctx += `• Veiklos regionai: ${profile.regionai.join(', ')}\n`;
-  if (profile.maxProjektoVerte) ctx += `• Didžiausia projekto vertė: ${profile.maxProjektoVerte}\n`;
-  if (profile.apyvarta) ctx += `• Metinė apyvarta: ${profile.apyvarta}\n`;
-  if (profile.darbuotojai) ctx += `• Darbuotojų/brigadų: ${profile.darbuotojai}\n`;
-  if (profile.patirtis) ctx += `• Patirtis: ${profile.patirtis}\n`;
-  if (profile.viesPirkPatirtis) ctx += `• Viešųjų pirkimų patirtis: ${profile.viesPirkPatirtis}\n`;
-  if (Array.isArray(profile.sertifikatai) && profile.sertifikatai.length)
-    ctx += `• Sertifikatai: ${profile.sertifikatai.join(', ')}\n`;
-  if (Array.isArray(profile.stiprybes) && profile.stiprybes.length)
-    ctx += `• Stiprybės: ${profile.stiprybes.join('; ')}\n`;
-  if (Array.isArray(profile.silpnybes) && profile.silpnybes.length)
-    ctx += `• Silpnybės: ${profile.silpnybes.join('; ')}\n`;
-  if (Array.isArray(profile.vengia) && profile.vengia.length)
-    ctx += `• Vengia (NESIŪLYK tokių konkursų): ${profile.vengia.join('; ')}\n`;
-  if (profile.kainuStrategija) ctx += `• Kainodaros strategija: ${profile.kainuStrategija}\n`;
-  if (profile.klausimynas && typeof profile.klausimynas === 'object') {
-    ctx += '\nKLAUSIMYNO ATSAKYMAI (specifinė info — naudok aktyviai):\n';
-    for (const [k, v] of Object.entries(profile.klausimynas)) {
-      if (v) ctx += `  – ${k}: ${v}\n`;
-    }
+
+  // === B. FINANSINIS PAJĖGUMAS ===
+  if (profile.apyvarta_metai_1 || profile.apyvarta_metai_2 || profile.apyvarta_metai_3 || profile.apyvarta || profile.maksimali_ivykdyta_sutarties_verte || profile.komfortine_sutarties_verte || profile.banko_garantija_galima || profile.profesines_atsakomybes_draudimas){
+    ctx += '\n── B. FINANSINIS PAJĖGUMAS ──\n';
+    if (profile.apyvarta_metai_1) ctx += `• Apyvarta (paskutiniai metai): ${profile.apyvarta_metai_1} EUR\n`;
+    if (profile.apyvarta_metai_2) ctx += `• Apyvarta prieš 2 metus: ${profile.apyvarta_metai_2} EUR\n`;
+    if (profile.apyvarta_metai_3) ctx += `• Apyvarta prieš 3 metus: ${profile.apyvarta_metai_3} EUR\n`;
+    if (profile.apyvarta && !profile.apyvarta_metai_1) ctx += `• Metinė apyvarta: ${profile.apyvarta}\n`;
+    if (profile.maksimali_ivykdyta_sutarties_verte || profile.maxProjektoVerte) ctx += `• Didžiausia įvykdyta sutarties vertė: ${profile.maksimali_ivykdyta_sutarties_verte || profile.maxProjektoVerte} EUR\n`;
+    if (profile.komfortine_sutarties_verte) ctx += `• Komfortinė sutarties vertė: ${profile.komfortine_sutarties_verte} EUR\n`;
+    if (profile.banko_garantija_galima) ctx += `• Banko garantija: ${profile.banko_garantija_galima==='taip'?'Galima':'Negalima'}\n`;
+    if (profile.banko_garantijos_limitas) ctx += `• Banko garantijos limitas: ${profile.banko_garantijos_limitas} EUR\n`;
+    if (profile.profesines_atsakomybes_draudimas) ctx += `• Profesinės atsakomybės draudimas: ${profile.profesines_atsakomybes_draudimas} EUR\n`;
+  }
+
+  // === C. PATIRTIS IR REFERENCIJOS ===
+  if (profile.patirtis_pagrindineje_veikloje_metais || profile.patirtis || profile.analogisku_projektu_skaicius_3m || profile.viesuju_pirkimu_laimeta_skaicius || profile.stambiausi_3_projektai || profile.viesPirkPatirtis){
+    ctx += '\n── C. PATIRTIS IR REFERENCIJOS ──\n';
+    if (profile.patirtis_pagrindineje_veikloje_metais) ctx += `• Patirtis pagrindinėje veikloje: ${profile.patirtis_pagrindineje_veikloje_metais} metai\n`;
+    else if (profile.patirtis) ctx += `• Patirtis: ${profile.patirtis}\n`;
+    if (profile.analogisku_projektu_skaicius_3m) ctx += `• Analogiškų projektų per 3 metus: ${profile.analogisku_projektu_skaicius_3m}\n`;
+    if (profile.analogisku_projektu_bendra_verte_3m) ctx += `• Analogiškų projektų vertė per 3m: ${profile.analogisku_projektu_bendra_verte_3m} EUR\n`;
+    if (profile.viesuju_pirkimu_laimeta_skaicius) ctx += `• Laimėtų viešųjų pirkimų: ${profile.viesuju_pirkimu_laimeta_skaicius}\n`;
+    if (profile.viesuju_pirkimu_laimeta_verte) ctx += `• Laimėtų VP bendra vertė: ${profile.viesuju_pirkimu_laimeta_verte} EUR\n`;
+    if (profile.viesPirkPatirtis && !profile.viesuju_pirkimu_laimeta_skaicius) ctx += `• Viešųjų pirkimų patirtis: ${profile.viesPirkPatirtis}\n`;
+    if (profile.stambiausi_3_projektai) ctx += `• Stambiausi 3 projektai:\n${profile.stambiausi_3_projektai}\n`;
+  }
+
+  // === D. TECHNINIS PAJĖGUMAS ===
+  if (profile.technine_baze_aprasymas || profile.subrangovai_naudojami || profile.kokybes_ar_erp_sistemos){
+    ctx += '\n── D. TECHNINIS PAJĖGUMAS ──\n';
+    if (profile.technine_baze_aprasymas) ctx += `• Techninė bazė: ${profile.technine_baze_aprasymas}\n`;
+    if (profile.subrangovai_naudojami) ctx += `• Subrangovai: ${profile.subrangovai_naudojami==='taip'?'Naudoja':'Nenaudoja'}\n`;
+    if (Array.isArray(profile.subrangovu_sritys) && profile.subrangovu_sritys.length) ctx += `• Subrangos sritys: ${profile.subrangovu_sritys.join(', ')}\n`;
+    if (Array.isArray(profile.kokybes_ar_erp_sistemos) && profile.kokybes_ar_erp_sistemos.length) ctx += `• Valdymo sistemos: ${profile.kokybes_ar_erp_sistemos.join(', ')}\n`;
+  }
+
+  // === E. SERTIFIKATAI IR LEIDIMAI ===
+  const iso = profile.iso_sertifikatai;
+  if ((Array.isArray(iso) && iso.length) || profile.profesines_licencijos || profile.sertifikatu_galiojimo_datos || profile.statybos_atestatai || profile.sertifikatai){
+    ctx += '\n── E. SERTIFIKATAI IR LEIDIMAI ──\n';
+    if (Array.isArray(iso) && iso.length) ctx += `• ISO sertifikatai: ${iso.filter(x=>x!=='Neturime').join(', ') || 'Neturi'}\n`;
+    if (profile.sertifikatu_galiojimo_datos) ctx += `• Sertifikatų galiojimas: ${profile.sertifikatu_galiojimo_datos}\n`;
+    if (profile.profesines_licencijos) ctx += `• Profesinės licencijos: ${profile.profesines_licencijos}\n`;
+    if (profile.statybos_atestatai) ctx += `• Statybos atestatai: ${profile.statybos_atestatai}\n`;
+    if (Array.isArray(profile.it_saugumo_sertifikatai) && profile.it_saugumo_sertifikatai.length) ctx += `• IT saugumo sertifikatai: ${profile.it_saugumo_sertifikatai.join(', ')}\n`;
+    if (Array.isArray(profile.sertifikatai) && profile.sertifikatai.length && !iso) ctx += `• Sertifikatai: ${profile.sertifikatai.join(', ')}\n`;
+  }
+
+  // === F. KOMANDA IR KOMPETENCIJOS ===
+  if (profile.vadovu_patirtis_metais || profile.pagrindiniu_specialistu_skaicius || profile.specialistu_kompetencijos || profile.uzsienio_kalbos){
+    ctx += '\n── F. KOMANDA IR KOMPETENCIJOS ──\n';
+    if (profile.vadovu_patirtis_metais) ctx += `• Vadovų patirtis: ${profile.vadovu_patirtis_metais} m.\n`;
+    if (profile.pagrindiniu_specialistu_skaicius) ctx += `• Pagrindinių specialistų: ${profile.pagrindiniu_specialistu_skaicius}\n`;
+    if (profile.specialistu_kompetencijos) ctx += `• Specialistų kompetencijos: ${profile.specialistu_kompetencijos}\n`;
+    if (Array.isArray(profile.uzsienio_kalbos) && profile.uzsienio_kalbos.length) ctx += `• Užsienio kalbos: ${profile.uzsienio_kalbos.join(', ')}\n`;
+    if (profile.dedikuotos_komandos_galimybe) ctx += `• Dedikuota komanda: ${profile.dedikuotos_komandos_galimybe==='taip'?'Galima':'Negalima'}\n`;
+  }
+
+  // === G. GEOGRAFINĖ APRĖPTIS ===
+  const regions = profile.aptarnaujami_regionai || profile.regionai;
+  if ((Array.isArray(regions) && regions.length) || profile.filialai_ar_atstovybes || profile.tarptautine_patirtis){
+    ctx += '\n── G. GEOGRAFINĖ APRĖPTIS ──\n';
+    if (Array.isArray(regions) && regions.length) ctx += `• Aptarnaujami regionai: ${regions.join(', ')}\n`;
+    if (profile.filialai_ar_atstovybes) ctx += `• Filialai/atstovybės: ${profile.filialai_ar_atstovybes}\n`;
+    if (profile.tarptautine_patirtis) ctx += `• Tarptautinė patirtis: ${profile.tarptautine_patirtis==='taip'?'Turi':'Neturi'}\n`;
+  }
+
+  // === H. KOKYBĖS UŽTIKRINIMAS ===
+  if (profile.garantinis_laikotarpis_menesiais || profile.reagavimo_laikas_valandomis || profile.kokybes_kontroles_procesas || profile.sla_lygis){
+    ctx += '\n── H. KOKYBĖS UŽTIKRINIMAS ──\n';
+    if (profile.garantinis_laikotarpis_menesiais) ctx += `• Tipinis garantinis laikotarpis: ${profile.garantinis_laikotarpis_menesiais} mėn.\n`;
+    if (profile.reagavimo_laikas_valandomis) ctx += `• Reagavimo laikas: ${profile.reagavimo_laikas_valandomis} val.\n`;
+    if (profile.kokybes_kontroles_procesas) ctx += `• Kokybės kontrolė: ${profile.kokybes_kontroles_procesas}\n`;
+    if (profile.sla_lygis) ctx += `• SLA: ${profile.sla_lygis}\n`;
+  }
+
+  // === I. RIZIKOS PROFILIS ===
+  if (profile.rizikos_tolerancija || profile.maksimalios_baudos_tolerancija_proc || profile.ilgu_terminu_tolerancija){
+    ctx += '\n── I. RIZIKOS PROFILIS ──\n';
+    if (profile.rizikos_tolerancija) ctx += `• Bendra rizikos tolerancija: ${profile.rizikos_tolerancija}\n`;
+    if (profile.maksimalios_baudos_tolerancija_proc) ctx += `• Max baudų tolerancija: ${profile.maksimalios_baudos_tolerancija_proc}%\n`;
+    if (profile.ilgu_terminu_tolerancija) ctx += `• Sutarties trukmės tolerancija: ${profile.ilgu_terminu_tolerancija}\n`;
+    if (profile.avanso_poreikis) ctx += `• Avanso poreikis: ${profile.avanso_poreikis==='taip'?'Reikia':'Nereikia'}\n`;
+    if (profile.grieztu_garantiju_patirtis) ctx += `• Griežtų garantijų patirtis: ${profile.grieztu_garantiju_patirtis==='taip'?'Turi':'Neturi'}\n`;
+  }
+
+  // === J. STRATEGINĖ POZICIJA ===
+  if (profile.konkurenciniai_pranasumai || profile.tipine_pelno_marza_proc || profile.pageidaujama_konkurso_verte_min || profile.pageidaujama_konkurso_verte_max || profile.nesidomi_sritimis || profile.stiprybes){
+    ctx += '\n── J. STRATEGINĖ POZICIJA ──\n';
+    if (profile.konkurenciniai_pranasumai) ctx += `• Konkurenciniai pranašumai:\n${profile.konkurenciniai_pranasumai}\n`;
+    else if (Array.isArray(profile.stiprybes) && profile.stiprybes.length) ctx += `• Stiprybės: ${profile.stiprybes.join('; ')}\n`;
+    if (profile.tipine_pelno_marza_proc) ctx += `• Tipinė pelno marža: ${profile.tipine_pelno_marza_proc}%\n`;
+    if (profile.pageidaujama_konkurso_verte_min) ctx += `• Pageidaujama min konkurso vertė: ${profile.pageidaujama_konkurso_verte_min} EUR\n`;
+    if (profile.pageidaujama_konkurso_verte_max) ctx += `• Pageidaujama max konkurso vertė: ${profile.pageidaujama_konkurso_verte_max} EUR\n`;
+    if (Array.isArray(profile.nesidomi_sritimis) && profile.nesidomi_sritimis.length) ctx += `• Vengia (NESIŪLYK tokių): ${profile.nesidomi_sritimis.join(', ')}\n`;
+  }
+
+  // === K. PAŠALINIMO PAGRINDAI ===
+  if (profile.mokesciu_isiskolinimu_yra || profile.sodros_isiskolinimu_yra || profile.bankroto_restrukturizavimo_proceduros || profile.teistumo_ar_teismo_sprendimu_rizika || profile.nepatikimu_tiekeju_sarase){
+    ctx += '\n── K. PAŠALINIMO PAGRINDAI (VPĮ 46 str.) ──\n';
+    const warnings = [];
+    if (profile.mokesciu_isiskolinimu_yra === 'taip') warnings.push('Mokesčių įsiskolinimai');
+    if (profile.sodros_isiskolinimu_yra === 'taip') warnings.push('SODROS skolos');
+    if (profile.bankroto_restrukturizavimo_proceduros === 'taip') warnings.push('Bankroto/restruktūrizavimo procedūros');
+    if (profile.teistumo_ar_teismo_sprendimu_rizika === 'taip') warnings.push('Įsiteisėję teismo sprendimai');
+    if (profile.nepatikimu_tiekeju_sarase === 'taip') warnings.push('Buvo nepatikimų tiekėjų sąraše');
+    if (warnings.length) ctx += `⚠️ RIZIKA: ${warnings.join(', ')} — gali būti pašalinta iš pirkimo!\n`;
+    else ctx += '✓ Pašalinimo pagrindų nedeklaruota\n';
+  }
+
+  // === L. SEKTORIAUS SPECIFIKA ===
+  if (profile.statybos_darbu_vadovai || profile.it_programuotoju_skaicius || profile.it_technologiju_stackas || profile.apsaugos_licencija){
+    ctx += '\n── L. SEKTORIAUS SPECIFIKA ──\n';
+    if (profile.statybos_darbu_vadovai) ctx += `• Statybos darbų vadovai: ${profile.statybos_darbu_vadovai}\n`;
+    if (profile.it_programuotoju_skaicius) ctx += `• IT specialistai: ${profile.it_programuotoju_skaicius}\n`;
+    if (Array.isArray(profile.it_technologiju_stackas) && profile.it_technologiju_stackas.length) ctx += `• IT technologijos: ${profile.it_technologiju_stackas.join(', ')}\n`;
+    if (profile.apsaugos_licencija) ctx += `• Apsaugos licencija: ${profile.apsaugos_licencija==='taip'?'Turi':'Neturi'}\n`;
+  }
+
+  // === SUDERINAMUMAS SU SENU FORMATU ===
+  if (Array.isArray(profile.veiklos) && profile.veiklos.length && !profile.konkurenciniai_pranasumai) {
+    ctx += `\n• Teikiamos paslaugos (senas profilis): ${profile.veiklos.join(', ')}\n`;
   }
   if (profile.profilioSantrauka) ctx += `\nPROFILIO SANTRAUKA:\n${profile.profilioSantrauka}\n`;
+
+  // === META: profilio užpildymo informacija agentams ===
+  const completeness = profile._wizard_completeness;
+  if (completeness !== undefined) {
+    ctx += `\n[PROFILIO IŠSAMUMAS: ${completeness}%`;
+    if (completeness < 50) ctx += ' — REIKĖS DALĮ PRIELAIDŲ; verdiktas su platesniu paklaidos diapazonu';
+    else if (completeness < 80) ctx += ' — geras pagrindas, kai kurios sritys gali būti neišsamios';
+    else ctx += ' — labai išsamus profilis, AI rezultatas tikslus';
+    ctx += ']\n';
+  }
+
   return { hasProfile: true, contextText: ctx };
 }
 
