@@ -296,9 +296,10 @@ footer{background:var(--navy2);border-top:1px solid var(--border);padding:48px 3
 /* ═══════════════════════════════
    LEGAL MODALS
 ═══════════════════════════════ */
-.legal-modal{position:fixed;inset:0;z-index:500;background:rgba(6,13,42,.95);backdrop-filter:blur(12px);display:none;align-items:center;justify-content:center;padding:24px}
+.legal-modal{position:fixed;inset:0;z-index:500;background:rgba(6,13,42,.95);backdrop-filter:blur(12px);display:none;align-items:center;justify-content:center;padding:24px;font-family:'Inter',sans-serif}
 .legal-modal.open{display:flex}
-.legal-box{background:var(--navy2);border:1px solid var(--border);border-radius:20px;width:100%;max-width:720px;max-height:88vh;display:flex;flex-direction:column}
+.legal-modal[style*="block"]{display:flex !important}
+.legal-box{background:var(--navy2);border:1px solid var(--border);border-radius:20px;width:100%;max-width:720px;max-height:88vh;display:flex;flex-direction:column;position:relative;font-family:'Inter',sans-serif}
 .legal-header{padding:28px 32px 20px;border-bottom:1px solid var(--border);display:flex;justify-content:space-between;align-items:center;flex-shrink:0}
 .legal-header h2{font-family:'Sora',sans-serif;font-size:20px;font-weight:800}
 .legal-header p{font-size:12px;color:var(--text3);margin-top:2px}
@@ -306,10 +307,28 @@ footer{background:var(--navy2);border-top:1px solid var(--border);padding:48px 3
 .legal-body{padding:32px;overflow-y:auto;flex:1}
 .legal-body h3{font-family:'Sora',sans-serif;font-size:15px;font-weight:700;margin:24px 0 10px;color:var(--text)}
 .legal-body h3:first-child{margin-top:0}
-.legal-body p{font-size:13px;color:var(--text2);line-height:1.8;margin-bottom:12px}
+.legal-body p{font-family:'Inter',sans-serif;font-size:13.5px;color:var(--text2);line-height:1.8;margin-bottom:12px}
 .legal-body ul{list-style:none;margin-bottom:12px}
-.legal-body ul li{font-size:13px;color:var(--text2);line-height:1.7;padding-left:16px;position:relative;margin-bottom:6px}
+.legal-body ul li{font-family:'Inter',sans-serif;font-size:13.5px;color:var(--text2);line-height:1.7;padding-left:16px;position:relative;margin-bottom:6px}
 .legal-body ul li::before{content:'–';position:absolute;left:0;color:var(--blue3)}
+
+/* === MODAL'AMS BE .legal-header/.legal-body WRAPPER'IO === */
+/* Veikia modal'ams kur h2/h3/p yra TIESIAI .legal-box viduje */
+.legal-box:not(:has(> .legal-body)){padding:32px;overflow-y:auto}
+.legal-box > .legal-close{position:absolute;top:14px;right:14px;width:32px;height:32px;padding:0;display:flex;align-items:center;justify-content:center;font-size:18px;line-height:1;border-radius:8px;background:rgba(255,255,255,.05)}
+.legal-box > .legal-close:hover{background:rgba(255,255,255,.1);color:var(--text)}
+.legal-box > h2{font-family:'Sora',sans-serif;font-size:22px;font-weight:800;color:var(--text);margin-bottom:6px;padding-right:40px}
+.legal-box > h3{font-family:'Sora',sans-serif;font-size:15px;font-weight:700;color:var(--text);margin:22px 0 10px}
+.legal-box > h3:first-of-type{margin-top:18px}
+.legal-box > p{font-family:'Inter',sans-serif;font-size:13.5px;color:var(--text2);line-height:1.8;margin-bottom:12px}
+.legal-box > p strong, .legal-box > p b{color:var(--text);font-weight:600}
+.legal-box > ul{list-style:none;margin-bottom:12px;padding-left:0}
+.legal-box > ul li{font-family:'Inter',sans-serif;font-size:13.5px;color:var(--text2);line-height:1.7;padding-left:16px;position:relative;margin-bottom:6px}
+.legal-box > ul li::before{content:'–';position:absolute;left:0;color:var(--blue3)}
+.legal-box > ol{padding-left:20px;margin-bottom:12px}
+.legal-box > ol li{font-family:'Inter',sans-serif;font-size:13.5px;color:var(--text2);line-height:1.7;margin-bottom:6px}
+.legal-box > a{font-family:'Inter',sans-serif;color:var(--blue3);text-decoration:none}
+.legal-box > a:hover{text-decoration:underline}
 
 /* ═══════════════════════════════
    APP SHELL
@@ -679,7 +698,7 @@ footer{background:var(--navy2);border-top:1px solid var(--border);padding:48px 3
 <div class="hero">
   <div class="hero-pill au">🎯 &nbsp;Pirmoji AI tikimybės sistema Lietuvoje</div>
   <h1 class="au d1">AI padeda <span class="grad-text">atsirinkti</span> viešuosius pirkimus su <span class="grad-text">didžiausia laimėjimo tikimybe</span></h1>
-  <p class="hero-sub au d2">Įkelkite CVP konkurso dokumentus — Bidwise AI per 30 sekundžių apskaičiuoja jūsų <strong>laimėjimo tikimybę nuo 0% iki 100%</strong>, įvertina kvalifikaciją, identifikuoja rizikas ir parengia <strong>personalizuotą strategiją</strong>. Praleiskite laiką tik tuose konkursuose kuriuose tikrai turite šansą.</p>
+  <p class="hero-sub au d2">Įkelkite CVP konkurso dokumentus — Bidwise AI per 30 sekundžių apskaičiuoja jūsų <strong>laimėjimo tikimybę nuo 0% iki 100%</strong>, įvertina kvalifikaciją, identifikuoja rizikas ir parengia <strong>personalizuotą strategiją</strong>. Skirkite laiką tik tiems konkursams, kuriuose turite realų šansą laimėti.</p>
   <div class="hero-cta au d3">
     <button class="btn btn-primary" style="padding:16px 36px;font-size:15px" onclick="openAuth('register')">🚀 Pradėti nemokamai</button>
     <button class="btn btn-outline" style="padding:16px 28px;font-size:15px" onclick="runDemo()">▶ Išbandyti demo</button>
@@ -688,7 +707,7 @@ footer{background:var(--navy2);border-top:1px solid var(--border);padding:48px 3
     <div class="trust-badge"><span class="tb-icon">🔒</span> SSL šifravimas</div>
     <div class="trust-badge"><span class="tb-icon">🇪🇺</span> GDPR / BDAR atitinka</div>
     <div class="trust-badge"><span class="tb-icon">🤖</span> Dokumentai nenaudojami AI mokymui</div>
-    <div class="trust-badge"><span class="tb-icon">🛡️</span> EU debesyje</div>
+    <div class="trust-badge"><span class="tb-icon">🛡️</span> ES infrastruktūroje</div>
   </div>
   <div class="hero-trust au d4">
     <div class="hero-trust-item"><span>✓</span> Tikimybės balas 0–100%</div>
@@ -738,7 +757,7 @@ footer{background:var(--navy2);border-top:1px solid var(--border);padding:48px 3
   <div class="container">
     <div style="text-align:center;margin-bottom:40px">
       <span class="section-label">Unikalu Lietuvos rinkoje</span>
-      <h2 class="section-title">Vienintelė sistema kuri parodo<br><span class="grad-text">duomenimis grįstą laimėjimo tikimybę</span></h2>
+      <h2 class="section-title">Vienintelė sistema, kuri parodo<br><span class="grad-text">duomenimis grįstą laimėjimo tikimybę</span></h2>
       <p class="section-sub" style="max-width:620px;margin:0 auto">Niekas kitas Lietuvoje to nedaro. Mūsų AI palygina konkurso reikalavimus su jūsų įmonės profiliu ir grąžina konkretų skaičių — nuo 0 iki 100%.</p>
     </div>
 
@@ -803,7 +822,7 @@ footer{background:var(--navy2);border-top:1px solid var(--border);padding:48px 3
         </ul>
       </div>
     </div>
-    <p style="text-align:center;margin-top:32px;font-size:14px;color:var(--text2);max-width:600px;margin-left:auto;margin-right:auto;line-height:1.7">💡 <strong>Mes nesivaržome su monitoringo įrankiais</strong> — naudokitės jais konkursams rasti. Pas mus ateikite kai reikia <strong>giliai išanalizuoti konkretų konkursą ir suprasti ar verta jame dalyvauti</strong>.</p>
+    <p style="text-align:center;margin-top:32px;font-size:14px;color:var(--text2);max-width:600px;margin-left:auto;margin-right:auto;line-height:1.7">💡 <strong>Mes nesivaržome su monitoringo įrankiais</strong> — naudokitės jais konkursams rasti. Pas mus ateikite, kai reikia <strong>giliai išanalizuoti konkretų konkursą ir suprasti ar verta jame dalyvauti</strong>.</p>
   </div>
 </div>
 
@@ -837,7 +856,7 @@ footer{background:var(--navy2);border-top:1px solid var(--border);padding:48px 3
 <div class="section" style="padding-top:0">
   <div class="container">
     <span class="section-label">Funkcionalumas</span>
-    <h2 class="section-title">Viskas ko reikia konkursui laimėti</h2>
+    <h2 class="section-title">Viskas, ko reikia konkursui laimėti</h2>
     <div class="features">
       <div class="feat au">
         <div class="feat-icon">🎯</div>
@@ -867,7 +886,7 @@ footer{background:var(--navy2);border-top:1px solid var(--border);padding:48px 3
       </div>
       <div class="feat au d5">
         <div class="feat-icon">💬</div>
-        <h3>AI Asistentas</h3>
+        <h3>AI asistentas</h3>
         <p>Užduokite klausimus apie konkursą — asistentas atsako remdamasis išanalizuotais dokumentais. Tik Pro ir Komanda planams.</p>
       </div>
     </div>
@@ -880,7 +899,7 @@ footer{background:var(--navy2);border-top:1px solid var(--border);padding:48px 3
     <div style="text-align:center;margin-bottom:48px">
       <span class="section-label">Vidinė virtuvė</span>
       <h2 class="section-title">5 AI agentai dirba <span class="grad-text">jūsų konkursui</span></h2>
-      <p class="section-sub" style="max-width:600px;margin:0 auto">Vietoj vieno generinio AI — penki specializuoti agentai, kiekvienas savo srities ekspertas. Tai kodėl rezultatai gilesni ir tikslesni.</p>
+      <p class="section-sub" style="max-width:600px;margin:0 auto">Vietoj vieno bendro atsakymo konkursą analizuoja penki specializuoti AI agentai. Todėl rezultatas tampa aiškesnis, gilesnis ir labiau pritaikytas jūsų įmonei.</p>
     </div>
 
     <div style="max-width:880px;margin:0 auto;display:flex;flex-direction:column;gap:12px">
@@ -896,15 +915,15 @@ footer{background:var(--navy2);border-top:1px solid var(--border);padding:48px 3
         <div style="font-size:28px;flex-shrink:0">🎓</div>
         <div>
           <h4 style="font-family:Sora,sans-serif;font-size:15px;font-weight:700;color:var(--text);margin-bottom:4px">2. Kvalifikacijos agentas</h4>
-          <p style="font-size:13px;color:var(--text2);line-height:1.6">Palygina reikalavimus su jūsų įmonės profiliu. Pasako tiksliai ką atitinkate ir ko trūksta — apyvarta, sertifikatai, patirtis.</p>
+          <p style="font-size:13px;color:var(--text2);line-height:1.6">Palygina reikalavimus su jūsų įmonės profiliu. Parodo tiksliai, ką atitinkate ir ko trūksta — apyvarta, sertifikatai, patirtis.</p>
         </div>
       </div>
 
       <div style="display:flex;gap:18px;align-items:flex-start;background:var(--card);border:1px solid var(--border);border-radius:14px;padding:20px 24px">
         <div style="font-size:28px;flex-shrink:0">💰</div>
         <div>
-          <h4 style="font-family:Sora,sans-serif;font-size:15px;font-weight:700;color:var(--text);margin-bottom:4px">3. Kainodaron agentas</h4>
-          <p style="font-size:13px;color:var(--text2);line-height:1.6">Analizuoja vertinimo kriterijus ir svorius. Pataria kaip formuoti kainą kad gautumėte daugiausiai taškų neprarandant pelno.</p>
+          <h4 style="font-family:Sora,sans-serif;font-size:15px;font-weight:700;color:var(--text);margin-bottom:4px">3. Kainodaros agentas</h4>
+          <p style="font-size:13px;color:var(--text2);line-height:1.6">Analizuoja vertinimo kriterijus ir jų svorius. Padeda suprasti, kaip formuoti kainą, kad surinktumėte daugiau taškų neprarasdami pelno.</p>
         </div>
       </div>
 
@@ -979,7 +998,7 @@ footer{background:var(--navy2);border-top:1px solid var(--border);padding:48px 3
         <div class="price-amount">0€</div>
         <div class="price-period">amžinai, be kortelės</div>
         <ul class="price-features">
-          <li><span>✓</span> 3 analizės — paragauti</li>
+          <li><span>✓</span> 3 analizės — išbandymui</li>
           <li><span>✓</span> Atitikimo įvertinimas</li>
           <li><span>✓</span> Terminai ir rizikos</li>
           <li><span>✓</span> Kvalifikacijos patikrinimas</li>
@@ -1069,11 +1088,11 @@ footer{background:var(--navy2);border-top:1px solid var(--border);padding:48px 3
           <span>Ar mano duomenys saugūs?</span>
           <span style="color:var(--blue3);font-size:20px;font-weight:300">+</span>
         </summary>
-        <p style="margin-top:14px;font-size:13px;color:var(--text2);line-height:1.7">Taip. Sistema atitinka BDAR reikalavimus. Visa komunikacija šifruojama (HTTPS), slaptažodžiai bcrypt hashinami. Įkelti dokumentai nesaugomi ilgam — tik analizės rezultatai. Galite ištrinti visus duomenis bet kada iš paskyros nustatymų.</p>
+        <p style="margin-top:14px;font-size:13px;color:var(--text2);line-height:1.7">Taip. Sistema atitinka BDAR reikalavimus. Visa komunikacija šifruojama (HTTPS), slaptažodžiai saugomi kaip bcrypt maišos. Įkelti dokumentai nenaudojami AI modelių mokymui. Analizės rezultatai ir ribotas dokumentų tekstas saugomi jūsų paskyroje, kad galėtumėte peržiūrėti istoriją ir naudotis AI asistentu. Galite ištrinti visus duomenis bet kada iš paskyros nustatymų.</p>
       </details>
       <details style="background:var(--card);border:1px solid var(--border);border-radius:14px;padding:18px 22px">
         <summary style="font-size:15px;font-weight:700;color:var(--text);cursor:pointer;font-family:Sora,sans-serif;list-style:none;display:flex;justify-content:space-between;align-items:center">
-          <span>Kas atsitinka jei išnaudoju nemokamas 3 analizes?</span>
+          <span>Kas nutinka, jei išnaudoju nemokamas 3 analizes?</span>
           <span style="color:var(--blue3);font-size:20px;font-weight:300">+</span>
         </summary>
         <p style="margin-top:14px;font-size:13px;color:var(--text2);line-height:1.7">Galėsite peržiūrėti senas analizes nemokamai, bet naujų — ne. Pereiti į Pro planą (29€/mėn) galite bet kada — gausite neribotas analizes, AI asistentą, PDF eksportą, klausimų raštus ir prioritetinį palaikymą.</p>
@@ -1211,7 +1230,7 @@ footer{background:var(--navy2);border-top:1px solid var(--border);padding:48px 3
       <div class="trust-badge"><span class="tb-icon">🔒</span> SSL šifravimas</div>
       <div class="trust-badge"><span class="tb-icon">🇪🇺</span> GDPR / BDAR</div>
       <div class="trust-badge"><span class="tb-icon">🤖</span> Dokumentai nenaudojami AI mokymui</div>
-      <div class="trust-badge"><span class="tb-icon">🛡️</span> EU debesyje</div>
+      <div class="trust-badge"><span class="tb-icon">🛡️</span> ES infrastruktūroje</div>
     </div>
     <div class="footer-bottom">
       <p>© 2026 Bidwise AI · Beta versija · Sukurta Lietuvoje 🇱🇹</p>
@@ -1467,7 +1486,7 @@ footer{background:var(--navy2);border-top:1px solid var(--border);padding:48px 3
       <h3>4. Pro planas ir mokėjimai</h3>
       <ul>
         <li>Pro planas suteikia neribotą analizių skaičių</li>
-        <li>Standartinė Pro kaina: 29 EUR/mėn. Komanda planas: 59 EUR/mėn.</li>
+        <li>Standartinė Pro kaina: 29 EUR/mėn. Komanda planas: 99 EUR/mėn.</li>
         <li>BETA testavimo laikotarpiu gali būti taikoma speciali arba nemokama kaina</li>
         <li>Mokėjimai tvarkomi per saugius mokėjimo tarpininkus</li>
         <li>Prenumerata atnaujinama automatiškai iki atšaukimo</li>
@@ -1490,7 +1509,7 @@ footer{background:var(--navy2);border-top:1px solid var(--border);padding:48px 3
       <p>Bidwise AI platforma ir jos turinys priklauso mums. Jūsų įkelti dokumentai lieka jūsų nuosavybe. Generuotos analizės priklauso jums.</p>
 
       <h3>8. Atsakomybės ribojimas</h3>
-      <p>Bidwise AI teikia analitinę informaciją kaip <strong>pagalbinę priemonę</strong>, o ne kaip teisinę ar finansinę konsultaciją. Galutiniai sprendimai dėl konkursų dalyvaimo priimami jūsų atsakomybe. Negarantuojame analizės tikslumo ar laimėjimo.</p>
+      <p>Bidwise AI teikia analitinę informaciją kaip <strong>pagalbinę priemonę</strong>, o ne kaip teisinę ar finansinę konsultaciją. Galutiniai sprendimai dėl dalyvavimo konkursuose priimami jūsų atsakomybe. Negarantuojame analizės tikslumo ar laimėjimo.</p>
 
       <h3>9. Paskyros panaikinimas</h3>
       <p>Turime teisę sustabdyti ar panaikinti paskyrą pažeidus šias Sąlygas. Jūs bet kuriuo metu galite ištrinti paskyrą kreipdamiesi į elija@bidwiseai.lt.</p>
@@ -1533,10 +1552,10 @@ footer{background:var(--navy2);border-top:1px solid var(--border);padding:48px 3
       <span class="sn-icon">🔍</span> Nauja analizė
     </button>
     <button class="sn" id="sn-cvp" onclick="pg('cvp')">
-      <span class="sn-icon">🇱🇹</span> CVP.lt paieška
+      <span class="sn-icon">🇱🇹</span> CVP IS paieška
     </button>
     <button class="sn" id="sn-assistant" onclick="pg('assistant')">
-      <span class="sn-icon">💬</span> AI Asistentas <span id="nav-pro-badge" style="font-size:9px;background:rgba(124,58,237,.2);color:var(--purple2);padding:2px 6px;border-radius:8px;margin-left:4px">PRO</span>
+      <span class="sn-icon">💬</span> AI asistentas <span id="nav-pro-badge" style="font-size:9px;background:rgba(124,58,237,.2);color:var(--purple2);padding:2px 6px;border-radius:8px;margin-left:4px">PRO</span>
     </button>
     <button class="sn" id="sn-projects" onclick="pg('projects')">
       <span class="sn-icon">📁</span> Projektai
@@ -1716,7 +1735,7 @@ footer{background:var(--navy2);border-top:1px solid var(--border);padding:48px 3
         <div style="font-size:11px;color:var(--text3);margin-top:4px" id="stat-time-eur">~0 EUR vertės</div>
       </div>
       <div class="stat-card" style="background:linear-gradient(135deg,rgba(26,86,219,.08),rgba(124,58,237,.08));border:1px solid rgba(59,130,246,.2);border-radius:14px;padding:18px 20px">
-        <div style="font-size:11px;color:var(--text2);font-weight:700;letter-spacing:1px;text-transform:uppercase;margin-bottom:6px">Win rate</div>
+        <div style="font-size:11px;color:var(--text2);font-weight:700;letter-spacing:1px;text-transform:uppercase;margin-bottom:6px">Laimėjimo rodiklis</div>
         <div style="font-size:32px;font-weight:900;font-family:Sora,sans-serif;background:var(--grad);-webkit-background-clip:text;-webkit-text-fill-color:transparent" id="stat-winrate">–</div>
         <div style="font-size:11px;color:var(--text3);margin-top:4px" id="stat-winrate-sub">Nepradėtos sekti</div>
       </div>
@@ -1758,7 +1777,7 @@ footer{background:var(--navy2);border-top:1px solid var(--border);padding:48px 3
   <!-- CVP.lt SEARCH PAGE -->
   <div id="pg-cvp" class="hidden">
     <h1 class="pg-h">🇱🇹 CVP konkursų navigatorius</h1>
-    <p class="pg-sub">Raskite konkursus pagal BVPŽ kodą — visa CPV klasifikacija vienoje vietoje</p>
+    <p class="pg-sub">Raskite aktualius konkursus pagal BVPŽ kodą. Visa CPV klasifikacija — vienoje vietoje.</p>
 
     <!-- TABS -->
     <div style="display:flex;gap:4px;margin-bottom:18px;border-bottom:1px solid var(--border);padding-bottom:2px">
@@ -1788,7 +1807,7 @@ footer{background:var(--navy2);border-top:1px solid var(--border);padding:48px 3
     <div id="cvp-pane-research" style="display:none">
       <div style="background:rgba(124,58,237,.06);border:1px solid rgba(124,58,237,.15);border-radius:10px;padding:14px 18px;margin-bottom:20px;font-size:13px;color:var(--text2);line-height:1.7">
         💡 <strong style="color:var(--text)">Tyrinėkite konkurentus ir istorinius laimėjimus</strong><br>
-        Visi viešųjų pirkimų duomenys Lietuvoje yra nemokami ir vieši. Šie oficialūs šaltiniai parodo kas laimėjo panašius konkursus, už kokią kainą ir kada.
+        Visi viešųjų pirkimų duomenys Lietuvoje yra nemokami ir vieši. Šie oficialūs šaltiniai parodo, kas laimėjo panašius konkursus, už kokią kainą ir kada.
       </div>
       <div style="display:grid;grid-template-columns:1fr 1fr;gap:14px;margin-bottom:20px">
         <a href="https://cvpp.eviesiejipirkimai.lt/" target="_blank" rel="noopener noreferrer" style="text-decoration:none">
@@ -1878,7 +1897,7 @@ footer{background:var(--navy2);border-top:1px solid var(--border);padding:48px 3
 
   <!-- AI ASSISTANT PAGE -->
   <div id="pg-assistant" class="hidden">
-    <h1 class="pg-h">💬 AI Asistentas</h1>
+    <h1 class="pg-h">💬 AI asistentas</h1>
     <p class="pg-sub">Diskutuokite apie analizę ir gaukite konkrečius atsakymus</p>
     <div id="assistant-no-result" style="text-align:center;padding:64px 32px">
       <div style="font-size:48px;margin-bottom:16px">💬</div>
@@ -2032,7 +2051,7 @@ footer{background:var(--navy2);border-top:1px solid var(--border);padding:48px 3
     <p>Visa komunikacija tarp jūsų naršyklės ir mūsų serverių šifruojama naudojant TLS/SSL (HTTPS). Slaptažodžiai saugomi tik bcrypt hash pavidalu — net mes negalime jų matyti.</p>
 
     <h3>Dokumentų apsauga</h3>
-    <p>Įkelti pirkimo dokumentai apdorojami analizei ir <strong>automatiškai ištrinami iš serverių iškart po analizės</strong>. Mūsų duomenų bazėje saugomi tik struktūruoti analizės rezultatai, ne originalūs failai.</p>
+    <p>Įkelti pirkimo dokumentai <strong>nenaudojami AI modelių mokymui</strong>. Originalūs failai (PDF, Word) į mūsų duomenų bazę nesaugomi. Saugome tik struktūruotus analizės rezultatus ir ribotą dokumentų tekstą — tam, kad galėtumėte peržiūrėti istoriją ir naudotis AI asistentu.</p>
 
     <h3>Infrastruktūra</h3>
     <p>Sistema veikia ES teritorijoje esančiuose serveriuose (Vercel + Supabase). Duomenys neperduodami už ES ribų be tinkamų apsaugos priemonių.</p>
@@ -2083,7 +2102,7 @@ footer{background:var(--navy2);border-top:1px solid var(--border);padding:48px 3
     <p>Komandos planas (keli vartotojai) · Detalesnė konkurentų analizė · Mobilios aplikacijos optimizacija</p>
 
     <h3 style="color:var(--blue3)">📅 Planuojama</h3>
-    <p>Automatinis konkursų monitoringas pagal jūsų profilį · El. pašto pranešimai apie naujus tinkamus konkursus · Integracija su VPT atvirais duomenimis · Istorinių laimėjimų duomenų bazė · Konkursų palyginimas šonas šonan</p>
+    <p>Automatinis konkursų monitoringas pagal jūsų profilį · El. pašto pranešimai apie naujus tinkamus konkursus · Integracija su VPT atvirais duomenimis · Istorinių laimėjimų duomenų bazė · Konkursų palyginimas šalia vienas kito</p>
 
     <p style="margin-top:24px;padding:14px;background:rgba(59,130,246,.08);border-radius:10px;font-size:13px">💡 Turite idėją ką pridėti? Parašykite <a href="mailto:elija@bidwiseai.lt" style="color:var(--blue3)">elija@bidwiseai.lt</a> — beta vartotojų pasiūlymai formuoja produktą.</p>
   </div>
@@ -2193,7 +2212,7 @@ footer{background:var(--navy2);border-top:1px solid var(--border);padding:48px 3
     <p>Išsiųsime pilną HTML ataskaitą su visomis analizės sekcijomis.</p>
     <div class="fg" style="text-align:left"><label>Gavėjo el. paštas</label><input class="inp" type="email" id="et" placeholder="komanda@imone.lt"></div>
     <div style="background:rgba(59,130,246,.06);border:1px solid rgba(59,130,246,.15);border-radius:8px;padding:10px 14px;font-size:12px;color:var(--text2);margin-bottom:12px">
-      📋 Ataskaita bus išsiųsta kaip HTML el. laiškas. Patikrinkite spam aplanką jei negaunate.
+      📋 Ataskaita bus išsiųsta kaip HTML el. laiškas. Patikrinkite šlamšto aplanką, jei laiško negaunate.
     </div>
     <div class="err" id="ee"></div>
     <div class="suc" id="eo">✓ Išsiųsta sėkmingai!</div>
@@ -3742,11 +3761,11 @@ function exportPDF(){
           <span>Ar mano duomenys saugūs?</span>
           <span style="color:var(--blue3);font-size:20px;font-weight:300">+</span>
         </summary>
-        <p style="margin-top:14px;font-size:13px;color:var(--text2);line-height:1.7">Taip. Sistema atitinka BDAR reikalavimus. Visa komunikacija šifruojama (HTTPS), slaptažodžiai bcrypt hashinami. Įkelti dokumentai nesaugomi ilgam — tik analizės rezultatai. Galite ištrinti visus duomenis bet kada iš paskyros nustatymų.</p>
+        <p style="margin-top:14px;font-size:13px;color:var(--text2);line-height:1.7">Taip. Sistema atitinka BDAR reikalavimus. Visa komunikacija šifruojama (HTTPS), slaptažodžiai saugomi kaip bcrypt maišos. Įkelti dokumentai nenaudojami AI modelių mokymui. Analizės rezultatai ir ribotas dokumentų tekstas saugomi jūsų paskyroje, kad galėtumėte peržiūrėti istoriją ir naudotis AI asistentu. Galite ištrinti visus duomenis bet kada iš paskyros nustatymų.</p>
       </details>
       <details style="background:var(--card);border:1px solid var(--border);border-radius:14px;padding:18px 22px">
         <summary style="font-size:15px;font-weight:700;color:var(--text);cursor:pointer;font-family:Sora,sans-serif;list-style:none;display:flex;justify-content:space-between;align-items:center">
-          <span>Kas atsitinka jei išnaudoju nemokamas 3 analizes?</span>
+          <span>Kas nutinka, jei išnaudoju nemokamas 3 analizes?</span>
           <span style="color:var(--blue3);font-size:20px;font-weight:300">+</span>
         </summary>
         <p style="margin-top:14px;font-size:13px;color:var(--text2);line-height:1.7">Galėsite peržiūrėti senas analizes nemokamai, bet naujų — ne. Pereiti į Pro planą (29€/mėn) galite bet kada — gausite neribotas analizes, AI asistentą, PDF eksportą, klausimų raštus ir prioritetinį palaikymą.</p>
@@ -4731,18 +4750,25 @@ function initCVPPage(){
   }
 }
 
-function openCVP(){
+async function openCVP(){
   const q = (document.getElementById('cvp-q')?.value||'').trim();
   if(q){
     const recent = JSON.parse(localStorage.getItem('cvp_recent')||'[]');
     const updated = [q, ...recent.filter(r=>r!==q)].slice(0,10);
     localStorage.setItem('cvp_recent', JSON.stringify(updated));
+    // Vietoj nestabilios greitos paieškos URL — nukopijuojam raktažodį ir atveriam išplėstinę paiešką
+    try {
+      await navigator.clipboard.writeText(q);
+      if(typeof toast === 'function'){
+        toast('Raktažodis „' + q + '" nukopijuotas. Įklijuokite jį CVP IS paieškoje.', 'success', 6000);
+      }
+    } catch(e){
+      if(typeof toast === 'function'){
+        toast('Nukopijuokite raktažodį: ' + q, 'warn', 6000);
+      }
+    }
   }
-  // TIESIOGINĖ paieška su jau įvestu žodžiu
-  const url = q
-    ? 'https://viesiejipirkimai.lt/epps/quickSearchAction.do?searchType=cftFTS&searchText=' + encodeURIComponent(q)
-    : 'https://viesiejipirkimai.lt/epps/home.do';
-  window.open(url, '_blank', 'noopener');
+  window.open(CVP_ADVANCED_SEARCH_URL, '_blank', 'noopener,noreferrer');
 }
 
 
@@ -5032,7 +5058,7 @@ function renderDashStats(items){
   document.getElementById('stat-time').textContent = hours + ' val.';
   document.getElementById('stat-time-eur').textContent = '~' + eur.toLocaleString('lt-LT') + ' EUR vertės';
 
-  // Win rate
+  // Laimėjimo rodiklis
   const tracked = items.filter(a => a.outcome);
   const wins = tracked.filter(a => a.outcome === 'won').length;
   const wrEl = document.getElementById('stat-winrate');
@@ -5239,38 +5265,23 @@ function renderBVPZTree(){
   });
 }
 
-function openCVPByCode(code, name){
-  // POST forma — CVP IS priima cpvCodes per POST išplėstinėje paieškoje
-  const form = document.createElement('form');
-  form.method = 'POST';
-  form.action = 'https://viesiejipirkimai.lt/epps/searchNotices.do?type=cftFTS';
-  form.target = '_blank';
-  form.style.display = 'none';
+// CVP IS išplėstinė paieška — patikima alternatyva nestabiliam vidiniam endpoint'ui
+const CVP_ADVANCED_SEARCH_URL = 'https://viesiejipirkimai.lt/epps/prepareAdvancedSearch.do?type=cftFTS';
 
-  // cpvCodes laukas — portalas filtruoja pagal šį parametrą
-  const f1 = document.createElement('input');
-  f1.type = 'hidden';
-  f1.name = 'cpvCodes';
-  f1.value = code;
-  form.appendChild(f1);
-
-  // Būsena — tik aktyvūs pirkimai (Pasiūlymų teikimas)
-  const f2 = document.createElement('input');
-  f2.type = 'hidden';
-  f2.name = 'cftStatus';
-  f2.value = 'TENDERING';
-  form.appendChild(f2);
-
-  document.body.appendChild(form);
-  form.submit();
-  document.body.removeChild(form);
-
-  // Trumpa žinutė
-  const tip = document.createElement('div');
-  tip.style.cssText = 'position:fixed;top:80px;right:24px;background:#10b981;color:#fff;padding:14px 18px;border-radius:12px;font-size:13px;z-index:999;box-shadow:0 4px 20px rgba(0,0,0,.3);max-width:340px;line-height:1.6';
-  tip.innerHTML = '✅ <strong>CVP atidarytas su filtru</strong><br><span style="font-family:monospace;background:rgba(255,255,255,.2);padding:2px 8px;border-radius:4px;font-size:12px">' + code + '</span> ' + (name||'') + '<br><span style="opacity:.85;font-size:11px;margin-top:4px;display:inline-block">Rezultatai filtruoti pagal BVPŽ kodą</span>';
-  document.body.appendChild(tip);
-  setTimeout(() => tip && tip.remove(), 6000);
+async function openCVPByCode(code, name){
+  // Vietoj POST formos į vidinį endpoint'ą (kuris gali nutrūkti) —
+  // nukopijuojam kodą ir atveriam CVP IS išplėstinę paiešką
+  try {
+    await navigator.clipboard.writeText(code);
+    if(typeof toast === 'function'){
+      toast('BVPŽ kodas ' + code + ' nukopijuotas. Įklijuokite jį į lauką „BVPŽ kodai" CVP IS paieškoje.', 'success', 7000);
+    }
+  } catch(e){
+    if(typeof toast === 'function'){
+      toast('Nukopijuokite BVPŽ kodą: ' + code, 'warn', 7000);
+    }
+  }
+  window.open(CVP_ADVANCED_SEARCH_URL, '_blank', 'noopener,noreferrer');
 }
 
 // Textarea auto-resize
@@ -5463,7 +5474,7 @@ function closeSource(){
   <div class="chat-panel" id="chat-panel">
     <div class="chat-hdr">
       <div>
-        <h4>💬 AI Asistentas</h4>
+        <h4>💬 AI asistentas</h4>
         <p id="chat-context-label">Klauskite apie šį konkursą</p>
       </div>
       <div class="chat-hdr-actions">
@@ -5497,7 +5508,7 @@ function closeSource(){
       </div>
     </div>
   </div>
-  <button class="chat-bubble" onclick="toggleChat()" title="AI Asistentas">💬</button>
+  <button class="chat-bubble" onclick="toggleChat()" title="AI asistentas">💬</button>
 </div>
 
 
