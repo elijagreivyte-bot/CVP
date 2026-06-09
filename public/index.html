@@ -537,6 +537,80 @@ footer{background:var(--navy2);border-top:1px solid var(--border);padding:48px 3
 .chat-preset-btn{background:rgba(124,156,255,.08);border:1px solid rgba(124,156,255,.2);color:var(--text);padding:7px 12px;border-radius:14px;cursor:pointer;font-size:12px;text-align:left;line-height:1.3;transition:all .15s;font-family:inherit}
 .chat-preset-btn:hover{background:rgba(124,156,255,.18);border-color:var(--blue3);transform:translateY(-1px)}
 
+/* === PROFILIO VEDLYS (PROFILE WIZARD) === */
+.pw-modal{position:fixed;inset:0;z-index:600;background:rgba(6,13,42,.92);backdrop-filter:blur(14px);display:none;align-items:stretch;justify-content:center;padding:20px;font-family:'Inter',sans-serif}
+.pw-modal.open{display:flex}
+.pw-box{background:var(--navy2);border:1px solid var(--border);border-radius:20px;width:100%;max-width:1100px;display:flex;overflow:hidden;box-shadow:0 30px 90px rgba(0,0,0,.6);max-height:calc(100vh - 40px)}
+.pw-sidebar{width:280px;background:rgba(0,0,0,.2);border-right:1px solid var(--border);display:flex;flex-direction:column;flex-shrink:0;overflow:hidden}
+.pw-sidebar-hdr{padding:24px 24px 18px;border-bottom:1px solid var(--border);flex-shrink:0}
+.pw-sidebar-hdr h2{font-family:Sora,sans-serif;font-size:17px;font-weight:800;margin-bottom:6px}
+.pw-sidebar-hdr p{font-size:11px;color:var(--text2);line-height:1.5}
+.pw-progress-wrap{padding:14px 24px 18px;border-bottom:1px solid var(--border);flex-shrink:0}
+.pw-progress-label{display:flex;justify-content:space-between;font-size:11px;color:var(--text2);margin-bottom:6px}
+.pw-progress-bar{height:6px;background:var(--card2);border-radius:4px;overflow:hidden}
+.pw-progress-fill{height:100%;background:linear-gradient(90deg,var(--blue3),#7c3aed);border-radius:4px;transition:width .4s;width:0%}
+.pw-sections-list{flex:1;overflow-y:auto;padding:10px 12px}
+.pw-section-btn{display:flex;align-items:center;gap:10px;width:100%;padding:10px 12px;background:none;border:none;color:var(--text2);font-family:inherit;font-size:13px;text-align:left;border-radius:8px;cursor:pointer;transition:all .15s;margin-bottom:2px}
+.pw-section-btn:hover{background:rgba(255,255,255,.04);color:var(--text)}
+.pw-section-btn.active{background:rgba(124,156,255,.1);color:var(--text);border-left:3px solid var(--blue3);padding-left:9px}
+.pw-section-btn .pw-section-icon{font-size:16px;width:22px;flex-shrink:0;text-align:center}
+.pw-section-btn .pw-section-num{font-size:10px;color:var(--text3);background:rgba(255,255,255,.06);padding:2px 6px;border-radius:6px;flex-shrink:0;min-width:22px;text-align:center}
+.pw-section-btn .pw-section-name{flex:1;line-height:1.3;min-width:0}
+.pw-section-btn.complete .pw-section-num{background:rgba(34,197,94,.2);color:var(--success)}
+.pw-section-btn.partial .pw-section-num{background:rgba(245,158,11,.2);color:var(--warn)}
+
+.pw-main{flex:1;display:flex;flex-direction:column;overflow:hidden;min-width:0}
+.pw-main-hdr{padding:24px 32px 18px;border-bottom:1px solid var(--border);flex-shrink:0;display:flex;justify-content:space-between;align-items:flex-start;gap:16px}
+.pw-main-hdr-text{flex:1;min-width:0}
+.pw-main-hdr h3{font-family:Sora,sans-serif;font-size:20px;font-weight:700;margin-bottom:4px}
+.pw-main-hdr p{font-size:13px;color:var(--text2);line-height:1.5}
+.pw-close-btn{background:rgba(255,255,255,.05);border:none;color:var(--text2);width:36px;height:36px;border-radius:10px;cursor:pointer;font-size:18px;flex-shrink:0;transition:all .15s;display:flex;align-items:center;justify-content:center}
+.pw-close-btn:hover{background:rgba(255,255,255,.12);color:var(--text)}
+.pw-fields{flex:1;overflow-y:auto;padding:24px 32px}
+.pw-field{margin-bottom:20px;animation:cmSlideIn .25s ease-out}
+.pw-field-label{display:block;font-size:13px;font-weight:600;color:var(--text);margin-bottom:6px}
+.pw-field-label .pw-req{color:var(--warn);font-size:11px;margin-left:6px;font-weight:500}
+.pw-field-help{font-size:11px;color:var(--text2);margin-bottom:8px;line-height:1.5}
+.pw-input,.pw-textarea,.pw-select{width:100%;background:rgba(255,255,255,.04);border:1px solid var(--border);border-radius:10px;color:var(--text);font-family:'Inter',sans-serif;font-size:14px;padding:11px 14px;outline:none;transition:border-color .15s,box-shadow .15s}
+.pw-input:focus,.pw-textarea:focus,.pw-select:focus{border-color:var(--blue3);box-shadow:0 0 0 3px rgba(124,156,255,.1)}
+.pw-textarea{min-height:90px;resize:vertical;font-family:'Inter',sans-serif;line-height:1.5}
+.pw-select{appearance:none;background-image:url("data:image/svg+xml;utf8,<svg xmlns='http://www.w3.org/2000/svg' width='12' height='8' viewBox='0 0 12 8'><path fill='%239db2d8' d='M6 8L0 0h12z'/></svg>");background-repeat:no-repeat;background-position:right 14px center;padding-right:36px;cursor:pointer}
+.pw-select option{background:var(--navy2);color:var(--text)}
+.pw-bool-group{display:flex;gap:10px}
+.pw-bool-btn{flex:1;background:rgba(255,255,255,.03);border:1px solid var(--border);color:var(--text2);padding:11px 14px;border-radius:10px;cursor:pointer;font-family:inherit;font-size:14px;transition:all .15s}
+.pw-bool-btn:hover{background:rgba(255,255,255,.06);color:var(--text)}
+.pw-bool-btn.active{background:rgba(124,156,255,.15);border-color:var(--blue3);color:var(--text);font-weight:600}
+.pw-bool-btn.active.no{background:rgba(239,68,68,.12);border-color:var(--danger)}
+.pw-chip-group{display:flex;flex-wrap:wrap;gap:8px}
+.pw-chip{background:rgba(255,255,255,.04);border:1px solid var(--border);color:var(--text2);padding:8px 14px;border-radius:18px;cursor:pointer;font-family:inherit;font-size:13px;transition:all .15s;line-height:1.3}
+.pw-chip:hover{background:rgba(255,255,255,.08);color:var(--text)}
+.pw-chip.active{background:rgba(124,156,255,.18);border-color:var(--blue3);color:var(--text);font-weight:600}
+.pw-conditional{padding:14px 16px;background:rgba(124,156,255,.04);border-left:3px solid var(--blue3);border-radius:8px;margin-bottom:14px}
+
+.pw-footer{padding:18px 32px;border-top:1px solid var(--border);display:flex;justify-content:space-between;align-items:center;flex-shrink:0;background:rgba(0,0,0,.15);gap:12px;flex-wrap:wrap}
+.pw-footer-info{font-size:11px;color:var(--text2);flex:1;min-width:120px}
+.pw-footer-btns{display:flex;gap:10px;flex-wrap:wrap}
+.pw-btn{padding:10px 18px;border-radius:10px;border:none;cursor:pointer;font-family:'Inter',sans-serif;font-size:13px;font-weight:600;transition:all .15s;display:inline-flex;align-items:center;gap:6px}
+.pw-btn-ghost{background:transparent;color:var(--text2);border:1px solid var(--border)}
+.pw-btn-ghost:hover{background:rgba(255,255,255,.05);color:var(--text)}
+.pw-btn-secondary{background:rgba(255,255,255,.06);color:var(--text);border:1px solid var(--border)}
+.pw-btn-secondary:hover{background:rgba(255,255,255,.12)}
+.pw-btn-primary{background:var(--grad);color:#fff;box-shadow:0 2px 8px rgba(124,58,237,.3)}
+.pw-btn-primary:hover{transform:translateY(-1px);box-shadow:0 4px 12px rgba(124,58,237,.4)}
+.pw-btn:disabled{opacity:.4;cursor:not-allowed;transform:none}
+
+.pw-tip{padding:12px 14px;background:rgba(245,158,11,.06);border:1px solid rgba(245,158,11,.18);border-radius:10px;margin-bottom:20px;font-size:12px;color:var(--text2);line-height:1.6}
+.pw-tip strong{color:var(--warn)}
+
+@media(max-width:900px){
+  .pw-modal{padding:0}
+  .pw-box{border-radius:0;max-width:100%;max-height:100vh;flex-direction:column}
+  .pw-sidebar{width:100%;max-height:38vh}
+  .pw-sections-list{padding:6px}
+  .pw-section-btn{padding:8px 10px;font-size:12px}
+  .pw-main-hdr,.pw-fields,.pw-footer{padding-left:18px;padding-right:18px}
+}
+
 /* === TAMSŪS SCROLLBAR'AI VISAM PUSLAPIUI === */
 *{scrollbar-width:thin;scrollbar-color:rgba(124,156,255,.25) rgba(13,23,64,.4)}
 *::-webkit-scrollbar{width:10px;height:10px}
@@ -2440,6 +2514,473 @@ async function doRegister(){
   }catch(e){se('r-err','Serverio klaida')}
 }
 
+// ═══════════════════════════════════════════════════════════════════
+// PROFILIO VEDLYS (Profile Wizard) — pilna 12 sekcijų anketa
+// ═══════════════════════════════════════════════════════════════════
+
+// Anketos struktūros apibrėžimas
+const PROFILE_FIELDS = {
+  sections: [
+    {
+      id: 'a_pagrindine',
+      title: '🏢 A. Pagrindinė informacija',
+      desc: 'Bazinis įmonės identitetas ir veiklos kryptis.',
+      icon: '🏢',
+      fields: [
+        { id:'imones_pavadinimas', label:'Įmonės pavadinimas', type:'text', req:true, ph:'Pvz. UAB Saugos sprendimai', help:'Naudojamas analizėse ir personalizacijai.' },
+        { id:'imones_kodas', label:'Įmonės kodas', type:'text', req:false, ph:'Pvz. 123456789', help:'9 skaitmenys. Ateityje leis automatinį duomenų tikrinimą.', validate:'kodas9' },
+        { id:'juridine_forma', label:'Juridinė forma', type:'select', req:true, opts:['UAB','MB','IĮ','VšĮ','AB','ŪB','Fizinis asmuo','Kita'] },
+        { id:'isikurimo_metai', label:'Įmonės įsikūrimo metai', type:'number', req:true, ph:'Pvz. 2018', help:'Patirties trukmė dažnai naudojama vertinant tiekėjo stabilumą.' },
+        { id:'darbuotoju_skaicius', label:'Dabartinis darbuotojų skaičius', type:'number', req:true, ph:'Pvz. 18', help:'Padeda įvertinti pajėgumą vykdyti sutartį.' },
+        { id:'darbuotoju_dinamika', label:'Darbuotojų skaičiaus dinamika per 12 mėn.', type:'select', req:false, opts:['Augo','Stabili','Mažėjo','Nenurodyta'] },
+        { id:'pagrindinis_sektorius', label:'Pagrindinis veiklos sektorius', type:'select', req:true, opts:['Statybos ir rangos darbai','IT ir programinė įranga','Apsaugos paslaugos','Valymo ir priežiūros paslaugos','Konsultacijos ir mokymai','Prekės ir tiekimas','Transportas ir logistika','Medicina ir įranga','Maistas ir maitinimas','Kita'], help:'Pagal sektorių rodoma aktuali anketos logika.' }
+      ]
+    },
+    {
+      id: 'b_finansai',
+      title: '💰 B. Finansinis pajėgumas',
+      desc: 'Apyvarta, draudimas, garantijos ir sutarties finansinė riba.',
+      icon: '💰',
+      fields: [
+        { id:'apyvarta_metai_1', label:'Metinė apyvarta (paskutiniai užbaigti metai), EUR', type:'number', req:true, ph:'Pvz. 250000', help:'Dažnai naudojama vertinant ekonominį pajėgumą.' },
+        { id:'apyvarta_metai_2', label:'Metinė apyvarta prieš 2 metus, EUR', type:'number', req:false, ph:'Pvz. 210000' },
+        { id:'apyvarta_metai_3', label:'Metinė apyvarta prieš 3 metus, EUR', type:'number', req:false, ph:'Pvz. 180000', help:'Kai kurie konkursai reikalauja 3 metų vidurkio.' },
+        { id:'maksimali_ivykdyta_sutarties_verte', label:'Didžiausia iki šiol įvykdyta sutarties vertė, EUR', type:'number', req:true, ph:'Pvz. 120000', help:'Padeda įvertinti, ar įmonė jau vykdė panašaus dydžio sutartis.' },
+        { id:'komfortine_sutarties_verte', label:'Komfortinė sutarties vertė, EUR', type:'number', req:false, ph:'Pvz. 80000', help:'Vertė, kurią galite vykdyti be per didelės finansinės įtampos.' },
+        { id:'banko_garantija_galima', label:'Ar galite pateikti banko garantiją?', type:'boolean', req:true, help:'Kai kuriuose konkursuose reikalaujama pasiūlymo ar sutarties įvykdymo garantijos.' },
+        { id:'banko_garantijos_limitas', label:'Maksimalus banko garantijos limitas, EUR', type:'number', req:false, ph:'Pvz. 30000', show_if:(a)=>a.banko_garantija_galima==='taip' },
+        { id:'profesines_atsakomybes_draudimas', label:'Profesinės civilinės atsakomybės draudimo suma, EUR', type:'number', req:false, ph:'Pvz. 100000', help:'Reikalavimas dažnas paslaugų, projektavimo ir statybos pirkimuose.' }
+      ]
+    },
+    {
+      id: 'c_patirtis',
+      title: '🎯 C. Patirtis ir referencijos',
+      desc: 'Panašūs projektai, viešųjų pirkimų patirtis ir didžiausi darbai.',
+      icon: '🎯',
+      fields: [
+        { id:'patirtis_pagrindineje_veikloje_metais', label:'Patirtis pagrindinėje veikloje, metais', type:'number', req:true, ph:'Pvz. 7' },
+        { id:'analogisku_projektu_skaicius_3m', label:'Analogiškų projektų skaičius per 3 metus', type:'number', req:true, ph:'Pvz. 12', help:'Padeda įrodyti praktinį pajėgumą.' },
+        { id:'analogisku_projektu_bendra_verte_3m', label:'Analogiškų projektų bendra vertė per 3m, EUR', type:'number', req:false, ph:'Pvz. 350000' },
+        { id:'viesuju_pirkimu_laimeta_skaicius', label:'Laimėtų viešųjų pirkimų skaičius', type:'number', req:false, ph:'Pvz. 8', help:'Viešųjų pirkimų patirtis rodo, kad suprantate procedūras.' },
+        { id:'viesuju_pirkimu_laimeta_verte', label:'Laimėtų viešųjų pirkimų bendra vertė, EUR', type:'number', req:false, ph:'Pvz. 220000' },
+        { id:'stambiausi_3_projektai', label:'3 stambiausi įvykdyti projektai', type:'textarea', req:false, ph:'Klientas, metai, vertė, trumpas aprašymas (po vieną eilutėje)', help:'Stambiausi projektai dažnai reikalingi pagrindžiant kvalifikaciją.' }
+      ]
+    },
+    {
+      id: 'd_techninis',
+      title: '⚙️ D. Techninis pajėgumas',
+      desc: 'Įranga, sistemos, subrangovai ir vykdymo resursai.',
+      icon: '⚙️',
+      fields: [
+        { id:'technine_baze_aprasymas', label:'Techninė bazė', type:'textarea', req:false, ph:'Pvz. transportas, įranga, sandėliai, programinė įranga', help:'Padeda įrodyti, kad galite realiai vykdyti sutartį.' },
+        { id:'subrangovai_naudojami', label:'Ar naudojate subrangovus?', type:'boolean', req:true, help:'Subrangovai gali padėti atitikti reikalavimus, bet gali didinti riziką.' },
+        { id:'subrangovu_sritys', label:'Kokiose srityse naudojate subrangovus?', type:'multi-select', req:false, opts:['Specializuoti darbai','Transportas','IT vystymas','Projektavimas','Apsauga','Valymas','Įrangos tiekimas','Kita'], show_if:(a)=>a.subrangovai_naudojami==='taip' },
+        { id:'kokybes_ar_erp_sistemos', label:'Naudojamos valdymo sistemos', type:'multi-select', req:false, opts:['CRM','ERP','Projektų valdymo','Helpdesk / ticketing','Kokybės valdymo','Sandėlio valdymo','Nenaudojame','Kita'], help:'Sistemos rodo brandą ir gebėjimą kontroliuoti vykdymą.' }
+      ]
+    },
+    {
+      id: 'e_sertifikatai',
+      title: '🏅 E. Sertifikatai ir leidimai',
+      desc: 'ISO, licencijos, atestatai ir sektoriaus leidimai.',
+      icon: '🏅',
+      fields: [
+        { id:'iso_sertifikatai', label:'Turimi ISO sertifikatai', type:'multi-select', req:false, opts:['ISO 9001','ISO 14001','ISO 27001','ISO 45001','ISO 22000','Neturime','Kita'] },
+        { id:'sertifikatu_galiojimo_datos', label:'Sertifikatų galiojimo datos', type:'textarea', req:false, ph:'Pvz. ISO 9001 galioja iki 2027-05-01', help:'Negaliojantis sertifikatas gali lemti neatitikimą.', show_if:(a)=>Array.isArray(a.iso_sertifikatai)&&a.iso_sertifikatai.length>0&&!a.iso_sertifikatai.includes('Neturime') },
+        { id:'profesines_licencijos', label:'Profesinės licencijos ir leidimai', type:'textarea', req:false, ph:'Pvz. asmens ir turto saugos licencija, maisto tvarkymo pažymėjimas', help:'Kai kurioms veikloms būtini specialūs leidimai.' }
+      ]
+    },
+    {
+      id: 'f_komanda',
+      title: '👥 F. Komanda ir kompetencijos',
+      desc: 'Vadovai, specialistai ir dedikuota komanda.',
+      icon: '👥',
+      fields: [
+        { id:'vadovu_patirtis_metais', label:'Vadovų patirtis, metais', type:'number', req:false, ph:'Pvz. 10' },
+        { id:'pagrindiniu_specialistu_skaicius', label:'Pagrindinių specialistų skaičius', type:'number', req:true, ph:'Pvz. 6' },
+        { id:'specialistu_kompetencijos', label:'Pagrindinių specialistų kompetencijos', type:'textarea', req:false, ph:'Pvz. projektų vadovas, darbų vadovas, programuotojas', help:'Leidžia palyginti komandą su pirkimo reikalavimais.' },
+        { id:'uzsienio_kalbos', label:'Komandos užsienio kalbos', type:'multi-select', req:false, opts:['Anglų','Rusų','Lenkų','Vokiečių','Prancūzų','Latvių','Estų','Kita'] },
+        { id:'dedikuotos_komandos_galimybe', label:'Ar galite skirti dedikuotą komandą konkrečiai sutarčiai?', type:'boolean', req:false }
+      ]
+    },
+    {
+      id: 'g_geografija',
+      title: '📍 G. Geografinė aprėptis',
+      desc: 'Regionai ir filialai.',
+      icon: '📍',
+      fields: [
+        { id:'aptarnaujami_regionai', label:'Aptarnaujami regionai Lietuvoje', type:'multi-select', req:true, opts:['Visa Lietuva','Vilniaus apskritis','Kauno apskritis','Klaipėdos apskritis','Šiaulių apskritis','Panevėžio apskritis','Alytaus apskritis','Marijampolės apskritis','Utenos apskritis','Telšių apskritis','Tauragės apskritis'], help:'Padeda atmesti logistiškai netinkamus konkursus.' },
+        { id:'filialai_ar_atstovybes', label:'Filialai ar atstovybės', type:'text', req:false, ph:'Pvz. Vilnius, Kaunas, Klaipėda' },
+        { id:'tarptautine_patirtis', label:'Tarptautinė patirtis', type:'boolean', req:false, help:'Gali būti naudinga ES ar tarptautiniuose konkursuose.' }
+      ]
+    },
+    {
+      id: 'h_kokybe',
+      title: '✅ H. Kokybės užtikrinimas',
+      desc: 'Garantijos, SLA ir kokybės kontrolė.',
+      icon: '✅',
+      fields: [
+        { id:'garantinis_laikotarpis_menesiais', label:'Tipinis garantinis laikotarpis, mėnesiais', type:'number', req:false, ph:'Pvz. 24' },
+        { id:'reagavimo_laikas_valandomis', label:'Tipinis reagavimo laikas į problemą, valandomis', type:'number', req:false, ph:'Pvz. 4', help:'Dažnai vertinamas paslaugų ir IT pirkimuose.' },
+        { id:'kokybes_kontroles_procesas', label:'Kokybės kontrolės procesas', type:'textarea', req:false, ph:'Trumpai aprašykite, kaip tikrinate darbo kokybę' }
+      ]
+    },
+    {
+      id: 'i_rizikos',
+      title: '⚠️ I. Rizikos profilis',
+      desc: 'Baudos, terminai ir toleruojama rizika.',
+      icon: '⚠️',
+      fields: [
+        { id:'rizikos_tolerancija', label:'Bendra rizikos tolerancija', type:'select', req:true, opts:['Žema','Vidutinė','Aukšta'], help:'AI verdiktas keičiamas pagal tai.' },
+        { id:'maksimalios_baudos_tolerancija_proc', label:'Maksimali priimtina baudų/delspinigių riba, %', type:'number', req:false, ph:'Pvz. 10' },
+        { id:'ilgu_terminu_tolerancija', label:'Priimtinos sutarties trukmės', type:'select', req:false, opts:['Tik iki 6 mėn.','Iki 12 mėn.','Iki 24 mėn.','Daugiau nei 24 mėn. priimtina'] },
+        { id:'avanso_poreikis', label:'Ar didesnėms sutartims reikalingas avansas?', type:'boolean', req:false }
+      ]
+    },
+    {
+      id: 'j_strategija',
+      title: '🎲 J. Strateginė pozicija',
+      desc: 'Pranašumai, marža ir pageidaujami konkursai.',
+      icon: '🎲',
+      fields: [
+        { id:'konkurenciniai_pranasumai', label:'Konkurenciniai pranašumai (3–5)', type:'textarea', req:true, ph:'Pvz. greitas reagavimas, sertifikuota komanda, mažesnė savikaina', help:'AI naudoja šį lauką laimėjimo strategijai.' },
+        { id:'tipine_pelno_marza_proc', label:'Tipinė pelno marža, %', type:'number', req:false, ph:'Pvz. 15', help:'Padeda vertinti, ar galima agresyvesnė kainodara.' },
+        { id:'pageidaujama_konkurso_verte_min', label:'Mažiausia pageidaujama konkurso vertė, EUR', type:'number', req:false, ph:'Pvz. 10000' },
+        { id:'pageidaujama_konkurso_verte_max', label:'Didžiausia pageidaujama konkurso vertė, EUR', type:'number', req:false, ph:'Pvz. 200000' },
+        { id:'nesidomi_sritimis', label:'Sritys, kuriomis nesidomite', type:'multi-select', req:false, opts:['Per maži konkursai','Per dideli konkursai','Tarptautiniai','Ilgalaikės sutartys','Be avanso','Su didelėmis garantijomis','Kita'] }
+      ]
+    },
+    {
+      id: 'k_pasalinimas',
+      title: '⛔ K. Pašalinimo pagrindai',
+      desc: 'Deklaracija apie galimas kliūtis dalyvauti pirkimuose.',
+      icon: '⛔',
+      fields: [
+        { id:'mokesciu_isiskolinimu_yra', label:'Ar yra mokesčių įsiskolinimų?', type:'boolean', req:true, help:'Gali būti kliūtis dalyvauti viešuosiuose pirkimuose.' },
+        { id:'sodros_isiskolinimu_yra', label:'Ar yra SODROS įsiskolinimų?', type:'boolean', req:true },
+        { id:'bankroto_restrukturizavimo_proceduros', label:'Ar vyksta bankroto ar restruktūrizavimo procedūros?', type:'boolean', req:true },
+        { id:'teistumo_ar_teismo_sprendimu_rizika', label:'Ar yra įsiteisėjusių sprendimų, galinčių turėti įtakos dalyvavimui?', type:'boolean', req:true },
+        { id:'nepatikimu_tiekeju_sarase', label:'Ar įmonė yra buvusi nepatikimų tiekėjų sąraše?', type:'boolean', req:true, help:'Gali stipriai paveikti galimybes dalyvauti pirkimuose.' }
+      ]
+    },
+    {
+      id: 'l_sektorius',
+      title: '🔧 L. Sektoriaus specifika',
+      desc: 'Papildomi klausimai pagal jūsų pagrindinį sektorių.',
+      icon: '🔧',
+      fields: [
+        { id:'statybos_darbu_vadovai', label:'Atestuotų statybos darbų vadovų skaičius', type:'number', req:false, ph:'Pvz. 2', show_if:(a)=>a.pagrindinis_sektorius==='Statybos ir rangos darbai' },
+        { id:'it_programuotoju_skaicius', label:'Programuotojų / IT specialistų skaičius', type:'number', req:false, ph:'Pvz. 8', show_if:(a)=>a.pagrindinis_sektorius==='IT ir programinė įranga' },
+        { id:'it_technologiju_stackas', label:'Naudojamos IT technologijos', type:'multi-select', req:false, opts:['JavaScript','TypeScript','React','Node.js','Python','PHP','Java','.NET','AWS','Azure','Google Cloud','Kita'], show_if:(a)=>a.pagrindinis_sektorius==='IT ir programinė įranga' },
+        { id:'apsaugos_licencija', label:'Ar turite asmens ir turto saugos licenciją?', type:'boolean', req:false, show_if:(a)=>a.pagrindinis_sektorius==='Apsaugos paslaugos' },
+        { id:'sla_lygis', label:'SLA / paslaugos lygio įsipareigojimai', type:'select', req:false, opts:['Neturime SLA','Darbo valandomis','24/7','Pagal individualią sutartį','Kita'], show_if:(a)=>['IT ir programinė įranga','Apsaugos paslaugos','Valymo ir priežiūros paslaugos','Transportas ir logistika'].includes(a.pagrindinis_sektorius) }
+      ]
+    }
+  ]
+};
+
+// Wizard state
+let pwAnswers = {};
+let pwCurrentSectionIdx = 0;
+
+// === MIGRACIJA: senas profilis → nauji laukai ===
+function pwMigrateOldProfile(oldProfile){
+  const a = {};
+  if(!oldProfile || typeof oldProfile !== 'object') return a;
+  // Tiesioginis kopijavimas (jei naujas laukas jau buvo užpildytas)
+  Object.keys(oldProfile).forEach(k => { a[k] = oldProfile[k]; });
+  // Senas laukas → naujas
+  if(oldProfile.name && !a.imones_pavadinimas) a.imones_pavadinimas = oldProfile.name;
+  if(oldProfile.sector && !a.pagrindinis_sektorius){
+    // Mapping: pamename senas sektorių pavadinimus
+    const map = {
+      'IT':'IT ir programinė įranga', 'IT paslaugos':'IT ir programinė įranga',
+      'Statyba':'Statybos ir rangos darbai', 'Statybos':'Statybos ir rangos darbai',
+      'Apsauga':'Apsaugos paslaugos', 'Apsaugos paslaugos':'Apsaugos paslaugos',
+      'Valymas':'Valymo ir priežiūros paslaugos',
+      'Konsultacijos':'Konsultacijos ir mokymai',
+      'Prekės':'Prekės ir tiekimas',
+      'Transportas':'Transportas ir logistika',
+      'Medicina':'Medicina ir įranga'
+    };
+    a.pagrindinis_sektorius = map[oldProfile.sector] || oldProfile.sector;
+  }
+  if(oldProfile.patirtis && !a.patirtis_pagrindineje_veikloje_metais){
+    const n = parseInt(String(oldProfile.patirtis).replace(/\D/g,''),10);
+    if(!isNaN(n)) a.patirtis_pagrindineje_veikloje_metais = n;
+  }
+  if(oldProfile.apyvarta && !a.apyvarta_metai_1){
+    const n = parseInt(String(oldProfile.apyvarta).replace(/\D/g,''),10);
+    if(!isNaN(n)) a.apyvarta_metai_1 = n;
+  }
+  if(oldProfile.maxProjektoVerte && !a.maksimali_ivykdyta_sutarties_verte){
+    const n = parseInt(String(oldProfile.maxProjektoVerte).replace(/\D/g,''),10);
+    if(!isNaN(n)) a.maksimali_ivykdyta_sutarties_verte = n;
+  }
+  if(oldProfile.regionai && Array.isArray(oldProfile.regionai) && !a.aptarnaujami_regionai){
+    a.aptarnaujami_regionai = oldProfile.regionai;
+  }
+  if(oldProfile.sertifikatai && !a.iso_sertifikatai){
+    const certs = Array.isArray(oldProfile.sertifikatai) ? oldProfile.sertifikatai : [oldProfile.sertifikatai];
+    a.iso_sertifikatai = certs.filter(c => /ISO/i.test(c));
+    if(a.iso_sertifikatai.length === 0 && certs.some(c => c)) a.profesines_licencijos = certs.join(', ');
+  }
+  if(oldProfile.stiprybes && !a.konkurenciniai_pranasumai){
+    a.konkurenciniai_pranasumai = Array.isArray(oldProfile.stiprybes) ? oldProfile.stiprybes.join('\n') : oldProfile.stiprybes;
+  }
+  return a;
+}
+
+// === LAUKO RODYMO LOGIKA (conditional) ===
+function pwShouldShow(field){
+  if(!field.show_if) return true;
+  try { return field.show_if(pwAnswers) === true; }
+  catch(e){ return true; }
+}
+
+// === IŠSAMUMO SKAIČIAVIMAS ===
+function pwCalcCompleteness(){
+  let total = 0, filled = 0;
+  PROFILE_FIELDS.sections.forEach(sec => {
+    sec.fields.forEach(f => {
+      if(!pwShouldShow(f)) return;
+      total++;
+      const v = pwAnswers[f.id];
+      if(v !== undefined && v !== null && v !== '' && !(Array.isArray(v) && v.length === 0)) filled++;
+    });
+  });
+  return total === 0 ? 0 : Math.round((filled/total)*100);
+}
+
+function pwCalcSectionCompleteness(sectionIdx){
+  const sec = PROFILE_FIELDS.sections[sectionIdx];
+  if(!sec) return 0;
+  let total = 0, filled = 0;
+  sec.fields.forEach(f => {
+    if(!pwShouldShow(f)) return;
+    total++;
+    const v = pwAnswers[f.id];
+    if(v !== undefined && v !== null && v !== '' && !(Array.isArray(v) && v.length === 0)) filled++;
+  });
+  return total === 0 ? 100 : Math.round((filled/total)*100);
+}
+
+// === STATUSO ETIKETĖS ===
+function pwStatusLabel(pct){
+  if(pct < 36) return { label:'Bazinis profilis', color:'var(--danger)' };
+  if(pct < 76) return { label:'Geras profilis', color:'var(--warn)' };
+  return { label:'Tikslus AI profilis', color:'var(--success)' };
+}
+
+// === RENDERINIMAS ===
+function pwRenderSidebar(){
+  const list = document.getElementById('pw-sections-list');
+  if(!list) return;
+  list.innerHTML = PROFILE_FIELDS.sections.map((s, i) => {
+    const pct = pwCalcSectionCompleteness(i);
+    const cls = pct === 100 ? 'complete' : (pct > 0 ? 'partial' : '');
+    const activeCls = i === pwCurrentSectionIdx ? 'active' : '';
+    const num = pct === 100 ? '✓' : (i+1);
+    return `<button class="pw-section-btn ${cls} ${activeCls}" onclick="pwGoToSection(${i})">
+      <span class="pw-section-num">${num}</span>
+      <span class="pw-section-name">${s.title.replace(/^[\W\d]+\s*[A-Z]\.\s*/,'')}</span>
+    </button>`;
+  }).join('');
+
+  // Progress bar
+  const pct = pwCalcCompleteness();
+  const pctEl = document.getElementById('pw-progress-pct');
+  const fillEl = document.getElementById('pw-progress-fill');
+  const statusEl = document.getElementById('pw-progress-status');
+  if(pctEl) pctEl.textContent = pct + '%';
+  if(fillEl) fillEl.style.width = pct + '%';
+  if(statusEl){
+    const st = pwStatusLabel(pct);
+    statusEl.textContent = st.label;
+    statusEl.style.color = st.color;
+  }
+}
+
+function pwRenderFields(){
+  const sec = PROFILE_FIELDS.sections[pwCurrentSectionIdx];
+  if(!sec) return;
+  document.getElementById('pw-section-title').textContent = sec.title;
+  document.getElementById('pw-section-desc').textContent = sec.desc;
+  document.getElementById('pw-footer-info').textContent = `Sekcija ${pwCurrentSectionIdx+1} iš ${PROFILE_FIELDS.sections.length} · Duomenys saugomi automatiškai`;
+
+  const back = document.getElementById('pw-btn-back');
+  if(back) back.disabled = pwCurrentSectionIdx === 0;
+  const next = document.getElementById('pw-btn-next');
+  if(next) next.textContent = pwCurrentSectionIdx === PROFILE_FIELDS.sections.length-1 ? 'Baigti ✓' : 'Toliau →';
+
+  const container = document.getElementById('pw-fields');
+  const visibleFields = sec.fields.filter(pwShouldShow);
+  if(visibleFields.length === 0){
+    container.innerHTML = '<div class="pw-tip">Šioje sekcijoje šiuo metu nėra aktualių klausimų (pagal jūsų sektorių). Galite eiti toliau.</div>';
+    return;
+  }
+  container.innerHTML = visibleFields.map(f => pwRenderField(f)).join('');
+  // Attach event listeners
+  visibleFields.forEach(f => {
+    const el = document.getElementById('pw-f-' + f.id);
+    if(!el) return;
+    if(f.type === 'text' || f.type === 'number' || f.type === 'textarea'){
+      el.addEventListener('input', e => { pwAnswers[f.id] = e.target.value; pwUpdateProgress(); });
+    } else if(f.type === 'select'){
+      el.addEventListener('change', e => {
+        pwAnswers[f.id] = e.target.value;
+        pwUpdateProgress();
+        // Jei pagrindinis sektorius pasikeitė — perrender'inam (sąlyginiai laukai)
+        if(f.id === 'pagrindinis_sektorius') pwRenderFields();
+      });
+    }
+  });
+}
+
+function pwRenderField(f){
+  const val = pwAnswers[f.id];
+  const reqLabel = f.req ? '<span class="pw-req">Būtina AI tikslumui</span>' : '';
+  const help = f.help ? `<div class="pw-field-help">${f.help}</div>` : '';
+  let input = '';
+  if(f.type === 'text'){
+    input = `<input type="text" class="pw-input" id="pw-f-${f.id}" placeholder="${f.ph||''}" value="${(val||'').toString().replace(/"/g,'&quot;')}">`;
+  } else if(f.type === 'number'){
+    input = `<input type="number" class="pw-input" id="pw-f-${f.id}" placeholder="${f.ph||''}" value="${val||''}">`;
+  } else if(f.type === 'textarea'){
+    input = `<textarea class="pw-textarea" id="pw-f-${f.id}" placeholder="${f.ph||''}">${(val||'').toString().replace(/</g,'&lt;')}</textarea>`;
+  } else if(f.type === 'select'){
+    const options = (f.opts||[]).map(o => `<option value="${o.replace(/"/g,'&quot;')}" ${val===o?'selected':''}>${o}</option>`).join('');
+    input = `<select class="pw-select" id="pw-f-${f.id}"><option value="">-- Pasirinkite --</option>${options}</select>`;
+  } else if(f.type === 'boolean'){
+    input = `<div class="pw-bool-group" id="pw-f-${f.id}">
+      <button class="pw-bool-btn ${val==='taip'?'active':''}" onclick="pwSetBoolean('${f.id}','taip')">✓ Taip</button>
+      <button class="pw-bool-btn no ${val==='ne'?'active':''}" onclick="pwSetBoolean('${f.id}','ne')">✗ Ne</button>
+    </div>`;
+  } else if(f.type === 'multi-select'){
+    const selected = Array.isArray(val) ? val : [];
+    const chips = (f.opts||[]).map(o => `<button class="pw-chip ${selected.includes(o)?'active':''}" onclick="pwToggleChip('${f.id}','${o.replace(/'/g,"\\'")}')">${o}</button>`).join('');
+    input = `<div class="pw-chip-group" id="pw-f-${f.id}">${chips}</div>`;
+  }
+  return `<div class="pw-field">
+    <label class="pw-field-label">${f.label}${reqLabel}</label>
+    ${help}
+    ${input}
+  </div>`;
+}
+
+function pwSetBoolean(fieldId, value){
+  pwAnswers[fieldId] = value;
+  pwRenderFields(); // perrender'inam, kad atsirastų/dingtų sąlyginiai laukai
+  pwUpdateProgress();
+}
+
+function pwToggleChip(fieldId, value){
+  if(!Array.isArray(pwAnswers[fieldId])) pwAnswers[fieldId] = [];
+  const idx = pwAnswers[fieldId].indexOf(value);
+  if(idx >= 0) pwAnswers[fieldId].splice(idx, 1);
+  else pwAnswers[fieldId].push(value);
+  pwRenderFields();
+  pwUpdateProgress();
+}
+
+function pwUpdateProgress(){
+  pwRenderSidebar();
+}
+
+// === NAVIGACIJA ===
+function pwGoToSection(idx){
+  if(idx < 0 || idx >= PROFILE_FIELDS.sections.length) return;
+  // Surenkam dabartinės sekcijos duomenis prieš pereinant
+  pwCollectCurrentSection();
+  pwCurrentSectionIdx = idx;
+  pwRenderFields();
+  pwRenderSidebar();
+  // Auto-save fone
+  pwAutoSave();
+}
+
+function pwBack(){ pwGoToSection(pwCurrentSectionIdx - 1); }
+function pwNext(){
+  if(pwCurrentSectionIdx === PROFILE_FIELDS.sections.length - 1){
+    pwSaveAndExit();
+    return;
+  }
+  pwGoToSection(pwCurrentSectionIdx + 1);
+}
+
+function pwCollectCurrentSection(){
+  const sec = PROFILE_FIELDS.sections[pwCurrentSectionIdx];
+  if(!sec) return;
+  sec.fields.forEach(f => {
+    if(!pwShouldShow(f)) return;
+    if(f.type === 'text' || f.type === 'number'){
+      const el = document.getElementById('pw-f-' + f.id);
+      if(el){
+        const v = el.value.trim();
+        pwAnswers[f.id] = f.type === 'number' && v ? Number(v) : v;
+      }
+    } else if(f.type === 'textarea'){
+      const el = document.getElementById('pw-f-' + f.id);
+      if(el) pwAnswers[f.id] = el.value.trim();
+    } else if(f.type === 'select'){
+      const el = document.getElementById('pw-f-' + f.id);
+      if(el) pwAnswers[f.id] = el.value;
+    }
+    // boolean ir multi-select keičiami iš karto per onclick handler'ius
+  });
+}
+
+// === SAVE & EXIT ===
+async function pwAutoSave(){
+  // Tylus fono saugojimas (be UI atsako)
+  const tok = localStorage.getItem(TK);
+  if(!tok) return;
+  try {
+    pwAnswers._wizard_completeness = pwCalcCompleteness();
+    pwAnswers._wizard_updated_at = new Date().toISOString();
+    await fetch(API + '/api/profile-save', {
+      method: 'POST',
+      headers: {'Content-Type':'application/json','Authorization':'Bearer '+tok},
+      body: JSON.stringify({ company_profile: pwAnswers })
+    });
+    if(curUser){
+      curUser.company_profile = pwAnswers;
+      localStorage.setItem(UK, JSON.stringify(curUser));
+    }
+  } catch(e){ console.warn('Auto-save klaida:', e); }
+}
+
+async function pwSaveAndExit(){
+  pwCollectCurrentSection();
+  const pct = pwCalcCompleteness();
+  await pwAutoSave();
+  if(typeof toast === 'function'){
+    toast(`Profilis išsaugotas (${pct}%). Galite tęsti vėliau.`, 'success', 4000);
+  }
+  pwClose();
+  // Atnaujinam paskyros puslapį
+  if(typeof renderAcc === 'function') renderAcc();
+}
+
+function pwClose(){
+  const m = document.getElementById('pw-modal');
+  if(m) m.classList.remove('open');
+}
+
+// === ATIDARYMAS ===
+function pwOpen(){
+  // Pakraunam esamą profilį ir migruojam
+  const existing = (curUser && curUser.company_profile) || {};
+  pwAnswers = pwMigrateOldProfile(existing);
+  pwCurrentSectionIdx = 0;
+  pwRenderSidebar();
+  pwRenderFields();
+  const m = document.getElementById('pw-modal');
+  if(m) m.classList.add('open');
+}
+
+// Make pwOpen() open the new wizard (replacing old simple modal)
+window.openProfileWizard = pwOpen;
+
 function doLogout(){
   localStorage.removeItem(TK);
   localStorage.removeItem(UK);
@@ -2479,25 +3020,6 @@ function openOnboarding(){
     }
   } catch(e) {
     console.error('openOnboarding error:', e);
-    if(typeof toast === 'function') toast('Klaida: ' + e.message, 'error');
-  }
-}
-
-function openOnboardingEdit(){
-  try {
-    const cp = (curUser && curUser.company_profile) || {};
-    const company = document.getElementById('ob-company');
-    const sector = document.getElementById('ob-sector');
-    if(!company || !sector){
-      console.error('Onboarding modal elements not found');
-      if(typeof toast === 'function') toast('Klaida atidarant profilio formą', 'error');
-      return;
-    }
-    company.value = cp.name || '';
-    sector.value = cp.sector || '';
-    openOnboarding();
-  } catch(e) {
-    console.error('openOnboardingEdit error:', e);
     if(typeof toast === 'function') toast('Klaida: ' + e.message, 'error');
   }
 }
@@ -3188,29 +3710,35 @@ async function renderAcc(){
   const u=curUser||{};
   const pro=u.plan==='pro' || u.plan==='team';
   const planLabel = u.plan==='team' ? 'Komanda' : (u.plan==='pro' ? 'Pro' : 'Nemokamas');
-  const cp=u.company_profile||{};
+  // Migrate old profile to new field structure for consistent display
+  const cp = (typeof pwMigrateOldProfile === 'function')
+    ? pwMigrateOldProfile(u.company_profile||{})
+    : (u.company_profile||{});
 
-  // Profilio užpildymo checklist
+  // Profilio užpildymo checklist — pagrindiniai naujos anketos laukai
   const profileItems = [
-    { key:'name', label:'Įmonės pavadinimas', filled: !!cp.name },
-    { key:'sector', label:'Veiklos sritis', filled: !!cp.sector },
-    { key:'activity', label:'Veikla / specializacija', filled: !!(cp.specializacija||cp.activity) },
-    { key:'patirtis', label:'Patirtis (metai veikloje)', filled: !!cp.patirtis },
-    { key:'sertifikatai', label:'Sertifikatai', filled: !!(cp.sertifikatai && (Array.isArray(cp.sertifikatai)?cp.sertifikatai.length:cp.sertifikatai)) },
-    { key:'apyvarta', label:'Metinė apyvarta', filled: !!(cp.apyvarta||cp.maxProjektoVerte) },
-    { key:'regionai', label:'Aptarnaujami regionai', filled: !!(cp.regionai && cp.regionai.length) },
-    { key:'paslaugos', label:'Paslaugos / produktai', filled: !!(cp.veiklos && cp.veiklos.length) },
-    { key:'santrauka', label:'AI veiklos santrauka', filled: !!cp.profilioSantrauka }
+    { key:'imones_pavadinimas', label:'Įmonės pavadinimas', filled: !!cp.imones_pavadinimas },
+    { key:'pagrindinis_sektorius', label:'Veiklos sektorius', filled: !!cp.pagrindinis_sektorius },
+    { key:'darbuotoju_skaicius', label:'Darbuotojų skaičius', filled: !!cp.darbuotoju_skaicius },
+    { key:'apyvarta_metai_1', label:'Metinė apyvarta', filled: !!cp.apyvarta_metai_1 },
+    { key:'patirtis_pagrindineje_veikloje_metais', label:'Patirtis (metai)', filled: !!cp.patirtis_pagrindineje_veikloje_metais },
+    { key:'analogisku_projektu_skaicius_3m', label:'Analogiški projektai', filled: !!cp.analogisku_projektu_skaicius_3m },
+    { key:'iso_sertifikatai', label:'Sertifikatai (ISO)', filled: !!(cp.iso_sertifikatai && Array.isArray(cp.iso_sertifikatai) && cp.iso_sertifikatai.length>0) || !!cp.profesines_licencijos },
+    { key:'aptarnaujami_regionai', label:'Aptarnaujami regionai', filled: !!(cp.aptarnaujami_regionai && cp.aptarnaujami_regionai.length) },
+    { key:'pagrindiniu_specialistu_skaicius', label:'Specialistai', filled: !!cp.pagrindiniu_specialistu_skaicius },
+    { key:'rizikos_tolerancija', label:'Rizikos tolerancija', filled: !!cp.rizikos_tolerancija },
+    { key:'konkurenciniai_pranasumai', label:'Konkurenciniai pranašumai', filled: !!cp.konkurenciniai_pranasumai }
   ];
   const filledCount = profileItems.filter(p => p.filled).length;
   const profilePct = Math.round((filledCount/profileItems.length)*100);
   const pctColor = profilePct>=75?'var(--success)':profilePct>=40?'var(--warn)':'var(--danger)';
+  const statusLabel = profilePct<36?'Bazinis profilis':(profilePct<76?'Geras profilis':'Tikslus AI profilis');
 
   const checklistHtml = profileItems.map(p =>
     `<div style="display:flex;align-items:center;gap:10px;padding:7px 0;font-size:13px;color:${p.filled?'var(--text)':'var(--text2)'}">
       <span style="font-size:14px">${p.filled?'✅':'⭕'}</span>
       <span style="flex:1">${p.label}</span>
-      ${!p.filled?'<button onclick="openOnboardingEdit()" style="background:none;border:none;color:var(--blue3);font-size:12px;cursor:pointer;padding:2px 6px">+ Pridėti</button>':''}
+      ${!p.filled?'<button onclick="pwOpen()" style="background:none;border:none;color:var(--blue3);font-size:12px;cursor:pointer;padding:2px 6px">+ Pridėti</button>':''}
     </div>`
   ).join('');
 
@@ -3239,7 +3767,7 @@ async function renderAcc(){
       <h3>🏢 Įmonės profilis</h3>
       <div style="margin-bottom:12px">
         <div style="display:flex;justify-content:space-between;font-size:11px;color:var(--text2);margin-bottom:6px">
-          <span>Profilio išsamumas</span>
+          <span>Profilio išsamumas · <strong style="color:${pctColor}">${statusLabel}</strong></span>
           <span style="color:${pctColor};font-weight:700">${profilePct}% (${filledCount}/${profileItems.length})</span>
         </div>
         <div style="height:6px;background:var(--card2);border-radius:4px;overflow:hidden">
@@ -3249,9 +3777,9 @@ async function renderAcc(){
       <div style="background:rgba(255,255,255,.02);border:1px solid var(--border);border-radius:10px;padding:10px 14px;margin-bottom:14px">
         ${checklistHtml}
       </div>
-      ${cp.profilioSantrauka?`<div style="background:rgba(16,185,129,.05);border:1px solid rgba(16,185,129,.15);border-radius:10px;padding:12px;margin-bottom:14px;font-size:12px;color:var(--text2);line-height:1.6"><strong style="color:var(--success)">💡 AI profilio santrauka:</strong><br>${cp.profilioSantrauka}</div>`:''}
-      <button class="btn btn-primary btn-sm" style="width:100%;justify-content:center" onclick="openOnboardingEdit()">${profilePct>=75?'✏️ Atnaujinti profilį':'📝 Užpildyti trūkstamą informaciją'}</button>
-      ${profilePct<50?`<div style="background:rgba(245,158,11,.07);border:1px solid rgba(245,158,11,.2);border-radius:8px;padding:10px 12px;margin-top:10px;font-size:11px;line-height:1.6;color:var(--text2)"><strong style="color:var(--warn)">⚠️ Tikslesnė analizė reikalauja išsamesnio profilio.</strong> Įmonės informacija leidžia AI tiksliai įvertinti, ar atitinkate konkurso reikalavimus, ir apskaičiuoti realią laimėjimo tikimybę būtent jūsų įmonei.</div>`:''}
+      ${cp.konkurenciniai_pranasumai?`<div style="background:rgba(16,185,129,.05);border:1px solid rgba(16,185,129,.15);border-radius:10px;padding:12px;margin-bottom:14px;font-size:12px;color:var(--text2);line-height:1.6"><strong style="color:var(--success)">💡 Konkurenciniai pranašumai:</strong><br>${String(cp.konkurenciniai_pranasumai).replace(/\n/g,'<br>').replace(/</g,'&lt;')}</div>`:(cp.profilioSantrauka?`<div style="background:rgba(16,185,129,.05);border:1px solid rgba(16,185,129,.15);border-radius:10px;padding:12px;margin-bottom:14px;font-size:12px;color:var(--text2);line-height:1.6"><strong style="color:var(--success)">💡 AI profilio santrauka:</strong><br>${cp.profilioSantrauka}</div>`:'')}
+      <button class="btn btn-primary btn-sm" style="width:100%;justify-content:center" onclick="pwOpen()">${profilePct>=75?'✏️ Atnaujinti profilį':'📝 Užpildyti trūkstamą informaciją'}</button>
+      ${profilePct<50?`<div style="background:rgba(245,158,11,.07);border:1px solid rgba(245,158,11,.2);border-radius:8px;padding:10px 12px;margin-top:10px;font-size:11px;line-height:1.6;color:var(--text2)"><strong style="color:var(--warn)">⚠️ Tikslesnė analizė reikalauja išsamesnio profilio.</strong> Kuo išsamesnis profilis, tuo tiksliau AI įvertins kvalifikaciją, rizikas ir laimėjimo tikimybę. Naujasis profilio vedlys turi 12 sekcijų su sektoriui specifiniais klausimais.</div>`:''}
     </div>
 
     <!-- 3. MANO PLANAS (užima visą plotį) -->
@@ -5513,6 +6041,50 @@ function closeSource(){
 
 
 <!-- COOKIE CONSENT -->
+<!-- === PROFILIO VEDLYS MODAL === -->
+<div id="pw-modal" class="pw-modal">
+  <div class="pw-box">
+    <div class="pw-sidebar">
+      <div class="pw-sidebar-hdr">
+        <h2>📋 Įmonės profilis</h2>
+        <p>Kuo išsamesnis profilis, tuo tiksliau AI įvertins kvalifikaciją, rizikas ir laimėjimo tikimybę.</p>
+      </div>
+      <div class="pw-progress-wrap">
+        <div class="pw-progress-label">
+          <span>Profilio išsamumas</span>
+          <span id="pw-progress-pct">0%</span>
+        </div>
+        <div class="pw-progress-bar"><div class="pw-progress-fill" id="pw-progress-fill"></div></div>
+        <div id="pw-progress-status" style="font-size:10px;color:var(--text2);margin-top:6px;font-weight:600"></div>
+      </div>
+      <div class="pw-sections-list" id="pw-sections-list">
+        <!-- Sekcijos generuojamos dinamiškai -->
+      </div>
+    </div>
+
+    <div class="pw-main">
+      <div class="pw-main-hdr">
+        <div class="pw-main-hdr-text">
+          <h3 id="pw-section-title">...</h3>
+          <p id="pw-section-desc">...</p>
+        </div>
+        <button class="pw-close-btn" onclick="pwClose()" title="Uždaryti (duomenys išsaugomi automatiškai)">×</button>
+      </div>
+      <div class="pw-fields" id="pw-fields">
+        <!-- Laukai generuojami dinamiškai -->
+      </div>
+      <div class="pw-footer">
+        <div class="pw-footer-info" id="pw-footer-info">Sekcija 1 iš 12 · Duomenys saugomi automatiškai</div>
+        <div class="pw-footer-btns">
+          <button class="pw-btn pw-btn-ghost" id="pw-btn-back" onclick="pwBack()">← Atgal</button>
+          <button class="pw-btn pw-btn-secondary" onclick="pwSaveAndExit()">💾 Išsaugoti ir tęsti vėliau</button>
+          <button class="pw-btn pw-btn-primary" id="pw-btn-next" onclick="pwNext()">Toliau →</button>
+        </div>
+      </div>
+    </div>
+  </div>
+</div>
+
 <div id="toast-container"></div>
 
 <div id="cookie-banner" style="position:fixed;bottom:0;left:0;right:0;z-index:600;background:var(--navy2);border-top:1px solid var(--border);padding:16px 24px;display:none;align-items:center;justify-content:space-between;gap:16px;flex-wrap:wrap;backdrop-filter:blur(10px)">
