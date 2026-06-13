@@ -505,7 +505,7 @@ VERTINIMO GAIRĖS:
     if (process.env.SUPABASE_URL) {
       const supabase = createClient(process.env.SUPABASE_URL, process.env.SUPABASE_SERVICE_KEY);
       // doc_text apribojam iki 200KB (apie 50K tokenų) — saugumui ir vietai
-      const docTextSafe = (documentText || '').slice(0, 200000);
+      const docTextSafe = docText.slice(0, 200000);
       const presetQs = Array.isArray(result.presetQuestions) ? result.presetQuestions.slice(0, 5) : [];
       const { data: saved } = await supabase.from('analyses').insert({
         user_id: user.id,
