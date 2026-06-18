@@ -2,21 +2,13 @@
 // BIDWISE AI — SUMANUS ONBOARDING (patobulinta versija)
 // Naudoja veiklos aprašymą + kritinius klausimus tiksliam scoring'ui
 // ═══════════════════════════════════════════════════════════
-const jwt = require('jsonwebtoken');
 const { createClient } = require('@supabase/supabase-js');
+const { verifyToken, applyCors } = require('./security');
 
-const JWT_SECRET = process.env.JWT_SECRET || 'bidwise-secret-2025';
 const ANTHROPIC_API_KEY = process.env.ANTHROPIC_API_KEY;
 const MODEL = 'claude-sonnet-4-6';
 
 module.exports.config = { maxDuration: 30 };
-
-function verifyToken(req) {
-  const auth = req.headers.authorization || '';
-  const token = auth.replace('Bearer ', '');
-  if (!token) return null;
-  try { return jwt.verify(token, JWT_SECRET); } catch { return null; }
-}
 
 async function callClaude(system, user, maxTokens = 2000) {
   const controller = new AbortController();
@@ -65,9 +57,7 @@ function coreQuestions(sector) {
 }
 
 module.exports = async (req, res) => {
-  res.setHeader('Access-Control-Allow-Origin', '*');
-  res.setHeader('Access-Control-Allow-Headers', 'Content-Type, Authorization');
-  res.setHeader('Access-Control-Allow-Methods', 'POST, OPTIONS');
+  applyCors(res);
   if (req.method === 'OPTIONS') return res.status(200).end();
   if (req.method !== 'POST') return res.status(405).json({ error: 'Metodas neleidžiamas' });
 
