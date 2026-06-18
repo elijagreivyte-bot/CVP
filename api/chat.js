@@ -3,6 +3,7 @@ const { validate, chatRequestSchema } = require('../validation/analyzeSchema');
 const { createClient } = require('@supabase/supabase-js');
 const { logger } = require('../middleware/logger');
 const { verifyToken, applyCors } = require('./security');
+const { GENERAL_PROCUREMENT_KNOWLEDGE_BASE } = require('./knowledge/procurementKnowledgeBase');
 
 module.exports = asyncHandler(async (req, res) => {
   applyCors(res);
@@ -33,20 +34,42 @@ module.exports = asyncHandler(async (req, res) => {
     throw validationError([{ field: 'mode', message: 'AI asistentas prieinamas tik Pro ir Komanda planams.' }]);
   }
 
-  let systemPrompt = 'Tu esi viešųjų pirkimų ekspertas Lietuvoje. Atsakyk lietuvių kalba, glaustai ir konkrečiai.';
+  // Sluoksnis 1: bendras viešųjų pirkimų žinių pagrindas — veikia visada,
+  // net jei vartotojas dar neįkėlė konkretaus konkurso.
+  let systemPrompt = `Tu esi viešųjų pirkimų ekspertas Lietuvoje. Atsakyk lietuvių kalba, glaustai ir konkrečiai.
 
+${GENERAL_PROCUREMENT_KNOWLEDGE_BASE}
+
+Naudok šį žinių sluoksnį kaip pastovų pagrindą atsakymams apie bendrus viešųjų pirkimų klausimus. Tu NETEIKI galutinės teisinės išvados kaip advokatas — padedi vartotojui suprasti sąlygas, riziką ir pasiruošti veiksmams.`;
+
+  // Sluoksnis 2: konkretaus konkurso kontekstas — pridedamas TIK kai vartotojas
+  // įkėlė konkurso dokumentus/analizę. Bendra žinių bazė (sluoksnis 1) išlieka pagrindu,
+  // konkurso duomenys naudojami kaip papildomas, laikinas analizės kontekstas.
   if (context) {
     const c = typeof context === 'string' ? context : JSON.stringify(context, null, 2);
     systemPrompt = `Tu esi viešųjų pirkimų ekspertas Lietuvoje ir šio konkurso analizės asistentas.
 
-KONKURSO ANALIZĖ:
+${GENERAL_PROCUREMENT_KNOWLEDGE_BASE}
+
+═══════════════════════════════════════════
+SLUOKSNIS 2: KONKRETAUS KONKURSO ANALIZĖ (laikinas kontekstas)
+═══════════════════════════════════════════
 ${c}
+
+ATSAKYMO STRUKTŪRA (privaloma, kai klausimas susijęs su šio konkurso sąlygomis):
+1. "Pagal bendrą viešųjų pirkimų logiką..." — paaiškink bendrą principą iš sluoksnio 1.
+2. "Šiame konkrečiame konkurse nurodyta..." — pacituok/apibendrink, ką radai konkrečiuose dokumentuose (sluoksnis 2).
+3. "Galima rizika..." — įvertink, ar sąlyga aiški, įprasta, perteklinė, rizikinga, ar verta papildomo klausimo perkančiajai organizacijai.
+4. "Rekomenduojamas veiksmas..." — pasiūlyk konkretų žingsnį (pateikti klausimą PO, tikslinti dokumentus, paruošti įrodymus, įvertinti kainą, atsargiai vertinti sutarties sąlygą ir pan.).
 
 Taisyklės:
 - Atsakyk TIKTAI lietuvių kalba
-- Remkis konkrečiais duomenimis iš analizės
+- Aiškiai atskirk, kas paremta bendra taisykle (sluoksnis 1) ir kas paremta šio konkurso dokumentu (sluoksnis 2)
+- Remkis konkrečiais duomenimis iš analizės, ne spėliojimais
 - Būk praktiškas ir konkretus — ne bendros teorijos
-- Jei klausiama apie strategiją, kainą ar dokumentus — duok konkrečius patarimus pagal šį konkursą`;
+- Jei klausimas yra bendro pobūdžio (nesusijęs su šio konkurso specifika) — atsakyk pagal sluoksnį 1 ir nenaudok 4 dalių struktūros
+- Jei klausiama apie strategiją, kainą ar dokumentus — duok konkrečius patarimus pagal šį konkursą
+- Tu NETEIKI galutinės teisinės išvados kaip advokatas — padedi suprasti sąlygas, riziką ir pasiruošti veiksmams`;
   }
 
   if (mode === 'letter') {
