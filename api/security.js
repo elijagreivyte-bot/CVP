@@ -1,60 +1,18 @@
-const DEFAULT_ALLOWED_ORIGINS = [
-  'http://localhost:3000',
-  'http://localhost:5173',
-  'https://bidwise.app',
-  'https://www.bidwise.app'
-];
+const jwt = require('jsonwebtoken');
 
-function getAllowedOrigins() {
-  const envOrigins = process.env.ALLOWED_ORIGINS;
+const JWT_SECRET = process.env.JWT_SECRET || 'bidwise-secret-2025';
 
-  if (!envOrigins) {
-    return DEFAULT_ALLOWED_ORIGINS;
-  }
-
-  return envOrigins
-    .split(',')
-    .map((origin) => origin.trim())
-    .filter(Boolean);
+function verifyToken(req) {
+  const auth = req.headers.authorization || '';
+  const token = auth.replace('Bearer ', '');
+  if (!token) return null;
+  try { return jwt.verify(token, JWT_SECRET); } catch { return null; }
 }
 
-function setCorsHeaders(req, res) {
-  const allowedOrigins = getAllowedOrigins();
-  const requestOrigin = req.headers.origin;
-
-  if (requestOrigin && allowedOrigins.includes(requestOrigin)) {
-    res.setHeader('Access-Control-Allow-Origin', requestOrigin);
-    res.setHeader('Vary', 'Origin');
-  }
-
-  res.setHeader('Access-Control-Allow-Methods', 'GET,POST,OPTIONS');
+function applyCors(res, methods = 'POST, OPTIONS') {
+  res.setHeader('Access-Control-Allow-Origin', '*');
   res.setHeader('Access-Control-Allow-Headers', 'Content-Type, Authorization');
-
-  if (req.method === 'OPTIONS') {
-    res.status(204).end();
-    return true;
-  }
-
-  return false;
+  res.setHeader('Access-Control-Allow-Methods', methods);
 }
 
-function getJwtSecret() {
-  const secret = process.env.JWT_SECRET;
-
-  if (!secret) {
-    throw new Error('JWT_SECRET is required');
-  }
-
-  return secret;
-}
-
-function sendServerError(res, error, message = 'Serverio klaida. Bandykite dar kartą.') {
-  console.error(error);
-  return res.status(500).json({ error: message });
-}
-
-module.exports = {
-  setCorsHeaders,
-  getJwtSecret,
-  sendServerError
-};
+module.exports = { JWT_SECRET, verifyToken, applyCors };
