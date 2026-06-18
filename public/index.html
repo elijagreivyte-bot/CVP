@@ -4,6 +4,17 @@
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width,initial-scale=1.0">
 <title>Bidwise AI – Išmani CVP Konkursų Analizė</title>
+<meta name="description" content="Bidwise AI analizuoja viešųjų pirkimų konkursų dokumentus per 30 sekundžių — kvalifikacijos reikalavimai, rizikos, laimėjimo strategija ir CVP paieškos navigatorius vienoje vietoje.">
+<meta name="robots" content="index,follow">
+<link rel="canonical" href="https://cvp-sigma.vercel.app/">
+<meta property="og:type" content="website">
+<meta property="og:title" content="Bidwise AI – Išmani CVP Konkursų Analizė">
+<meta property="og:description" content="AI analizuoja viešųjų pirkimų dokumentus, įvertina laimėjimo galimybes ir padeda surasti tinkamus CVP konkursus.">
+<meta property="og:url" content="https://cvp-sigma.vercel.app/">
+<meta property="og:locale" content="lt_LT">
+<meta name="twitter:card" content="summary_large_image">
+<meta name="twitter:title" content="Bidwise AI – Išmani CVP Konkursų Analizė">
+<meta name="twitter:description" content="AI analizuoja viešųjų pirkimų dokumentus, įvertina laimėjimo galimybes ir padeda surasti tinkamus CVP konkursus.">
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link href="https://fonts.googleapis.com/css2?family=Sora:wght@300;400;600;700;800;900&family=Inter:wght@300;400;500;600&display=swap" rel="stylesheet">
 <script src="https://cdnjs.cloudflare.com/ajax/libs/pdf.js/3.11.174/pdf.min.js"></script>
@@ -498,6 +509,8 @@ footer{background:var(--navy2);border-top:1px solid var(--border);padding:48px 3
   .section{padding:64px 16px}
   .cta-box{padding:48px 24px}
   .proof-strip{gap:20px;padding:18px 16px}
+  .score-cards-grid{grid-template-columns:1fr!important}
+  .pricing-grid{grid-template-columns:1fr!important}
 }
 
 /* === Patobulinimai === */
@@ -713,7 +726,7 @@ footer{background:var(--navy2);border-top:1px solid var(--border);padding:48px 3
       <p class="section-sub" style="max-width:620px;margin:0 auto">Niekas kitas Lietuvoje to nedaro. Mūsų AI palygina konkurso reikalavimus su jūsų įmonės profiliu ir grąžina konkretų skaičių — nuo 0 iki 100%.</p>
     </div>
 
-    <div style="display:grid;grid-template-columns:repeat(3,1fr);gap:20px;max-width:920px;margin:0 auto">
+    <div class="score-cards-grid" style="display:grid;grid-template-columns:repeat(3,1fr);gap:20px;max-width:920px;margin:0 auto">
       <!-- Žalia: aukšta tikimybė -->
       <div style="background:rgba(16,185,129,.06);border:1px solid rgba(16,185,129,.25);border-radius:18px;padding:28px 22px;text-align:center;position:relative">
         <div style="font-size:48px;font-weight:900;color:#10b981;font-family:Sora,sans-serif;line-height:1;margin-bottom:6px">85%</div>
@@ -944,7 +957,7 @@ footer{background:var(--navy2);border-top:1px solid var(--border);padding:48px 3
     <span class="section-label">Kainos</span>
     <h2 class="section-title reveal">Paprasta kainodara</h2>
     <p class="section-sub" style="margin:0 auto 0">Pradėkite nemokamai, mokėkite tik kai reikia daugiau.</p>
-    <div class="pricing" style="max-width:960px;margin:64px auto 0;display:grid;grid-template-columns:repeat(3,1fr);gap:20px">
+    <div class="pricing pricing-grid" style="max-width:960px;margin:64px auto 0;display:grid;grid-template-columns:repeat(3,1fr);gap:20px">
       <div class="price-card reveal">
         <div class="price-name">Nemokamas</div>
         <div class="price-amount">0€</div>
