@@ -1805,17 +1805,15 @@ footer{background:var(--navy2);border-top:1px solid var(--border);padding:48px 3
   <!-- AI ASSISTANT PAGE -->
   <div id="pg-assistant" class="hidden">
     <h1 class="pg-h">💬 AI Asistentas</h1>
-    <p class="pg-sub">Diskutuokite apie analizę ir gaukite konkrečius atsakymus</p>
-    <div id="assistant-no-result" style="text-align:center;padding:64px 32px">
-      <div style="font-size:48px;margin-bottom:16px">💬</div>
-      <h3 style="font-family:Sora,sans-serif;font-size:18px;margin-bottom:10px">Pradėkite nuo analizės</h3>
-      <p style="font-size:13px;color:var(--text2);max-width:400px;margin:0 auto 24px;line-height:1.7">AI asistentas veikia su analizės kontekstu — atlikite analizę ir asistentas žinos apie jūsų konkursą.</p>
-      <button class="btn btn-primary" onclick="pg('analyze')">→ Atlikti analizę</button>
-    </div>
-    <div id="assistant-chat-full" style="display:none;max-width:720px">
-      <div style="background:var(--card);border:1px solid var(--border);border-radius:14px;margin-bottom:8px;padding:14px 18px;font-size:13px;color:var(--text2)">
+    <p class="pg-sub">Klauskite apie bendras viešųjų pirkimų taisykles arba — atlikę analizę — apie konkretų konkursą</p>
+    <div id="assistant-no-result" style="display:none"></div>
+    <div id="assistant-chat-full" style="max-width:720px">
+      <div id="asst-ctx-bar" style="display:none;background:var(--card);border:1px solid var(--border);border-radius:14px;margin-bottom:8px;padding:14px 18px;font-size:13px;color:var(--text2)">
         📋 Kontekstas: <span id="asst-ctx-label" style="color:var(--text);font-weight:600"></span>
         <button onclick="pg('analyze')" style="background:none;border:none;color:var(--blue3);cursor:pointer;font-size:12px;margin-left:12px;font-family:Inter,sans-serif">← Keisti analizę</button>
+      </div>
+      <div style="background:rgba(59,130,246,.06);border:1px solid rgba(59,130,246,.15);border-radius:10px;padding:10px 16px;margin-bottom:8px;font-size:12px;color:var(--text2)" id="asst-no-ctx-tip">
+        💡 Šiuo metu atsakau pagal bendras viešųjų pirkimų taisykles. <button onclick="pg('analyze')" style="background:none;border:none;color:var(--blue3);cursor:pointer;font-size:12px;font-family:Inter,sans-serif;text-decoration:underline">Atlikite analizę</button>, jei norite klausti apie konkretų konkursą.
       </div>
       <div id="asst-msgs" style="background:var(--card);border:1px solid var(--border);border-radius:14px;padding:16px;min-height:320px;max-height:480px;overflow-y:auto;display:flex;flex-direction:column;gap:10px;margin-bottom:10px">
         <div class="cm cm-ai">Sveiki! Aš galiu atsakyti į klausimus apie šį konkursą — reikalavimus, terminus, rizikas ar strategiją.</div>
@@ -4097,15 +4095,31 @@ async function setReminderFromResult(){
 // ASSISTANT PAGE
 // ══════════════════════════════════
 function initAssistant(){
+  // AI asistentas veikia visada — su bendrais viešųjų pirkimų klausimais net be analizės.
+  // Jei yra aktyvi analizė (curResult), prie bendrų žinių pridedamas konkretaus konkurso kontekstas.
   const noResult = document.getElementById('assistant-no-result');
   const chatFull = document.getElementById('assistant-chat-full');
-  if(!curResult){ if(noResult)noResult.style.display='block'; if(chatFull)chatFull.style.display='none'; return; }
   if(noResult) noResult.style.display='none';
   if(chatFull) chatFull.style.display='block';
+
+  const ctxBar = document.getElementById('asst-ctx-bar');
   const lbl = document.getElementById('asst-ctx-label');
-  if(lbl) lbl.textContent = (curResult.pavadinimas||'Dabartinė analizė').slice(0,60);
+  const noCtxTip = document.getElementById('asst-no-ctx-tip');
+  if(curResult){
+    if(ctxBar) ctxBar.style.display='block';
+    if(noCtxTip) noCtxTip.style.display='none';
+    if(lbl) lbl.textContent = (curResult.pavadinimas||'Dabartinė analizė').slice(0,60);
+  } else {
+    if(ctxBar) ctxBar.style.display='none';
+    if(noCtxTip) noCtxTip.style.display='block';
+  }
+
   const msgs = document.getElementById('asst-msgs');
-  if(msgs && chatHistory.length > 0){
+  if(msgs && chatHistory.length === 0){
+    msgs.innerHTML = curResult
+      ? '<div class="cm cm-ai">Sveiki! Aš galiu atsakyti į klausimus apie šį konkursą — reikalavimus, terminus, rizikas ar strategiją.</div>'
+      : '<div class="cm cm-ai">Sveiki! Galiu atsakyti į bendrus klausimus apie viešuosius pirkimus — kvalifikacijos reikalavimus, terminus, dažniausias klaidas ir pan. Jei norite konkretaus konkurso analizės, pirma atlikite analizę, ir aš žinosiu jo kontekstą.</div>';
+  } else if(msgs && chatHistory.length > 0){
     msgs.innerHTML = chatHistory.map(m=>`<div class="cm ${m.role==='user'?'cm-user':'cm-ai'}">${m.content.replace(/</g,'&lt;').replace(/\n/g,'<br>')}</div>`).join('');
     msgs.scrollTop = msgs.scrollHeight;
   }
