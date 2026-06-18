@@ -1,24 +1,5 @@
-const jwt = require('jsonwebtoken');
 const { createClient } = require('@supabase/supabase-js');
-
-const JWT_SECRET = process.env.JWT_SECRET || 'bidwise-secret-2025';
-
-/* =========================
-   AUTH
-========================= */
-
-function verifyToken(req) {
-  const auth = req.headers.authorization || '';
-  const token = auth.replace('Bearer ', '');
-
-  if (!token) return null;
-
-  try {
-    return jwt.verify(token, JWT_SECRET);
-  } catch {
-    return null;
-  }
-}
+const { verifyToken, applyCors } = require('./security');
 
 /* =========================
    EMAIL SENDER
@@ -26,7 +7,7 @@ function verifyToken(req) {
 
 async function sendEmail({ to, subject, html }) {
   if (!process.env.RESEND_API_KEY) {
-    console.log('RESEND_API_KEY missing');
+    console.warn('RESEND_API_KEY missing');
     return false;
   }
 
@@ -529,16 +510,8 @@ async function handleCron(res) {
 
 module.exports = async (req, res) => {
 
-  res.setHeader('Access-Control-Allow-Origin', '*');
-
-  res.setHeader(
-    'Access-Control-Allow-Headers',
-    'Content-Type, Authorization'
-  );
-
-  if (req.method === 'OPTIONS') {
-    return res.status(200).end();
-  }
+  applyCors(res);
+  if (req.method === 'OPTIONS') return res.status(200).end();
 
   // CRON
   if (req.method === 'GET') {
