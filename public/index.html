@@ -1675,20 +1675,49 @@ footer{background:var(--navy2);border-top:1px solid var(--border);padding:48px 3
   <!-- CVP.lt SEARCH PAGE -->
   <div id="pg-cvp" class="hidden">
     <h1 class="pg-h">🇱🇹 CVP konkursų navigatorius</h1>
-    <p class="pg-sub">Raskite konkursus pagal BVPŽ kodą — visa CPV klasifikacija vienoje vietoje</p>
+    <p class="pg-sub">Jūsų greitas kelias į tinkamus CVP konkursus pagal raktažodžius ir BVPŽ kodus. Sistema padeda greičiau ir tiksliau nueiti į oficialią CVP paiešką — ji nerodo konkursų tiesiogiai.</p>
 
     <!-- TABS -->
     <div style="display:flex;gap:4px;margin-bottom:18px;border-bottom:1px solid var(--border);padding-bottom:2px">
-      <button id="cvp-tab-search" onclick="cvpTab('search')" class="cvp-tab-btn" style="background:var(--card2);border:none;color:var(--text);padding:10px 18px;border-radius:8px 8px 0 0;cursor:pointer;font-family:Inter,sans-serif;font-weight:600;font-size:13px;border-bottom:2px solid var(--blue3)">🔍 Paieška pagal žodį</button>
-      <button id="cvp-tab-codes" onclick="cvpTab('codes')" class="cvp-tab-btn" style="background:none;border:none;color:var(--text2);padding:10px 18px;border-radius:8px 8px 0 0;cursor:pointer;font-family:Inter,sans-serif;font-size:13px">📋 BVPŽ kodai (visi)</button>
-      <button id="cvp-tab-research" onclick="cvpTab('research')" class="cvp-tab-btn" style="background:none;border:none;color:var(--text2);padding:10px 18px;border-radius:8px 8px 0 0;cursor:pointer;font-family:Inter,sans-serif;font-size:13px">🔬 Konkurentų tyrimas</button>
+      <button id="cvp-tab-search" onclick="cvpTab('search')" class="cvp-tab-btn" style="background:var(--card2);border:none;color:var(--text);padding:10px 18px;border-radius:8px 8px 0 0;cursor:pointer;font-family:Inter,sans-serif;font-weight:600;font-size:13px;border-bottom:2px solid var(--blue3)">🔎 Ieškoti pagal žodį</button>
+      <button id="cvp-tab-codes" onclick="cvpTab('codes')" class="cvp-tab-btn" style="background:none;border:none;color:var(--text2);padding:10px 18px;border-radius:8px 8px 0 0;cursor:pointer;font-family:Inter,sans-serif;font-size:13px">📋 Ieškoti pagal BVPŽ kodą</button>
+      <button id="cvp-tab-research" onclick="cvpTab('research')" class="cvp-tab-btn" style="background:none;border:none;color:var(--text2);padding:10px 18px;border-radius:8px 8px 0 0;cursor:pointer;font-family:Inter,sans-serif;font-size:13px">🕵️ Konkurentų analizė</button>
     </div>
 
     <!-- TAB: SEARCH -->
     <div id="cvp-pane-search">
-      <div style="display:flex;gap:10px;flex-wrap:wrap;margin-bottom:24px">
-        <input id="cvp-q" class="inp" placeholder="🔍 Raktažodis (pvz. įranga, valymas, IT...)" style="flex:1;min-width:220px" onkeydown="if(event.key==='Enter')openCVP()">
-        <button class="btn btn-primary" onclick="openCVP()">🔗 Ieškoti CVP →</button>
+      <div style="display:flex;gap:10px;flex-wrap:wrap;margin-bottom:8px">
+        <input id="cvp-q" class="inp" placeholder="Įveskite raktažodį, pvz. programinė įranga, valymas, statybos darbai" style="flex:1;min-width:220px" onkeydown="if(event.key==='Enter')openCVP()">
+        <button class="btn btn-primary" onclick="openCVP()">Atidaryti CVP paiešką →</button>
+      </div>
+      <p id="cvp-q-error" style="display:none;color:var(--danger,#ef4444);font-size:12px;margin-bottom:8px">Įveskite raktažodį arba pasirinkite vieną iš BVPŽ kategorijų.</p>
+
+      <!-- QUICK CPV CATEGORY CHIPS -->
+      <div style="margin-top:28px">
+        <p style="font-family:Sora,sans-serif;font-size:15px;font-weight:700;color:var(--text);margin-bottom:4px">Greitos kryptys pagal BVPŽ kategoriją</p>
+        <p style="font-size:12px;color:var(--text2);margin-bottom:14px;line-height:1.6">Pasirinkite sritį, o mes nukopijuosime tinkamą BVPŽ kodą ir atidarysime CVP išplėstinę paiešką.</p>
+        <div id="cvp-quick-chips" style="display:flex;flex-wrap:wrap;gap:8px;margin-bottom:20px"></div>
+      </div>
+
+      <!-- SELECTED DIRECTION CARD -->
+      <div id="cvp-selected-card" style="display:none;background:linear-gradient(135deg,rgba(26,86,219,.08),rgba(124,58,237,.08));border:1px solid rgba(59,130,246,.2);border-radius:14px;padding:20px;margin-bottom:24px">
+        <p style="font-size:11px;font-weight:700;color:var(--blue3);letter-spacing:1px;text-transform:uppercase;margin-bottom:10px">Pasirinkta kryptis</p>
+        <div id="cvp-selected-body" style="font-size:13px;color:var(--text2);line-height:1.8;margin-bottom:14px"></div>
+        <div style="display:flex;gap:10px;flex-wrap:wrap">
+          <button class="btn btn-primary btn-sm" id="cvp-selected-open">Atidaryti CVP išplėstinę paiešką →</button>
+          <button class="btn btn-sm" id="cvp-selected-copy" style="background:var(--card2);border:1px solid var(--border);color:var(--text)">Kopijuoti kodą dar kartą</button>
+          <button class="btn btn-sm" style="background:var(--card2);border:1px solid var(--border);color:var(--text)" onclick="pg('analyze')">Pradėti dokumentų analizę</button>
+        </div>
+      </div>
+
+      <!-- SEARCH PATH WIZARD -->
+      <div style="background:var(--card);border:1px solid var(--border);border-radius:14px;padding:20px;margin-bottom:8px">
+        <h3 style="font-family:Sora,sans-serif;font-size:14px;font-weight:700;margin-bottom:14px">🧭 Jūsų paieškos kelias</h3>
+        <div style="display:flex;flex-direction:column;gap:12px">
+          <div style="display:flex;gap:12px;align-items:flex-start"><div style="background:rgba(59,130,246,.15);color:var(--blue3);width:24px;height:24px;border-radius:50%;display:flex;align-items:center;justify-content:center;font-size:12px;font-weight:700;flex-shrink:0">1</div><p style="font-size:13px;color:var(--text2);line-height:1.6"><strong style="color:var(--text)">Pasirinkite kryptį.</strong> Įveskite raktažodį arba pasirinkite BVPŽ kategoriją.</p></div>
+          <div style="display:flex;gap:12px;align-items:flex-start"><div style="background:rgba(59,130,246,.15);color:var(--blue3);width:24px;height:24px;border-radius:50%;display:flex;align-items:center;justify-content:center;font-size:12px;font-weight:700;flex-shrink:0">2</div><p style="font-size:13px;color:var(--text2);line-height:1.6"><strong style="color:var(--text)">Atidarykite CVP paiešką.</strong> Sistema nukopijuos kodą arba paruoš paiešką pagal raktažodį.</p></div>
+          <div style="display:flex;gap:12px;align-items:flex-start"><div style="background:rgba(16,185,129,.15);color:var(--success);width:24px;height:24px;border-radius:50%;display:flex;align-items:center;justify-content:center;font-size:12px;font-weight:700;flex-shrink:0">3</div><div style="flex:1"><p style="font-size:13px;color:var(--text2);line-height:1.6"><strong style="color:var(--text)">Įkelkite dokumentus analizei.</strong> Radę konkursą, atsisiųskite dokumentus ir įkelkite ZIP failą čia.</p><button class="btn btn-primary btn-sm" style="margin-top:8px" onclick="pg('analyze')">Pradėti dokumentų analizę →</button></div></div>
+        </div>
       </div>
     </div>
 
@@ -1750,32 +1779,6 @@ footer{background:var(--navy2);border-top:1px solid var(--border);padding:48px 3
           <div style="display:flex;gap:12px;align-items:flex-start"><div style="background:rgba(16,185,129,.15);color:var(--success);width:24px;height:24px;border-radius:50%;display:flex;align-items:center;justify-content:center;font-size:12px;font-weight:700;flex-shrink:0">4</div><p style="font-size:13px;color:var(--text2);line-height:1.6">Grįžkite į <strong>Bidwise analizę</strong> ir pritaikykite žinias formuodami konkurencingą pasiūlymą</p></div>
         </div>
       </div>
-    </div>
-
-    <!-- HOW IT WORKS STEPS -->
-    <div style="display:grid;grid-template-columns:repeat(3,1fr);gap:16px;margin-bottom:32px">
-      <div style="background:var(--card);border:1px solid var(--border);border-radius:14px;padding:20px;text-align:center">
-        <div style="font-size:32px;margin-bottom:10px">1️⃣</div>
-        <div style="font-family:Sora,sans-serif;font-size:14px;font-weight:700;margin-bottom:6px">Ieškokite CVP.lt</div>
-        <p style="font-size:12px;color:var(--text2);line-height:1.6">Įveskite raktažodį ir spauskite „Ieškoti CVP.lt" — atidaromas portalas su paruošta paieška</p>
-      </div>
-      <div style="background:var(--card);border:1px solid var(--border);border-radius:14px;padding:20px;text-align:center">
-        <div style="font-size:32px;margin-bottom:10px">2️⃣</div>
-        <div style="font-family:Sora,sans-serif;font-size:14px;font-weight:700;margin-bottom:6px">Atsisiųskite dokumentus</div>
-        <p style="font-size:12px;color:var(--text2);line-height:1.6">Suradę įdomų konkursą — atsisiųskite ZIP archyvą su pirkimo dokumentais</p>
-      </div>
-      <div style="background:linear-gradient(135deg,rgba(26,86,219,.08),rgba(124,58,237,.08));border:1px solid rgba(59,130,246,.2);border-radius:14px;padding:20px;text-align:center">
-        <div style="font-size:32px;margin-bottom:10px">3️⃣</div>
-        <div style="font-family:Sora,sans-serif;font-size:14px;font-weight:700;margin-bottom:6px">Analizuokite čia</div>
-        <p style="font-size:12px;color:var(--text2);line-height:1.6">Grįžkite ir įkelkite ZIP — AI per 30 sekundžių išanalizuoja viską</p>
-        <button class="btn btn-primary btn-sm" style="margin-top:10px" onclick="pg('analyze')">→ Pradėti analizę</button>
-      </div>
-    </div>
-
-    <!-- QUICK LINKS to CVP.lt categories -->
-    <div style="margin-bottom:24px">
-      <p style="font-size:12px;font-weight:700;color:var(--text2);letter-spacing:1px;text-transform:uppercase;margin-bottom:12px">Greitos nuorodos pagal kategoriją</p>
-      <div style="display:flex;flex-wrap:wrap;gap:8px" id="cvp-quicklinks"></div>
     </div>
 
     <!-- RECENT — stored from previous sessions -->
@@ -3864,16 +3867,31 @@ const BVPZ_TREE = [
 // Ankstesnės kategorijos — paliekam atgaliniam suderinamumui
 const CVP_CATEGORIES = BVPZ_TREE.map(c => ({label: c.icon + ' ' + c.name, q: c.code}));
 
+// Greitos kryptys pagal BVPŽ kategoriją — naudojama navigatoriaus chips bloke
+const QUICK_CVP_CATEGORIES = [
+  { title: 'Programinė įranga', icon: '💻', cpv: '48000000' },
+  { title: 'Biuro įranga, kompiuteriai', icon: '🖥️', cpv: '30000000' },
+  { title: 'Statybos darbai', icon: '🏗️', cpv: '45000000' },
+  { title: 'Valymo paslaugos', icon: '🧼', cpv: '90900000' },
+  { title: 'Medicinos įranga', icon: '🏥', cpv: '33100000' },
+  { title: 'Transporto paslaugos', icon: '🚚', cpv: '60000000' },
+  { title: 'Maitinimo paslaugos', icon: '🍽️', cpv: '55500000' },
+  { title: 'Baldai ir įranga', icon: '🪑', cpv: '39100000' },
+  { title: 'Elektros įranga', icon: '⚡', cpv: '31000000' },
+  { title: 'Laboratorijos ir optika', icon: '🧪', cpv: '38000000' }
+];
+
 function initCVPPage(){
   // Render BVPŽ tree if codes tab is visible
   renderBVPZTree();
-  // Render quick links (kept for backwards compat)
-  const ql = document.getElementById('cvp-quicklinks');
-  if(ql) ql.innerHTML = CVP_CATEGORIES.map(c =>
-    `<button onclick="document.getElementById('cvp-q').value='${c.q}';openCVP()" 
-      style="background:var(--card);border:1px solid var(--border);border-radius:20px;padding:7px 14px;cursor:pointer;font-size:12px;color:var(--text2);font-family:Inter,sans-serif;transition:all .2s"
+
+  // Render quick CPV category chips
+  const chips = document.getElementById('cvp-quick-chips');
+  if(chips) chips.innerHTML = QUICK_CVP_CATEGORIES.map((c, i) =>
+    `<button onclick="searchByCpvCode(${i})"
+      style="background:var(--card);border:1px solid var(--border);border-radius:20px;padding:8px 16px;cursor:pointer;font-size:13px;color:var(--text2);font-family:Inter,sans-serif;transition:all .2s;display:inline-flex;align-items:center;gap:6px"
       onmouseover="this.style.borderColor='var(--blue3)';this.style.color='var(--text)'"
-      onmouseout="this.style.borderColor='var(--border)';this.style.color='var(--text2)'">${c.label}</button>`
+      onmouseout="this.style.borderColor='var(--border)';this.style.color='var(--text2)'">${c.icon} ${c.title}</button>`
   ).join('');
 
   // Show recent searches
@@ -3891,17 +3909,72 @@ function initCVPPage(){
 }
 
 function openCVP(){
+  const errEl = document.getElementById('cvp-q-error');
   const q = (document.getElementById('cvp-q')?.value||'').trim();
-  if(q){
-    const recent = JSON.parse(localStorage.getItem('cvp_recent')||'[]');
-    const updated = [q, ...recent.filter(r=>r!==q)].slice(0,10);
-    localStorage.setItem('cvp_recent', JSON.stringify(updated));
+  if(!q){
+    if(errEl) errEl.style.display = 'block';
+    toast('Įveskite raktažodį arba pasirinkite vieną iš BVPŽ kategorijų.', 'warn');
+    return;
   }
-  // TIESIOGINĖ paieška su jau įvestu žodžiu
-  const url = q
-    ? 'https://viesiejipirkimai.lt/epps/quickSearchAction.do?searchType=cftFTS&searchText=' + encodeURIComponent(q)
-    : 'https://viesiejipirkimai.lt/epps/home.do';
-  window.open(url, '_blank', 'noopener');
+  if(errEl) errEl.style.display = 'none';
+
+  const recent = JSON.parse(localStorage.getItem('cvp_recent')||'[]');
+  const updated = [q, ...recent.filter(r=>r!==q)].slice(0,10);
+  localStorage.setItem('cvp_recent', JSON.stringify(updated));
+
+  window.open('https://cvpp.eviesiejipirkimai.lt/?Query=' + encodeURIComponent(q), '_blank', 'noopener');
+}
+
+// Pasirinkus greitą BVPŽ kategoriją: nukopijuojamas kodas, atidaroma CVP išplėstinė paieška,
+// rodoma "Pasirinkta kryptis" kortelė su tolesniu žingsniu.
+let cvpSelectedCategory = null;
+
+async function searchByCpvCode(index){
+  const category = QUICK_CVP_CATEGORIES[index];
+  if(!category) return;
+  cvpSelectedCategory = category;
+
+  let copied = false;
+  try{
+    await navigator.clipboard.writeText(category.cpv);
+    copied = true;
+  }catch(e){ copied = false; }
+
+  window.open('https://viesiejipirkimai.lt/epps/prepareAdvancedSearch.do?type=cftFTS', '_blank', 'noopener');
+
+  if(copied){
+    toast(`BVPŽ kodas nukopijuotas: ${category.cpv}. Atsidariusiame CVP lange įklijuokite jį į lauką „BVPŽ kodai".`, 'success');
+  } else {
+    toast(`BVPŽ kodas: ${category.cpv}. Nukopijuokite jį rankiniu būdu ir įklijuokite CVP paieškoje.`, 'warn');
+  }
+
+  renderCvpSelectedCard(copied);
+}
+
+function renderCvpSelectedCard(copied){
+  const card = document.getElementById('cvp-selected-card');
+  const body = document.getElementById('cvp-selected-body');
+  const openBtn = document.getElementById('cvp-selected-open');
+  const copyBtn = document.getElementById('cvp-selected-copy');
+  if(!card || !body || !cvpSelectedCategory) return;
+  const c = cvpSelectedCategory;
+
+  card.style.display = 'block';
+  body.innerHTML =
+    '<div><strong style="color:var(--text)">Paieškos kryptis:</strong> ' + c.icon + ' ' + c.title + '</div>' +
+    '<div><strong style="color:var(--text)">BVPŽ kodas:</strong> <span style="font-family:monospace">' + c.cpv + '</span></div>' +
+    '<div><strong style="color:var(--text)">CVP veiksmas:</strong> ' + (copied ? 'kodas nukopijuotas' : 'nukopijuokite kodą rankiniu būdu') + '</div>' +
+    '<div><strong style="color:var(--text)">Kitas žingsnis:</strong> įklijuokite kodą CVP paieškoje</div>';
+
+  openBtn.onclick = () => window.open('https://viesiejipirkimai.lt/epps/prepareAdvancedSearch.do?type=cftFTS', '_blank', 'noopener');
+  copyBtn.onclick = async () => {
+    try{
+      await navigator.clipboard.writeText(c.cpv);
+      toast(`BVPŽ kodas nukopijuotas: ${c.cpv}.`, 'success');
+    }catch(e){
+      toast(`BVPŽ kodas: ${c.cpv}. Nukopijuokite jį rankiniu būdu.`, 'warn');
+    }
+  };
 }
 
 
