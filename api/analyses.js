@@ -1,57 +1,104 @@
+// ═══════════════════════════════════════════════════════════
+// BIDWISE AI — ANALIZĖ (vienas greitas kvietimas)
+// Grąžina struktūrą suderintą su renderResult frontend'e.
+// temperature:0 — vienodi rezultatai tam pačiam dokumentui.
+// ═══════════════════════════════════════════════════════════
 const { createClient } = require('@supabase/supabase-js');
 const { verifyToken, applyCors } = require('./security');
 
-// Robust JSON extractor — handles truncated or slightly malformed responses
-function extractJSON(raw) {
-  let cleaned = raw.trim()
-    .replace(/^```json\s*/i, '')
-    .replace(/^```\s*/, '')
-    .replace(/```\s*$/, '')
-    .trim();
+const ANTHROPIC_API_KEY = process.env.ANTHROPIC_API_KEY;
+const MODEL = 'claude-sonnet-4-6';
 
-  // Direct parse first
-  try { return JSON.parse(cleaned); } catch {}
+module.exports.config = { maxDuration: 300 };
 
-  const start = cleaned.indexOf('{');
-  if (start === -1) return null;
-
-  // Parse from first brace to end
-  try { return JSON.parse(cleaned.slice(start)); } catch {}
-
-  // Track depth to find outermost closing brace
-  let depth = 0, inStr = false, esc = false, lastClose = -1;
-  for (let i = start; i < cleaned.length; i++) {
-    const c = cleaned[i];
-    if (esc) { esc = false; continue; }
-    if (c === '\\') { esc = true; continue; }
-    if (c === '"') { inStr = !inStr; continue; }
-    if (inStr) continue;
-    if (c === '{') depth++;
-    if (c === '}') { depth--; if (depth === 0) lastClose = i; }
+async function callClaude(system, user, maxTokens = 4000) {
+  const controller = new AbortController();
+  const timeout = setTimeout(() => controller.abort(), 120000);
+  try {
+    const r = await fetch('https://api.anthropic.com/v1/messages', {
+      method: 'POST',
+      headers: {
+        'Content-Type': 'application/json',
+        'x-api-key': ANTHROPIC_API_KEY,
+        'anthropic-version': '2023-06-01'
+      },
+      body: JSON.stringify({
+        model: MODEL,
+        max_tokens: maxTokens,
+        temperature: 0,
+        system,
+        messages: [{ role: 'user', content: user }]
+      }),
+      signal: controller.signal
+    });
+    clearTimeout(timeout);
+    if (!r.ok) {
+      const err = await r.text();
+      throw new Error('Claude API klaida: ' + r.status + ' ' + err.slice(0, 200));
+    }
+    const data = await r.json();
+    return data.content.map(c => c.text || '').join('\n');
+  } catch (e) {
+    clearTimeout(timeout);
+    if (e.name === 'AbortError') throw new Error('Analizė užtruko per ilgai. Pabandykite atskirą dokumentą vietoj viso ZIP.');
+    throw e;
   }
-  if (lastClose > 0) {
-    try { return JSON.parse(cleaned.slice(start, lastClose + 1)); } catch {}
-  }
-
-  // Last resort — close open braces on truncated response
-  if (depth > 0) {
-    let attempt = cleaned.slice(start);
-    attempt = attempt.replace(/,\s*"[^"]*":\s*"[^"]*$/, '');
-    attempt = attempt.replace(/,\s*"[^"]*":?\s*$/, '');
-    attempt = attempt.replace(/,\s*$/, '');
-    while (depth-- > 0) attempt += '}';
-    try { return JSON.parse(attempt); } catch {}
-  }
-
-  return null;
 }
 
-// Plan limits
-const PLAN_FEATURES = {
-  free: { analyses: 3, assistant: false, pdf: false, questionLetter: false },
-  pro:  { analyses: Infinity, assistant: true, pdf: true, questionLetter: true },
-  team: { analyses: Infinity, assistant: true, pdf: true, questionLetter: true },
-};
+function parseJSON(text, fallback = {}) {
+  try {
+    let clean = text.replace(/```json|```/g, '').trim();
+    const start = clean.indexOf('{');
+    const end = clean.lastIndexOf('}');
+    if (start >= 0 && end > start) clean = clean.slice(start, end + 1);
+    return JSON.parse(clean);
+  } catch (e) {
+    console.error('JSON parse failed:', e.message);
+    return fallback;
+  }
+}
+
+function buildProfileContext(profile) {
+  if (!profile || (!profile.profilioSantrauka && !profile.sector && !profile.name)) {
+    return {
+      hasProfile: false,
+      contextText: 'KLIENTO PROFILIS NEUŽPILDYTAS. Vertink bendrai pagal dokumento turinį. Balą skaičiuok objektyviai pagal reikalavimų sudėtingumą ir konkurencijos lygį.'
+    };
+  }
+  let ctx = 'KLIENTO ĮMONĖS PROFILIS (naudok aktyviai vertindamas atitikimą ir tikimybę):\n\n';
+  if (profile.name) ctx += `• Pavadinimas: ${profile.name}\n`;
+  if (profile.sector) ctx += `• Veiklos sritis: ${profile.sector}\n`;
+  if (profile.activity) ctx += `• Veiklos aprašymas: ${profile.activity}\n`;
+  if (profile.specializacija) ctx += `• Specializacija: ${profile.specializacija}\n`;
+  if (Array.isArray(profile.veiklos) && profile.veiklos.length)
+    ctx += `• Teikiamos paslaugos: ${profile.veiklos.join(', ')}\n`;
+  if (Array.isArray(profile.capabilityTags) && profile.capabilityTags.length)
+    ctx += `• Gebėjimai (tags): ${profile.capabilityTags.join(', ')}\n`;
+  if (Array.isArray(profile.regionai) && profile.regionai.length)
+    ctx += `• Veiklos regionai: ${profile.regionai.join(', ')}\n`;
+  if (profile.maxProjektoVerte) ctx += `• Didžiausia projekto vertė: ${profile.maxProjektoVerte}\n`;
+  if (profile.apyvarta) ctx += `• Metinė apyvarta: ${profile.apyvarta}\n`;
+  if (profile.darbuotojai) ctx += `• Darbuotojų/brigadų: ${profile.darbuotojai}\n`;
+  if (profile.patirtis) ctx += `• Patirtis: ${profile.patirtis}\n`;
+  if (profile.viesPirkPatirtis) ctx += `• Viešųjų pirkimų patirtis: ${profile.viesPirkPatirtis}\n`;
+  if (Array.isArray(profile.sertifikatai) && profile.sertifikatai.length)
+    ctx += `• Sertifikatai: ${profile.sertifikatai.join(', ')}\n`;
+  if (Array.isArray(profile.stiprybes) && profile.stiprybes.length)
+    ctx += `• Stiprybės: ${profile.stiprybes.join('; ')}\n`;
+  if (Array.isArray(profile.silpnybes) && profile.silpnybes.length)
+    ctx += `• Silpnybės: ${profile.silpnybes.join('; ')}\n`;
+  if (Array.isArray(profile.vengia) && profile.vengia.length)
+    ctx += `• Vengia (NESIŪLYK tokių konkursų): ${profile.vengia.join('; ')}\n`;
+  if (profile.kainuStrategija) ctx += `• Kainodaros strategija: ${profile.kainuStrategija}\n`;
+  if (profile.klausimynas && typeof profile.klausimynas === 'object') {
+    ctx += '\nKLAUSIMYNO ATSAKYMAI (specifinė info — naudok aktyviai):\n';
+    for (const [k, v] of Object.entries(profile.klausimynas)) {
+      if (v) ctx += `  – ${k}: ${v}\n`;
+    }
+  }
+  if (profile.profilioSantrauka) ctx += `\nPROFILIO SANTRAUKA:\n${profile.profilioSantrauka}\n`;
+  return { hasProfile: true, contextText: ctx };
+}
 
 module.exports = async (req, res) => {
   applyCors(res);
@@ -59,216 +106,110 @@ module.exports = async (req, res) => {
   if (req.method !== 'POST') return res.status(405).json({ error: 'Metodas neleidžiamas' });
 
   const user = verifyToken(req);
-  if (!user) return res.status(401).json({ error: 'Prisijunkite norėdami tęsti' });
+  if (!user) return res.status(401).json({ error: 'Neprisijungta' });
+  if (!ANTHROPIC_API_KEY) return res.status(500).json({ error: 'AI nepasiekiamas' });
 
-  const { text, documentName, projectId, companyProfile, mode } = req.body || {};
-  if (!text) return res.status(400).json({ error: 'Dokumentų tekstas būtinas' });
-
-  if (!process.env.ANTHROPIC_API_KEY) {
-    return res.status(500).json({ error: 'ANTHROPIC_API_KEY nenustatytas' });
+  const { documentText, text, documentName, companyProfile } = req.body || {};
+  const docText = documentText || text || '';
+  if (!docText || docText.length < 50) {
+    return res.status(400).json({ error: 'Dokumento tekstas per trumpas arba tuščias' });
   }
-
-  // Load user from DB
-  let userData = { plan: 'free', free_analyses_left: 3 };
-  let supabase = null;
-
-  if (process.env.SUPABASE_URL && process.env.SUPABASE_SERVICE_KEY) {
-    try {
-      supabase = createClient(process.env.SUPABASE_URL, process.env.SUPABASE_SERVICE_KEY);
-      const { data, error } = await supabase
-        .from('users')
-        .select('id, plan, free_analyses_left, company_profile')
-        .eq('id', user.id)
-        .single();
-      if (!error && data) userData = data;
-    } catch (e) {
-      console.error('DB read error:', e.message);
-    }
-  }
-
-  const plan = userData.plan || 'free';
-  const features = PLAN_FEATURES[plan] || PLAN_FEATURES.free;
-
-  // Check free limit (server-side — cannot be bypassed)
-  if (plan === 'free' && (userData.free_analyses_left ?? 3) <= 0) {
-    return res.status(403).json({ error: 'Išnaudojote nemokamas analizes. Atnaujinkite į Pro.' });
-  }
-
-  // Check feature access for assistant/letter modes
-  if (mode === 'assistant' && !features.assistant) {
-    return res.status(403).json({ error: 'AI asistentas prieinamas tik Pro ir Komanda planams.' });
-  }
-  if (mode === 'letter' && !features.questionLetter) {
-    return res.status(403).json({ error: 'Klausimų raštas prieinamas tik Pro ir Komanda planams.' });
-  }
-
-  // Build company profile context
-  let profileContext = '';
-  const cp = companyProfile || (userData.company_profile) || null;
-  if (cp && typeof cp === 'object' && Object.keys(cp).length > 0) {
-    profileContext = `\n\nĮMONĖS PROFILIS (analizuok atsižvelgdamas į šią įmonę):
-- Pavadinimas: ${cp.name || 'Nenurodyta'}
-- Veiklos sritis: ${cp.sector || 'Nenurodyta'}
-- Įmonės dydis: ${cp.size || 'Nenurodyta'}
-- Specializacija: ${cp.specialization || 'Nenurodyta'}
-- Patirtis: ${cp.experience || 'Nenurodyta'}
-- Sertifikatai: ${cp.certificates || 'Nenurodyta'}
-- Apyvarta: ${cp.revenue || 'Nenurodyta'}\n`;
-  }
-
-  const prompt = `Tu esi viešųjų pirkimų ekspertas Lietuvoje. Išanalizuok CVP konkurso dokumentus ir grąžink TIK JSON objektą — be markdown žymių, be \`\`\`json, tiesiog grynas JSON.
-
-Atsakymas turi būti KOMPAKTIŠKAS — kiekvienas laukas trumpas bet informatyvus (1–2 sakiniai). Tik "strategija" ir "isViso" gali būti iki 6 sakinių.
-
-SVARBU: Kainų kriterijų svoriai ir kvalifikacijos atitikimas yra patys svarbiausi laukai — juos pildyk ypač tiksliai ir išsamiai.
-${profileContext}
-
-Grąžink šią JSON struktūrą:
-{
-  "pavadinimas": "trumpas konkurso pavadinimas",
-  "score": 70,
-  "scoreLabel": "Geros galimybės",
-  "perkanciojiOrganizacija": "pavadinimas",
-  "pirkimoTipas": "tipas",
-  "bendraVerte": "vertė EUR",
-  "cpt": "CPV kodas",
-  "terminai": {
-    "pasiulymoTerminas": "data",
-    "vokuAtplesimas": "data arba –",
-    "vykdymoTerminas": "trukmė",
-    "garantija": "laikotarpis",
-    "klausimaiIki": "data arba –"
-  },
-  "kvalifikacija": {
-    "apyvarta": "reikalavimas",
-    "darbuotojai": "skaičius",
-    "patirtis": "patirties reikalavimai",
-    "sertifikatai": "reikalingi sertifikatai",
-    "finansinis": "finansinės garantijos",
-    "kita": "kiti reikalavimai"
-  },
-  "atitikimasKvalifikacijai": "Ar įmonė atitinka reikalavimus? Konkreti analizė pagal profilį arba bendroji rekomendacija.",
-  "vertinimoKriterijai": [
-    {"kriterijus": "Kaina", "svoris": "60%", "aprasas": "Kaip vertinama kaina"},
-    {"kriterijus": "Kokybė", "svoris": "40%", "aprasas": "Kokie kokybės rodikliai"}
-  ],
-  "kainuStrategija": "Kaip formuoti kainą — ar ji lemia ir kiek. Kokie kiti kriterijai svarbūs ir kokį svorį turi. 2–3 sakiniai.",
-  "techninieReikalavimai": "Techninių reikalavimų santrauka. 3–4 sakiniai.",
-  "finansinesSalygos": {
-    "avansas": "trumpas",
-    "apmokejimas": "mokėjimo sąlygos",
-    "baudos": "baudų sąlygos",
-    "garantinis": "garantinis laikotarpis",
-    "indeksavimas": "kainų indeksavimas arba –"
-  },
-  "draudimas": "draudimo reikalavimai",
-  "subtiekejiai": "subtiekėjų galimybės",
-  "konsorciumai": "konsorciumų galimybės",
-  "rizikos": [
-    "1–2 sakiniai konkreti rizika",
-    "1–2 sakiniai konkreti rizika",
-    "1–2 sakiniai konkreti rizika"
-  ],
-  "galimybes": [
-    "konkreti galimybė",
-    "konkreti galimybė",
-    "konkreti galimybė"
-  ],
-  "strategija": "Iki 6 sakinių konkrečių patarimų kaip parengti pasiūlymą — kokius aspektus akcentuoti, kaip struktūruoti kainą, kokius dokumentus gerai paruošti.",
-  "butinaiIttraukti": [
-    {"dokumentas": "dokumento pavadinimas", "pastaba": "komentaras"}
-  ],
-  "dazniausiasKlaidos": [
-    "konkreti klaida kurią daro tiekėjai",
-    "konkreti klaida"
-  ],
-  "klausimaiPerkanciajai": [
-    "Konkretus klausimas perkančiajai?",
-    "Konkretus klausimas?"
-  ],
-  "isViso": "Iki 6 sakinių išvada — ar verta dalyvauti, ką ypač svarbu žinoti, kokie pagrindiniai iššūkiai."
-}
-
-DOKUMENTAI:
-${String(text).slice(0, 100000)}`;
+  const docTextSafe = String(docText).replace(/<[^>]*>/g, '').trim();
 
   try {
-    const response = await fetch('https://api.anthropic.com/v1/messages', {
-      method: 'POST',
-      headers: {
-        'Content-Type': 'application/json',
-        'x-api-key': process.env.ANTHROPIC_API_KEY,
-        'anthropic-version': '2023-06-01'
-      },
-      body: JSON.stringify({
-        model: 'claude-sonnet-4-6',
-        max_tokens: 16000,
-        temperature: 0,
-        messages: [{ role: 'user', content: prompt }]
-      })
-    });
+    let profile = companyProfile || {};
+    if ((!profile || !profile.sector) && process.env.SUPABASE_URL) {
+      const supabase = createClient(process.env.SUPABASE_URL, process.env.SUPABASE_SERVICE_KEY);
+      const { data } = await supabase.from('users').select('company_profile').eq('id', user.id).single();
+      if (data && data.company_profile) profile = data.company_profile;
+    }
+    const profileCtx = buildProfileContext(profile);
 
-    if (!response.ok) {
-      const errText = await response.text();
-      console.error('Anthropic error:', errText);
-      return res.status(500).json({ error: 'AI klaida: ' + errText.slice(0, 200) });
+    const system = `Tu esi Bidwise AI — ekspertų komanda viešųjų pirkimų analizei (dokumentų, kvalifikacijos, kainodaros, rizikų ir strategijos analitikai). Analizuok lietuviškai. Būk objektyvus ir nuoseklus — tam pačiam dokumentui visada duok tą patį tikimybės balą. Grąžink TIK JSON, be jokio papildomo teksto.`;
+
+    const userMsg = `${profileCtx.contextText}
+
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+
+PIRKIMO DOKUMENTAS:
+${docTextSafe.slice(0, 30000)}
+
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+
+Išanalizuok šį konkursą ${profileCtx.hasProfile ? 'KONKREČIAI šios įmonės kontekste — naudok jos profilį ir klausimyno atsakymus' : '(profilis neužpildytas — bendras objektyvus vertinimas)'}.
+
+Grąžink TIKSLIAI tokios struktūros JSON (visi laukai privalomi, jei nėra informacijos — rašyk "Nenurodyta"):
+
+{
+  "pavadinimas": "tikslus pirkimo pavadinimas",
+  "perkanciojiOrganizacija": "perkančiosios organizacijos pavadinimas",
+  "pirkimoTipas": "atviras konkursas / supaprastintas / mažos vertės",
+  "bendraVerte": "numatoma vertė su valiuta arba Nenurodyta",
+  "cpt": "pagrindinis BVPŽ kodas",
+  "score": 65,
+  "scoreLabel": "Aukšta tikimybė / Vidutinė tikimybė / Žema tikimybė",
+  "scorePaaiskinimas": "2-3 sakiniai kodėl būtent toks balas šiai įmonei",
+  "terminai": {
+    "pasiulymoTerminas": "data ir laikas",
+    "vokuAtplesimas": "data arba Nenurodyta",
+    "klausimaiIki": "data arba Nenurodyta",
+    "vykdymoTerminas": "sutarties trukmė",
+    "garantija": "garantinis terminas arba Nenurodyta"
+  },
+  "kvalifikacija": {
+    "apyvarta": "reikalaujama apyvarta",
+    "darbuotojai": "reikalavimai darbuotojams",
+    "patirtis": "reikalaujama patirtis",
+    "sertifikatai": "reikalaujami sertifikatai",
+    "finansinis": "finansiniai reikalavimai"
+  },
+  "finansinesSalygos": {
+    "avansas": "ar mokamas avansas",
+    "apmokejimas": "apmokėjimo sąlygos",
+    "baudos": "baudų sąlygos",
+    "garantinis": "garantinio laikotarpio sąlygos"
+  },
+  "vertinimoKriterijai": [
+    {"kriterijus": "pvz. Kaina", "svoris": "60%"}
+  ],
+  "rizikos": ["konkreti rizika 1", "rizika 2", "rizika 3"],
+  "galimybes": ["galimybė 1", "galimybė 2"],
+  "pasleptosNuostatos": ["nepalanki nuostata jei yra"],
+  "strategija": "konkreti laimėjimo strategija šiai įmonei (1 pastraipa)",
+  "prioritetiniaiZingsniai": [
+    {"terminas": "Iki kada", "zingsnis": "ką padaryti"}
+  ],
+  "butinaiIttraukti": [
+    {"dokumentas": "reikalingas dokumentas", "pastaba": "komentaras"}
+  ],
+  "isViso": "galutinė išvada ar verta dalyvauti ir kodėl (2-3 sakiniai)"
+}`;
+
+    const aiRes = await callClaude(system, userMsg, 4000);
+    const result = parseJSON(aiRes, null);
+
+    if (!result || !result.pavadinimas) {
+      return res.status(500).json({ error: 'AI nepavyko struktūrizuoti atsakymo. Pabandykite dar kartą.' });
     }
 
-    const data = await response.json();
-    const raw = data.content?.[0]?.text || '';
-    const stopReason = data.stop_reason;
+    result.score = typeof result.score === 'number' ? result.score : 50;
+    result.personalizuota = profileCtx.hasProfile;
 
-    const result = extractJSON(raw);
-
-    if (!result) {
-      console.error('JSON parse failed. stopReason:', stopReason, 'rawLength:', raw.length);
-      console.error('Raw start:', raw.slice(0, 500));
-      return res.status(500).json({
-        error: 'AI atsakymas neteisingo formato. Bandykite su mažiau dokumentų arba pakartokite.',
-        debug: { stopReason, rawLength: raw.length }
-      });
+    if (process.env.SUPABASE_URL) {
+      const supabase = createClient(process.env.SUPABASE_URL, process.env.SUPABASE_SERVICE_KEY);
+      const { data: saved } = await supabase.from('analyses').insert({
+        user_id: user.id,
+        document_name: documentName || result.pavadinimas || 'Analizė',
+        score: result.score,
+        result_json: result
+      }).select('id').single();
+      if (saved) result._analysisId = saved.id;
     }
 
-    // Decrement free counter
-    if (supabase && plan === 'free') {
-      try {
-        const newLeft = Math.max(0, (userData.free_analyses_left ?? 3) - 1);
-        await supabase
-          .from('users')
-          .update({ free_analyses_left: newLeft })
-          .eq('id', user.id);
-      } catch (e) {
-        console.error('Counter update error:', e.message);
-      }
-    }
-
-    // Save analysis
-    if (supabase) {
-      try {
-        await supabase.from('analyses').insert([{
-          user_id: user.id,
-          project_id: projectId || null,
-          document_name: documentName || 'Dokumentas',
-          score: result.score || 0,
-          result_json: result
-        }]);
-      } catch (e) {
-        console.error('Save error:', e.message);
-      }
-    }
-
-    return res.status(200).json({
-      result,
-      plan,
-      features: {
-        assistant: features.assistant,
-        pdf: features.pdf,
-        questionLetter: features.questionLetter
-      }
-    });
+    return res.status(200).json({ result });
 
   } catch (e) {
-    console.error('Analyze error:', e.message, e.stack);
-    return res.status(500).json({ error: 'Serverio klaida: ' + e.message });
+    console.error('Analizės klaida:', e);
+    return res.status(500).json({ error: 'Analizės klaida: ' + e.message });
   }
 };
