@@ -51,9 +51,42 @@ function coreQuestions(sector) {
     { klausimas: 'Kokia jūsų metinė apyvarta?', tipas: 'select', variantai: ['iki 100 000 EUR', '100 000–500 000 EUR', '500 000–2 mln. EUR', 'virš 2 mln. EUR'] },
     { klausimas: 'Ar turite viešųjų pirkimų patirties?', tipas: 'select', variantai: ['Taip, reguliariai dalyvaujame', 'Taip, kelis kartus', 'Tik bandėme', 'Ne, dar neturime'] },
     { klausimas: 'Kiek metų dirbate ' + sector + ' srityje?', tipas: 'select', variantai: ['Mažiau nei 1 metai', '1–3 metai', '3–5 metai', '5–10 metų', 'Daugiau nei 10 metų'] },
+    { klausimas: 'Kiek darbuotojų/brigadų turite šiam darbui?', tipas: 'select', variantai: ['1–5', '6–15', '16–50', '50+'] },
     { klausimas: 'Kokius sertifikatus ar licencijas turite?', tipas: 'text', variantai: [] },
-    { klausimas: 'Kokio tipo konkursų vengiate ar nepageidaujate?', tipas: 'text', variantai: [] }
+    { klausimas: 'Ar turite ISO ar kitus kokybės vadybos sertifikatus?', tipas: 'select', variantai: ['Taip', 'Ne', 'Ruošiamės gauti'] },
+    { klausimas: 'Ar esate dalyvavę su jungtinės veiklos partneriais ar subtiekėjais?', tipas: 'select', variantai: ['Taip, dažnai', 'Taip, kelis kartus', 'Ne, dirbame savarankiškai'] },
+    { klausimas: 'Kokia jūsų finansinė padėtis (bankroto/restruktūrizavimo procesai)?', tipas: 'select', variantai: ['Stabili, jokių procesų', 'Yra mažų finansinių sunkumų', 'Vykdomas restruktūrizavimas'] },
+    { klausimas: 'Kokia jūsų kainodaros strategija konkursuose?', tipas: 'select', variantai: ['Konkuruojame kaina', 'Konkuruojame kokybe/patirtimi', 'Subalansuota'] },
+    { klausimas: 'Kokio tipo konkursų vengiate ar nepageidaujate?', tipas: 'text', variantai: [] },
+    { klausimas: 'Kokie jūsų stipriausi konkurenciniai pranašumai?', tipas: 'text', variantai: [] },
+    { klausimas: 'Ar turite patirties su avansiniais mokėjimais ir ilgais atsiskaitymo terminais?', tipas: 'select', variantai: ['Taip, priimtina', 'Tik su avansu', 'Stengiamės vengti'] }
   ];
+}
+
+// Normalizuoja naują grupinę klausimo struktūrą į plokščią formą, kurią naudoja frontend formos
+function normalizeQuestion(k, group) {
+  const typeMap = {
+    pasirinkimas: 'select',
+    keli_pasirinkimai: 'multiselect',
+    taip_ne: 'select',
+    skaicius: 'number',
+    valiuta: 'number',
+    procentai: 'number',
+    data: 'date',
+    failas: 'text',
+    tekstas: 'text'
+  };
+  let variantai = k.pasirinkimai || [];
+  if (k.atsakymo_tipas === 'taip_ne') variantai = ['Taip', 'Ne'];
+  return {
+    id: k.id || '',
+    klausimas: k.klausimas || k.lauko_pavadinimas || '',
+    paaiskinimas: k.paaiskinimas_vartotojui || '',
+    tipas: typeMap[k.atsakymo_tipas] || 'text',
+    variantai,
+    privalomas: !!k.privalomas,
+    grupe: group ? group.grupes_pavadinimas : ''
+  };
 }
 
 module.exports = async (req, res) => {
@@ -119,37 +152,128 @@ Nustatyk VISAS tinkamas sritis iš sąrašo (įmonė gali dirbti keliose). Jei v
     if (!sector) return res.status(400).json({ error: 'Nurodykite veiklos sritį' });
 
     try {
-      const system = `Tu esi viešųjų pirkimų konsultantas. Sukurk klausimus įmonės profiliui — kad AI galėtų tiksliai vertinti konkursų tinkamumą. Klausimai turi dengti: regioną, projektų dydį, pajėgumus, sertifikatus, patirtį, specializaciją ir ko įmonė vengia. Atsakyk TIK JSON.`;
-      const userMsg = `Įmonė: „${name || 'įmonė'}"
-Veiklos sritis: ${sector}
-${activity ? 'Veiklos aprašymas: ' + activity : ''}
+      const system = `Tu esi viešųjų pirkimų, tiekėjų kvalifikacijos ir EBVPD/ESPD analizės ekspertas.
 
-Sukurk 6-7 klausimus pritaikytus ${activity ? 'šios įmonės aprašytai veiklai' : 'šiam sektoriui'}. BŪTINAI įtrauk klausimus apie:
-- Regioną (kur dirba)
-- Didžiausią projekto vertę
-- Viešųjų pirkimų patirtį
-- Specializaciją/pajėgumus
-- Sertifikatus
-- Ko vengia
+Tavo užduotis: pagal įmonės veiklos sritį / specialybę sugeneruoti išsamų įmonės profilio klausimyną, kurį tiekėjas užpildys po registracijos. Šis klausimynas vėliau bus naudojamas AI konkurso analizei, kad AI galėtų įvertinti:
+1. ar įmonė atitinka konkretaus viešojo pirkimo reikalavimus;
+2. kokių dokumentų įmonei gali trūkti;
+3. ar įmonė turi tinkamą patirtį, darbuotojus, sertifikatus, apyvartą, pajėgumus;
+4. ar įmonei verta dalyvauti konkurse;
+5. kokia preliminari tikimybė laimėti;
+6. kaip pildyti EBVPD/ESPD;
+7. kokios yra įmonės stiprybės ir silpnybės konkrečiame konkurse.
 
-Grąžink TIKSLIAI tokios struktūros JSON:
+Svarbu:
+- Klausimynas turi būti pritaikytas konkrečiai veiklos sričiai.
+- Nekurk vien bendrų klausimų.
+- Klausimai turi surinkti realius duomenis, kuriuos vėliau galima lyginti su konkurso sąlygomis.
+- Klausimai turi būti aiškūs verslo žmogui, ne tik teisininkui.
+- Įtrauk klausimus apie EBVPD/ESPD, pašalinimo pagrindus, kvalifikaciją, patirtį, finansinį pajėgumą, techninį pajėgumą, dokumentus, sertifikatus, darbuotojus, subtiekėjus, regionus, kainodarą ir rizikos ribas.
+- Kiekvienam klausimui nurodyk atsakymo tipą.
+- Klausimai turi būti tinkami naudoti frontend formoje.
+- Grąžink tik validų JSON. Jokio teksto prieš ar po JSON.
+
+Klausimyno grupės privalo apimti bent:
+1. Įmonės pagrindiniai duomenys
+2. Veiklos sritis ir specializacija
+3. Teikiamos paslaugos / prekės / darbai
+4. Viešųjų pirkimų patirtis
+5. Panašios sutartys ir jų vertės
+6. Apyvarta ir finansinis pajėgumas
+7. Darbuotojai, specialistai, brigados, komanda
+8. Įranga, technologijos, įrankiai, transportas, jei aktualu
+9. Sertifikatai, leidimai, licencijos
+10. Kokybės, aplinkosaugos, saugos standartai
+11. Regionai, kuriuose įmonė gali vykdyti sutartis
+12. Maksimali projekto vertė, kurią įmonė gali saugiai vykdyti
+13. Subtiekėjai ir partneriai
+14. Jungtinė veikla
+15. EBVPD/ESPD pašalinimo pagrindai
+16. Kainodaros strategija
+17. Rizikos, kurių įmonė nori vengti
+18. Stiprybės ir konkurenciniai pranašumai
+19. Silpnos vietos ir ribojimai
+20. Dokumentai, kuriuos įmonė jau turi`;
+
+      const userMsg = `ĮMONĖS VEIKLOS SRITIS / SPECIALYBĖ:
+${sector}
+
+PAPILDOMAS APRAŠYMAS, JEI YRA:
+${activity || (name ? 'Įmonė: ' + name : 'Nepateiktas')}
+
+Sugeneruok JSON pagal šią struktūrą:
+
 {
-  "questions": [
-    {"klausimas": "tekstas", "tipas": "select", "variantai": ["v1", "v2", "v3"]},
-    {"klausimas": "tekstas", "tipas": "multiselect", "variantai": ["v1", "v2"]},
-    {"klausimas": "atviras", "tipas": "text", "variantai": []}
+  "specialybe": "",
+  "klausimyno_pavadinimas": "",
+  "klausimyno_tikslas": "",
+  "profilio_laukai": {
+    "rekomenduojami_capability_tags": [],
+    "rekomenduojami_rizikos_tags": [],
+    "rekomenduojami_dokumentu_tags": []
+  },
+  "klausimu_grupes": [
+    {
+      "grupes_id": "A",
+      "grupes_pavadinimas": "",
+      "aprasymas": "",
+      "klausimai": [
+        {
+          "id": "A1",
+          "lauko_pavadinimas": "",
+          "klausimas": "",
+          "paaiskinimas_vartotojui": "",
+          "atsakymo_tipas": "tekstas | taip_ne | skaicius | data | failas | pasirinkimas | keli_pasirinkimai | valiuta | procentai",
+          "pasirinkimai": [],
+          "privalomas": true,
+          "naudojama_konkurso_analizei": true,
+          "naudojama_EBVPD_ESPD": false,
+          "EBVPD_sritis": "",
+          "kaip_AI_naudos_atsakyma": "",
+          "rizika_jei_neuzpildyta": "zema | vidutine | auksta | kritine",
+          "priklausomybes": {
+            "rodyti_jei": "",
+            "jei_taip_papildomi_klausimai": [],
+            "jei_ne_papildomi_klausimai": []
+          }
+        }
+      ]
+    }
+  ],
+  "minimalus_profilis_analizei": ["kokie klausimai privalomi, kad AI galėtų bent preliminariai vertinti konkursą"],
+  "stipraus_profilio_kriterijai": ["kokie atsakymai rodytų, kad įmonė šioje srityje stipri"],
+  "silpno_profilio_signalai": ["kokie atsakymai rodytų, kad įmonė dažnai neatitiks konkursų"],
+  "rekomenduojami_failai": [
+    {"dokumento_pavadinimas": "", "kam_reikalingas": "", "kada_naudojamas": "registracijoje | konkurso analizeje | EBVPD | po laimejimo", "ar_privalomas": true}
   ]
-}
+}`;
 
-Naudok "select" vienam pasirinkimui, "multiselect" keliems (pvz. regionai), "text" atviriems.`;
-
-      const aiRes = await callClaude(system, userMsg, 2000);
+      const aiRes = await callClaude(system, userMsg, 6000);
       const parsed = parseJSON(aiRes, {});
-      let questions = parsed.questions || parsed.klausimai || [];
-      if (!Array.isArray(questions) || questions.length === 0 || !questions[0].klausimas) {
-        questions = coreQuestions(sector);
+      const groups = parsed.klausimu_grupes;
+
+      let questions = [];
+      if (Array.isArray(groups) && groups.length) {
+        groups.forEach(g => {
+          (g.klausimai || []).forEach(k => {
+            questions.push(normalizeQuestion(k, g));
+          });
+        });
       }
-      return res.status(200).json({ questions });
+      if (!questions.length) questions = coreQuestions(sector);
+
+      return res.status(200).json({
+        questions,
+        klausimynoMeta: {
+          specialybe: parsed.specialybe || sector,
+          klausimyno_pavadinimas: parsed.klausimyno_pavadinimas || '',
+          profilio_laukai: parsed.profilio_laukai || {},
+          minimalus_profilis_analizei: parsed.minimalus_profilis_analizei || [],
+          stipraus_profilio_kriterijai: parsed.stipraus_profilio_kriterijai || [],
+          silpno_profilio_signalai: parsed.silpno_profilio_signalai || [],
+          rekomenduojami_failai: parsed.rekomenduojami_failai || []
+        }
+      });
     } catch (e) {
       console.error('Klausimų klaida:', e);
       return res.status(200).json({ questions: coreQuestions(sector) });
@@ -158,7 +282,7 @@ Naudok "select" vienam pasirinkimui, "multiselect" keliems (pvz. regionai), "tex
 
   // ── SUKURTI PROFILĮ ──
   if (step === 'profile' || step === 'create-profile') {
-    const { name, sector, answers, activity } = req.body;
+    const { name, sector, answers, activity, klausimynoMeta } = req.body;
     if (!sector) return res.status(400).json({ error: 'Trūksta duomenų' });
 
     try {
@@ -206,6 +330,7 @@ Sukurk išsamų profilį. Grąžink JSON:
         activity: activity || '',
         ...aiProfile,
         klausimynas,
+        klausimynoMeta: klausimynoMeta || null,
         sukurta: new Date().toISOString()
       };
 
