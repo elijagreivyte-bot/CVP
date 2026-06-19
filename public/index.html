@@ -1450,7 +1450,7 @@ footer{background:var(--navy2);border-top:1px solid var(--border);padding:48px 3
       <span class="sn-icon">📊</span> Pradžia
     </button>
     <button class="sn on" id="sn-analyze" onclick="pg('analyze')">
-      <span class="sn-icon">🔍</span> Nova analizė
+      <span class="sn-icon">🔍</span> Nauja analizė
     </button>
     <button class="sn" id="sn-cvp" onclick="pg('cvp')">
       <span class="sn-icon">🇱🇹</span> CVP.lt paieška
@@ -1495,58 +1495,79 @@ footer{background:var(--navy2);border-top:1px solid var(--border);padding:48px 3
 
   <!-- ANALYZE PAGE -->
   <div id="pg-analyze">
-    <h1 class="pg-h">Nova analizė</h1>
-    <p class="pg-sub">Įkelkite iki 10 failų (PDF, Word, TXT) arba ZIP archyvą</p>
-    <div class="tip">💡 <strong>Patarimas:</strong> Įkelkite pirkimo sąlygas, techninę specifikaciją ir kvalifikacijos reikalavimus. Brėžinių įkelti nebūtina — jie neturi teksto kurį AI galėtų analizuoti.</div>
-    <div style="background:rgba(59,130,246,.05);border:1px solid rgba(59,130,246,.15);border-radius:10px;padding:14px 18px;margin-bottom:20px;display:flex;align-items:center;gap:12px;flex-wrap:wrap">
-      <span style="font-size:13px;font-weight:600;color:var(--text2);white-space:nowrap">📁 Priskirti projektui:</span>
-      <select id="proj-sel" class="inp" style="flex:1;min-width:180px;max-width:320px;padding:9px 12px" onchange="currentProject=this.value||null">
-        <option value="">— Be projekto —</option>
-      </select>
-      <button class="btn btn-outline btn-sm" onclick="openNewProjectModal()" style="white-space:nowrap">+ Naujas</button>
-      <span id="proj-sel-hint" style="font-size:11px;color:var(--text3)">Analizė bus išsaugota pasirinktame projekte</span>
-    </div>
-    <div id="profile-banner-analyze" style="display:none;background:rgba(245,158,11,.07);border:1px solid rgba(245,158,11,.2);border-radius:10px;padding:12px 16px;margin-bottom:16px;font-size:13px;line-height:1.55;display:flex;align-items:center;justify-content:space-between;gap:12px;flex-wrap:wrap">
-      <span>⚠️ <strong style="color:var(--warn)">Profilis neužpildytas</strong> — analizė nebus personalizuota jūsų įmonei. Užpildžius profilį AI tiksliau įvertins atitikimą ir laimėjimo tikimybę.</span>
-      <button class="btn btn-outline btn-sm" style="flex-shrink:0;border-color:rgba(245,158,11,.4);color:var(--warn)" onclick="pg('account')">Užpildyti profilį →</button>
-    </div>
-    <div id="profile-banner-analyze" style="display:none;background:rgba(245,158,11,.07);border:1px solid rgba(245,158,11,.2);border-radius:10px;padding:12px 16px;margin-bottom:16px;font-size:13px;line-height:1.55">
-      <span>⚠️ <strong style="color:var(--warn)">Profilis neužpildytas</strong> — analizė nebus personalizuota jūsų įmonei. Užpildžius profilį AI tiksliau įvertins atitikimą ir laimėjimo tikimybę.</span>
-      <button class="btn btn-outline btn-sm" style="margin-left:12px;border-color:rgba(245,158,11,.4);color:var(--warn)" onclick="pg('account')">Užpildyti profilį →</button>
-    </div>
-    <div id="profile-banner-analyze" style="display:none;background:rgba(245,158,11,.07);border:1px solid rgba(245,158,11,.2);border-radius:10px;padding:12px 16px;margin-bottom:16px;font-size:13px;line-height:1.55">
-      <span>⚠️ <strong style="color:var(--warn)">Profilis nežpildytas</strong> — analizė nebus personalizuota jūsų įmonėi. Užpildžius profilį AI tiksliau įvertins atitikimą ir laimėjimo tikimybę.</span>
-      <button class="btn btn-outline btn-sm" style="margin-left:12px;border-color:rgba(245,158,11,.4);color:var(--warn)" onclick="pg('account')">Užpildyti profilį →</button>
-    </div>
-    <div id="profile-banner-analyze" style="display:none;background:rgba(245,158,11,.07);border:1px solid rgba(245,158,11,.2);border-radius:10px;padding:12px 16px;margin-bottom:16px;font-size:13px;line-height:1.55">
-      <span>⚠️ <strong style="color:var(--warn)">Profilis nežpildytas</strong> — analizė nebus personalizuota jūsų įmonėi. Užpildžius profilį AI tiksliau įvertins atitikimą ir laimėjimo tikimybę.</span> <button class="btn btn-outline btn-sm" style="margin-left:12px;border-color:rgba(245,158,11,.4);color:var(--warn)" onclick="pg('account')">Užpildyti profilį →</button>
-    </div>
-    <div id="profile-banner-analyze" style="display:none;background:rgba(245,158,11,.07);border:1px solid rgba(245,158,11,.2);border-radius:10px;padding:12px 16px;margin-bottom:16px;font-size:13px;line-height:1.55"><span>⚠️ <strong style="color:var(--warn)">Profilis nežpildytas</strong> — analizė nebus personalizuota jūsų įmonėi. Užpildžius profilį AI tiksliau įvertins atitikimą ir laimėjimo tikimybę.</span> <button class="btn btn-outline btn-sm" style="margin-left:12px;border-color:rgba(245,158,11,.4);color:var(--warn)" onclick="pg('account')">Užpildyti profilį →</button></div>
-    <div class="doc-checks">
-      <label class="dc req"><input type="checkbox" checked> Pirkimo sąlygos <span style="color:var(--danger);font-size:10px;margin-left:4px">BŪTINA</span></label>
-      <label class="dc req"><input type="checkbox" checked> Techninė specifikacija <span style="color:var(--danger);font-size:10px;margin-left:4px">BŪTINA</span></label>
-      <label class="dc req"><input type="checkbox" checked> Kvalifikacijos reikalavimai <span style="color:var(--danger);font-size:10px;margin-left:4px">BŪTINA</span></label>
-      <label class="dc"><input type="checkbox"> Sutarties projektas</label>
-      <label class="dc"><input type="checkbox"> Kainų lentelė</label>
-    </div>
-    <div class="drop" id="drop" ondragover="ondg(event,1)" ondragleave="ondg(event,0)" ondrop="ondp(event)">
-      <input type="file" id="fi" multiple accept=".pdf,.docx,.doc,.txt,.zip" onchange="addF(this.files)">
-      <div class="drop-icon">📁</div>
-      <h3>Nuvilkite failus arba spustelėkite</h3>
-      <p>PDF · Word (.docx) · TXT · ZIP · Maks. 10 failų</p>
-    </div>
-    <div class="file-list" id="fl"></div>
-    <div class="sz-wrap hidden" id="szw">
-      <div class="sz-top"><span>Įkelta teksto</span><span id="szp">0%</span></div>
-      <div class="sz-track"><div class="sz-fill sz-ok" id="szf" style="width:0%"></div></div>
-      <div style="font-size:11px;color:var(--text2);margin-top:6px" id="szh"></div>
-    </div>
-    <div class="an-row">
-      <button class="btn btn-primary" id="an-btn" onclick="startAn()" disabled style="font-size:14px;padding:14px 32px">🔍 Analizuoti</button>
-      <span style="font-size:12px;color:var(--text2)" id="an-hint"></span>
+    <h1 class="pg-h">Nauja analizė</h1>
+    <p class="pg-sub">3 žingsnių vedlys — nuo dokumentų iki aiškios rekomendacijos</p>
+
+    <!-- WIZARD STEP INDICATOR -->
+    <div class="an-wiz-bar" id="an-wiz-bar" style="display:flex;align-items:center;gap:0;margin-bottom:28px;max-width:560px">
+      <div class="an-wiz-step" data-step="1" style="display:flex;align-items:center;gap:8px">
+        <div class="an-wiz-dot" style="width:28px;height:28px;border-radius:50%;display:flex;align-items:center;justify-content:center;font-size:12px;font-weight:700;flex-shrink:0">1</div>
+        <span class="an-wiz-label" style="font-size:12px;font-weight:600;white-space:nowrap">Dokumentai</span>
+      </div>
+      <div style="flex:1;height:1px;background:var(--border);margin:0 8px"></div>
+      <div class="an-wiz-step" data-step="2" style="display:flex;align-items:center;gap:8px">
+        <div class="an-wiz-dot" style="width:28px;height:28px;border-radius:50%;display:flex;align-items:center;justify-content:center;font-size:12px;font-weight:700;flex-shrink:0">2</div>
+        <span class="an-wiz-label" style="font-size:12px;font-weight:600;white-space:nowrap">Analizės tipas</span>
+      </div>
+      <div style="flex:1;height:1px;background:var(--border);margin:0 8px"></div>
+      <div class="an-wiz-step" data-step="3" style="display:flex;align-items:center;gap:8px">
+        <div class="an-wiz-dot" style="width:28px;height:28px;border-radius:50%;display:flex;align-items:center;justify-content:center;font-size:12px;font-weight:700;flex-shrink:0">3</div>
+        <span class="an-wiz-label" style="font-size:12px;font-weight:600;white-space:nowrap">Rezultatas</span>
+      </div>
     </div>
 
-    <!-- RESULT VIEW -->
+    <!-- STEP 1: DOCUMENTS -->
+    <div id="an-wiz-step1">
+      <p class="pg-sub" style="margin-top:0">Įkelkite iki 10 failų (PDF, Word, TXT) arba ZIP archyvą</p>
+      <div class="tip">💡 <strong>Patarimas:</strong> Įkelkite pirkimo sąlygas, techninę specifikaciją ir kvalifikacijos reikalavimus. Brėžinių įkelti nebūtina — jie neturi teksto kurį AI galėtų analizuoti.</div>
+      <div style="background:rgba(59,130,246,.05);border:1px solid rgba(59,130,246,.15);border-radius:10px;padding:14px 18px;margin-bottom:20px;display:flex;align-items:center;gap:12px;flex-wrap:wrap">
+        <span style="font-size:13px;font-weight:600;color:var(--text2);white-space:nowrap">📁 Priskirti projektui:</span>
+        <select id="proj-sel" class="inp" style="flex:1;min-width:180px;max-width:320px;padding:9px 12px" onchange="currentProject=this.value||null">
+          <option value="">— Be projekto —</option>
+        </select>
+        <button class="btn btn-outline btn-sm" onclick="openNewProjectModal()" style="white-space:nowrap">+ Naujas</button>
+        <span id="proj-sel-hint" style="font-size:11px;color:var(--text3)">Analizė bus išsaugota pasirinktame projekte</span>
+      </div>
+      <div id="profile-banner-analyze" style="display:none;background:rgba(245,158,11,.07);border:1px solid rgba(245,158,11,.2);border-radius:10px;padding:12px 16px;margin-bottom:16px;font-size:13px;line-height:1.55;display:flex;align-items:center;justify-content:space-between;gap:12px;flex-wrap:wrap">
+        <span>⚠️ <strong style="color:var(--warn)">Profilis neužpildytas</strong> — analizė nebus personalizuota jūsų įmonei. Užpildžius profilį AI tiksliau įvertins atitikimą ir laimėjimo tikimybę.</span>
+        <button class="btn btn-outline btn-sm" style="flex-shrink:0;border-color:rgba(245,158,11,.4);color:var(--warn)" onclick="pg('account')">Užpildyti profilį →</button>
+      </div>
+      <div class="doc-checks">
+        <label class="dc req"><input type="checkbox" checked> Pirkimo sąlygos <span style="color:var(--danger);font-size:10px;margin-left:4px">BŪTINA</span></label>
+        <label class="dc req"><input type="checkbox" checked> Techninė specifikacija <span style="color:var(--danger);font-size:10px;margin-left:4px">BŪTINA</span></label>
+        <label class="dc req"><input type="checkbox" checked> Kvalifikacijos reikalavimai <span style="color:var(--danger);font-size:10px;margin-left:4px">BŪTINA</span></label>
+        <label class="dc"><input type="checkbox"> Sutarties projektas</label>
+        <label class="dc"><input type="checkbox"> Kainų lentelė</label>
+      </div>
+      <div class="drop" id="drop" ondragover="ondg(event,1)" ondragleave="ondg(event,0)" ondrop="ondp(event)">
+        <input type="file" id="fi" multiple accept=".pdf,.docx,.doc,.txt,.zip" onchange="addF(this.files)">
+        <div class="drop-icon">📁</div>
+        <h3>Nuvilkite failus arba spustelėkite</h3>
+        <p>PDF · Word (.docx) · TXT · ZIP · Maks. 10 failų</p>
+      </div>
+      <div class="file-list" id="fl"></div>
+      <div class="sz-wrap hidden" id="szw">
+        <div class="sz-top"><span>Įkelta teksto</span><span id="szp">0%</span></div>
+        <div class="sz-track"><div class="sz-fill sz-ok" id="szf" style="width:0%"></div></div>
+        <div style="font-size:11px;color:var(--text2);margin-top:6px" id="szh"></div>
+      </div>
+      <div class="an-row">
+        <button class="btn btn-primary" id="an-btn" onclick="goAnWizStep2()" disabled style="font-size:14px;padding:14px 32px">Toliau: analizės tipas →</button>
+        <span style="font-size:12px;color:var(--text2)" id="an-hint"></span>
+      </div>
+    </div>
+
+    <!-- STEP 2: ANALYSIS TYPE -->
+    <div id="an-wiz-step2" style="display:none">
+      <p class="pg-sub" style="margin-top:0">Pasirinkite, į ką AI turėtų sutelkti dėmesį (rezultate matysite visus duomenis, tačiau pasirinktas akcentas bus pažymėtas pirmas)</p>
+      <div id="an-type-chips" style="display:flex;flex-wrap:wrap;gap:10px;margin-bottom:24px"></div>
+      <div class="an-row">
+        <button class="btn btn-outline" onclick="goAnWizStep1()" style="font-size:13px;padding:12px 22px">← Atgal</button>
+        <button class="btn btn-primary" id="an-btn-go" onclick="startAn()" style="font-size:14px;padding:14px 32px">🔍 Analizuoti</button>
+      </div>
+    </div>
+
+    <!-- STEP 3: RESULT VIEW -->
     <div id="result-view">
       <div class="r-topbar">
         <h2>Analizės ataskaita</h2>
@@ -1554,11 +1575,12 @@ footer{background:var(--navy2);border-top:1px solid var(--border);padding:48px 3
           <button class="btn btn-outline btn-sm" onclick="openEligCheck()">⚡ Tinkamumas</button>
           <button class="btn btn-outline btn-sm" onclick="setReminderFromResult()">🔔 Priminti</button>
           <button class="btn btn-outline btn-sm" onclick="openOutcomeModal()" title="Užfiksuokite rezultatą — AI mokysis iš jūsų patirties">🏆 Rezultatas</button>
+          <button class="btn btn-outline btn-sm" onclick="generateTenderQuestionnaire()">📋 EBVPD klausimynas</button>
           <button class="btn btn-outline btn-sm" onclick="generateQuestionLetter()">📨 Klausimų raštas</button>
           <button class="btn btn-outline btn-sm" onclick="generateSupplierSuggestions()">🛒 Tiekėjų pasiūlymai</button>
           <button class="btn btn-outline btn-sm" onclick="openEmailM()">✉ El. paštas</button>
           <button class="btn btn-outline btn-sm" onclick="exportPDF()">⬇ PDF</button>
-          <button class="btn-ghost btn-sm" onclick="resetAn()">+ Nova</button>
+          <button class="btn-ghost btn-sm" onclick="resetAn()">+ Nauja</button>
         </div>
       </div>
       <div id="r-body"></div>
@@ -2039,6 +2061,19 @@ footer{background:var(--navy2);border-top:1px solid var(--border);padding:48px 3
   </div>
 </div>
 
+<!-- EBVPD/ESPD QUESTIONNAIRE MODAL -->
+<div class="modal" id="tqModal">
+  <div class="modal-box" style="max-width:760px;max-height:85vh;overflow-y:auto">
+    <button class="modal-close" onclick="document.getElementById('tqModal').classList.remove('open')">×</button>
+    <div style="font-size:36px;margin-bottom:14px">📋</div>
+    <h3>EBVPD/ESPD klausimynas</h3>
+    <p style="margin-bottom:16px">Klausimynas sugeneruotas iš įkeltų pirkimo dokumentų — padės pasiruošti EBVPD/ESPD ir surinkti AI analizei reikalingus duomenis.</p>
+    <div id="tq-loading" style="display:none;text-align:center;padding:30px"><div class="spinner"></div><p style="margin-top:12px;font-size:13px;color:var(--text2)">AI analizuoja dokumentus ir generuoja klausimyną...</p></div>
+    <div id="tq-error" class="err" style="display:none"></div>
+    <div id="tq-body" style="text-align:left;font-size:13px;line-height:1.6"></div>
+  </div>
+</div>
+
 <!-- PAY MODAL -->
 <div class="modal" id="pm">
   <div class="modal-box">
@@ -2107,6 +2142,10 @@ function showApp(){
   if(tok){
     fetch(API+'/api/projects',{headers:{'Authorization':'Bearer '+tok}})
       .then(r=>r.json()).then(d=>{projects=d.projects||[];refreshProjSelector();}).catch(()=>{});
+    fetch(API+'/api/profile',{headers:{'Authorization':'Bearer '+tok}})
+      .then(r=>r.json()).then(d=>{
+        if(d.user){curUser={...curUser,...d.user};localStorage.setItem(UK,JSON.stringify(curUser));updSB();}
+      }).catch(()=>{});
   }
 }
 
@@ -2130,6 +2169,7 @@ function pg(n){
     const banner=document.getElementById('profile-banner-analyze');
     const hasProf=curUser&&curUser.company_profile&&(curUser.company_profile.profilioSantrauka||curUser.company_profile.sector);
     if(banner)banner.style.display=hasProf?'none':'block';
+    if(typeof setAnWizStep==='function')setAnWizStep(curResult?3:1);
   }
 }
 
@@ -2208,7 +2248,7 @@ function doLogout(){
 
 // ── SMART ONBOARDING ──
 let obAnswers={};
-let obQuestions=[];
+let obQuestions=[],obKlausimynoMeta=null;
 
 function openOnboarding(){
   try {
@@ -2294,6 +2334,7 @@ async function obStep1Next(){
     });
     const d=await r.json();
     obQuestions=d.questions||[];
+    obKlausimynoMeta=d.klausimynoMeta||null;
     renderObQuestions(obQuestions);
     document.getElementById('ob-step2-sub').textContent='Atsakykite į šiuos klausimus — AI sukurs jūsų įmonės profilį.';
   }catch(e){
@@ -2305,15 +2346,29 @@ async function obStep1Next(){
 
 function renderObQuestions(qs){
   const container=document.getElementById('ob-questions');
+  let lastGroup=null;
   container.innerHTML=qs.map((q,i)=>{
     const id='obq_'+i;
-    if(q.tipas==='select'&&q.variantai?.length){
-      return '<div class="fg" style="margin-bottom:0"><label style="font-size:13px;font-weight:500;color:var(--text);margin-bottom:6px;display:block">'+(i+1)+'. '+q.klausimas+'</label><select class="inp" id="'+id+'" style="font-size:13px"><option value="">Pasirinkite...</option>'+q.variantai.map(v=>'<option>'+v+'</option>').join('')+'</select></div>';
-    } else if(q.tipas==='multiselect'&&q.variantai?.length){
-      return '<div class="fg" style="margin-bottom:0"><label style="font-size:13px;font-weight:500;color:var(--text);margin-bottom:8px;display:block">'+(i+1)+'. '+q.klausimas+'</label><div style="display:flex;flex-wrap:wrap;gap:6px">'+q.variantai.map(v=>'<label style="display:flex;align-items:center;gap:6px;font-size:12px;cursor:pointer;background:var(--card);border:1px solid var(--border);padding:6px 10px;border-radius:8px"><input type="checkbox" name="'+id+'" value="'+v+'" style="accent-color:var(--blue3)"> '+v+'</label>').join('')+'</div></div>';
-    } else {
-      return '<div class="fg" style="margin-bottom:0"><label style="font-size:13px;font-weight:500;color:var(--text);margin-bottom:6px;display:block">'+(i+1)+'. '+q.klausimas+'</label><textarea class="inp" id="'+id+'" rows="2" placeholder="Jūsų atsakymas..." style="font-size:13px;resize:none"></textarea></div>';
+    const hint=q.paaiskinimas?'<div style="font-size:11px;color:var(--text3);margin:-2px 0 6px">'+q.paaiskinimas+'</div>':'';
+    let groupHeader='';
+    if(q.grupe&&q.grupe!==lastGroup){
+      groupHeader='<div style="font-size:12px;font-weight:700;color:var(--blue3);margin:'+(i===0?'0':'14px')+' 0 4px;text-transform:uppercase;letter-spacing:.3px">'+q.grupe+'</div>';
+      lastGroup=q.grupe;
     }
+    const reqMark=q.privalomas?' <span style="color:#ef4444;font-size:10px">*</span>':'';
+    let field;
+    if(q.tipas==='select'&&q.variantai?.length){
+      field='<select class="inp" id="'+id+'" style="font-size:13px"><option value="">Pasirinkite...</option>'+q.variantai.map(v=>'<option>'+v+'</option>').join('')+'</select>';
+    } else if(q.tipas==='multiselect'&&q.variantai?.length){
+      field='<div style="display:flex;flex-wrap:wrap;gap:6px">'+q.variantai.map(v=>'<label style="display:flex;align-items:center;gap:6px;font-size:12px;cursor:pointer;background:var(--card);border:1px solid var(--border);padding:6px 10px;border-radius:8px"><input type="checkbox" name="'+id+'" value="'+v+'" style="accent-color:var(--blue3)"> '+v+'</label>').join('')+'</div>';
+    } else if(q.tipas==='number'){
+      field='<input class="inp" type="number" id="'+id+'" placeholder="Jūsų atsakymas..." style="font-size:13px">';
+    } else if(q.tipas==='date'){
+      field='<input class="inp" type="date" id="'+id+'" style="font-size:13px">';
+    } else {
+      field='<textarea class="inp" id="'+id+'" rows="2" placeholder="Jūsų atsakymas..." style="font-size:13px;resize:none"></textarea>';
+    }
+    return groupHeader+'<div class="fg" style="margin-bottom:0"><label style="font-size:13px;font-weight:500;color:var(--text);margin-bottom:4px;display:block">'+(i+1)+'. '+q.klausimas+reqMark+'</label>'+hint+field+'</div>';
   }).join('');
 }
 
@@ -2339,7 +2394,7 @@ async function obStep2Next(){
     const r=await fetch(API+'/api/onboarding',{
       method:'POST',
       headers:{'Content-Type':'application/json','Authorization':'Bearer '+tok},
-      body:JSON.stringify({step:'profile',sector,name:company,answers:obAnswers,activity:document.getElementById('ob-activity')?.value?.trim()||''})
+      body:JSON.stringify({step:'profile',sector,name:company,answers:obAnswers,activity:document.getElementById('ob-activity')?.value?.trim()||'',klausimynoMeta:obKlausimynoMeta})
     });
     const d=await r.json();
     const profile=d.profile||{name:company,sector};
@@ -2536,6 +2591,56 @@ function buildClientContext(cp){
   return lines.length ? lines.join('\n') : null;
 }
 
+// ── ANALYSIS WIZARD STEP NAVIGATION ──
+const AN_TYPES=[
+  {id:'quick',icon:'⚡',label:'Greita santrauka'},
+  {id:'risk',icon:'⚠️',label:'Rizikų analizė'},
+  {id:'fit',icon:'🤝',label:'Tiekėjo tinkamumo analizė'},
+  {id:'docs',icon:'📅',label:'Dokumentų ir terminų patikra'},
+  {id:'full',icon:'🔎',label:'Pilna analizė'}
+];
+let selectedAnalysisType='full';
+
+function setAnWizStep(n){
+  document.querySelectorAll('.an-wiz-step').forEach(el=>{
+    const step=parseInt(el.dataset.step,10);
+    const dot=el.querySelector('.an-wiz-dot');
+    const label=el.querySelector('.an-wiz-label');
+    if(!dot)return;
+    if(step<n){ dot.style.background='var(--primary)'; dot.style.color='#fff'; if(label)label.style.color='var(--text)'; }
+    else if(step===n){ dot.style.background='var(--primary)'; dot.style.color='#fff'; if(label)label.style.color='var(--text)'; }
+    else { dot.style.background='var(--border)'; dot.style.color='var(--text2)'; if(label)label.style.color='var(--text2)'; }
+  });
+}
+
+function renderAnTypeChips(){
+  const c=document.getElementById('an-type-chips');
+  if(!c)return;
+  c.innerHTML=AN_TYPES.map(t=>`<button type="button" class="an-type-chip" data-type="${t.id}" onclick="selectAnType('${t.id}')" style="padding:12px 16px;border-radius:10px;border:1.5px solid ${t.id===selectedAnalysisType?'var(--primary)':'var(--border)'};background:${t.id===selectedAnalysisType?'rgba(59,130,246,.08)':'var(--card)'};color:var(--text);font-size:13px;font-weight:600;cursor:pointer;display:flex;align-items:center;gap:8px;font-family:Inter,sans-serif">${t.icon} ${t.label}</button>`).join('');
+}
+
+function selectAnType(id){
+  selectedAnalysisType=id;
+  renderAnTypeChips();
+}
+
+function goAnWizStep2(){
+  const s1=document.getElementById('an-wiz-step1');
+  const s2=document.getElementById('an-wiz-step2');
+  if(s1)s1.style.display='none';
+  if(s2)s2.style.display='block';
+  renderAnTypeChips();
+  setAnWizStep(2);
+}
+
+function goAnWizStep1(){
+  const s1=document.getElementById('an-wiz-step1');
+  const s2=document.getElementById('an-wiz-step2');
+  if(s2)s2.style.display='none';
+  if(s1)s1.style.display='block';
+  setAnWizStep(1);
+}
+
 async function startAn(){
   const u=curUser;
   if(!u)return;
@@ -2643,6 +2748,10 @@ function resetAn(){
   document.getElementById('an-btn').disabled=true;
   document.getElementById('szw').classList.add('hidden');
   document.getElementById('result-view').style.display='none';
+  const s1=document.getElementById('an-wiz-step1'), s2=document.getElementById('an-wiz-step2');
+  if(s1)s1.style.display='block';
+  if(s2)s2.style.display='none';
+  setAnWizStep(1);
 }
 
 // ── RENDER RESULT ──
@@ -2666,6 +2775,10 @@ function renderResult(r){
   const scFill=sc>=70?'#10b981':sc>=40?'#f59e0b':'#ef4444';
   const rv=document.getElementById('result-view');
   rv.style.display='block';
+  const s1=document.getElementById('an-wiz-step1'), s2=document.getElementById('an-wiz-step2');
+  if(s1)s1.style.display='none';
+  if(s2)s2.style.display='none';
+  setAnWizStep(3);
   const rb=document.getElementById('r-body');
 
   const term=r.terminai||{};
@@ -3341,6 +3454,84 @@ function exportPDF(){
 
 
 
+
+// ── EBVPD/ESPD KLAUSIMYNAS ──
+async function generateTenderQuestionnaire(){
+  if(!curResult)return;
+  const modal=document.getElementById('tqModal');
+  modal.classList.add('open');
+  document.getElementById('tq-loading').style.display='block';
+  document.getElementById('tq-error').style.display='none';
+  document.getElementById('tq-body').innerHTML='';
+  try{
+    const tok=localStorage.getItem(TK);
+    const cp=(curUser&&curUser.company_profile)||{};
+    const tiekejoProfilis=cp.profilioSantrauka||buildClientContext(cp)||'';
+    const r=await fetch(API+'/api/tender-questionnaire',{
+      method:'POST',
+      headers:{'Content-Type':'application/json','Authorization':'Bearer '+tok},
+      body:JSON.stringify({
+        pirkimoSritis:curResult.pirkimoSritis||curResult.sritis||'',
+        tiekejoProfilis,
+        dokumentaiText:extText||curResult.pavadinimas||''
+      })
+    });
+    const d=await r.json();
+    document.getElementById('tq-loading').style.display='none';
+    if(!r.ok){
+      document.getElementById('tq-error').style.display='block';
+      document.getElementById('tq-error').textContent=d.error||'Klaida generuojant klausimyną';
+      return;
+    }
+    renderTenderQuestionnaire(d.questionnaire);
+  }catch(e){
+    document.getElementById('tq-loading').style.display='none';
+    document.getElementById('tq-error').style.display='block';
+    document.getElementById('tq-error').textContent='Klaida: '+e.message;
+  }
+}
+
+function renderTenderQuestionnaire(q){
+  if(!q){document.getElementById('tq-body').innerHTML='<p>Nepavyko sugeneruoti klausimyno.</p>';return;}
+  const s=q.pirkimo_santrauka||{};
+  let html='';
+  html+=`<div style="background:rgba(59,130,246,.06);border:1px solid rgba(59,130,246,.15);border-radius:10px;padding:14px;margin-bottom:18px">
+    <strong>${s.pirkimo_pavadinimas||'Pirkimo santrauka'}</strong><br>
+    ${s.perkančioji_organizacija?'<span style="color:var(--text2)">PO:</span> '+s.perkančioji_organizacija+'<br>':''}
+    ${s.pirkimo_objektas?'<span style="color:var(--text2)">Objektas:</span> '+s.pirkimo_objektas+'<br>':''}
+    ${s.pasiulymo_pateikimo_terminas?'<span style="color:var(--text2)">Terminas:</span> '+s.pasiulymo_pateikimo_terminas:''}
+  </div>`;
+
+  (q.klausimu_grupes||[]).forEach(g=>{
+    html+=`<div style="margin-bottom:20px"><h4 style="margin-bottom:4px">${g.grupes_id}. ${g.grupes_pavadinimas||''}</h4>`;
+    if(g.aprasymas)html+=`<p style="color:var(--text2);font-size:12px;margin-bottom:10px">${g.aprasymas}</p>`;
+    (g.klausimai||[]).forEach(k=>{
+      const riskCl=k.rizikos_lygis_jei_neatitinka==='kritinis'?'#ef4444':k.rizikos_lygis_jei_neatitinka==='aukstas'?'#f59e0b':'var(--text2)';
+      html+=`<div style="border:1px solid var(--border);border-radius:8px;padding:10px 12px;margin-bottom:8px">
+        <div style="font-weight:600">${k.id||''} ${k.klausimas||''} ${k.privalomas?'<span style="color:#ef4444;font-size:10px">BŪTINA</span>':''}</div>
+        ${k.paaiskinimas_vartotojui?'<div style="color:var(--text2);font-size:12px;margin-top:4px">'+k.paaiskinimas_vartotojui+'</div>':''}
+        <div style="font-size:11px;color:var(--text3);margin-top:6px">Atsakymo tipas: ${k.atsakymo_tipas||'-'} ${k.dokumento_vieta_ar_citata?'· Šaltinis: '+k.dokumento_vieta_ar_citata:''} ${k.rizikos_lygis_jei_neatitinka?'· <span style="color:'+riskCl+'">Rizika: '+k.rizikos_lygis_jei_neatitinka+'</span>':''}</div>
+      </div>`;
+    });
+    html+='</div>';
+  });
+
+  const docs=q.dokumentu_sarasas_kuriuos_tiekejas_turetu_pateikti||[];
+  if(docs.length){
+    html+='<h4>📎 Reikalingi dokumentai</h4><ul style="margin-bottom:18px">';
+    docs.forEach(d=>{ html+=`<li>${d.dokumento_pavadinimas||''} ${d.ar_privalomas?'<strong>(privalomas)</strong>':''} — ${d.kada_pateikiamas||''}</li>`; });
+    html+='</ul>';
+  }
+
+  const clarif=q.neaiskumai_ir_patikslinimai_perkanciajai_organizacijai||[];
+  if(clarif.length){
+    html+='<h4>❓ Verta patikslinti su perkančiąja organizacija</h4><ul>';
+    clarif.forEach(c=>{ html+=`<li>${c.siulomas_klausimas_perkanciajai_organizacijai||c.tema||''}</li>`; });
+    html+='</ul>';
+  }
+
+  document.getElementById('tq-body').innerHTML=html;
+}
 
 // ── KLAUSIMŲ RAŠTAS ──
 function generateQuestionLetter(){
