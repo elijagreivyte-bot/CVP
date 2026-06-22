@@ -242,3 +242,5 @@ ${dokumentaiText.slice(0, 350000)}`;
     throw error;
   }
 });
+
+module.exports.config = { maxDuration: 300 };
