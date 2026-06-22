@@ -46,7 +46,9 @@ Naudok šį žinių sluoksnį kaip pastovų pagrindą atsakymams apie bendrus vi
   // įkėlė konkurso dokumentus/analizę. Bendra žinių bazė (sluoksnis 1) išlieka pagrindu,
   // konkurso duomenys naudojami kaip papildomas, laikinas analizės kontekstas.
   if (context) {
-    const c = typeof context === 'string' ? context : JSON.stringify(context, null, 2);
+    const MAX_CONTEXT_CHARS = 50000;
+    let c = typeof context === 'string' ? context : JSON.stringify(context);
+    if (c.length > MAX_CONTEXT_CHARS) c = c.slice(0, MAX_CONTEXT_CHARS) + '... [kontekstas sutrumpintas]';
     systemPrompt = `Tu esi viešųjų pirkimų ekspertas Lietuvoje ir šio konkurso analizės asistentas.
 
 ${GENERAL_PROCUREMENT_KNOWLEDGE_BASE}
