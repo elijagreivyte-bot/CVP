@@ -288,9 +288,9 @@ footer{background:var(--navy2);border-top:1px solid var(--border);padding:48px 3
 /* ═══════════════════════════════
    ONBOARDING MODAL
 ═══════════════════════════════ */
-#onboarding-modal{position:fixed;inset:0;z-index:300;background:rgba(6,13,42,.95);backdrop-filter:blur(12px);display:none;align-items:center;justify-content:center;padding:24px}
+#onboarding-modal{position:fixed;inset:0;z-index:300;background:rgba(6,13,42,.95);backdrop-filter:blur(12px);display:none;align-items:center;justify-content:center;padding:24px;overflow-y:auto}
 #onboarding-modal.open{display:flex}
-.onboard-box{background:var(--navy2);border:1px solid var(--border);border-radius:24px;padding:48px 40px;width:100%;max-width:520px;position:relative}
+.onboard-box{background:var(--navy2);border:1px solid var(--border);border-radius:24px;padding:48px 40px;width:100%;max-width:520px;position:relative;max-height:calc(100vh - 48px);overflow-y:auto;margin:auto}
 .onboard-step{font-size:11px;font-weight:700;letter-spacing:2px;text-transform:uppercase;color:var(--blue3);margin-bottom:10px}
 .onboard-box h2{font-family:'Sora',sans-serif;font-size:26px;font-weight:800;margin-bottom:8px}
 .onboard-box>p{font-size:14px;color:var(--text2);margin-bottom:32px;line-height:1.6}
