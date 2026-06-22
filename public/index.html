@@ -2520,7 +2520,7 @@ async function extZIP(f){
   const ab=await f.arrayBuffer();
   const zip=await JSZip.loadAsync(ab);
   let t='';
-  const MAX_CHARS=90000;
+  const MAX_CHARS=400000;
   const entries=Object.entries(zip.files).filter(([n,zf])=>!zf.dir);
   // Prioritizuojam svarbius failus
   const priority=['salygos','salyg','specif','reikalav','kvalif','techni','pirkimo'];
@@ -2534,17 +2534,17 @@ async function extZIP(f){
     try{
       if(name.endsWith('.txt')){
         const s=await zf.async('string');
-        t+='\n=== '+name+' ===\n'+s.slice(0,20000)+'\n';
+        t+='\n=== '+name+' ===\n'+s+'\n';
       } else if(name.endsWith('.pdf')){
         const blob=await zf.async('blob');
         const pf=new File([blob],name,{type:'application/pdf'});
         const extracted=await extPDF(pf);
-        t+='\n=== '+name+' ===\n'+extracted.slice(0,20000)+'\n';
+        t+='\n=== '+name+' ===\n'+extracted+'\n';
       } else if(name.endsWith('.docx')||name.endsWith('.doc')){
         const blob=await zf.async('blob');
         const df=new File([blob],name);
         const extracted=await extDOCX(df);
-        t+='\n=== '+name+' ===\n'+extracted.slice(0,20000)+'\n';
+        t+='\n=== '+name+' ===\n'+extracted+'\n';
       }
     }catch(e){
       console.warn('ZIP failo klaida:',name,e.message);
@@ -2557,7 +2557,7 @@ async function extTXT(f){return new Promise((res,rej)=>{const r=new FileReader()
 
 function updSZ(text){
   const bytes=new TextEncoder().encode(text).length;
-  const limit=80000;
+  const limit=400000;
   const pct=Math.min(100,Math.round(bytes/limit*100));
   document.getElementById('szw').classList.remove('hidden');
   document.getElementById('szp').textContent=pct+'%';
@@ -2592,6 +2592,15 @@ function buildClientContext(cp){
   if(cp.sertifikatai) lines.push('Sertifikatai / licencijos: '+cp.sertifikatai);
   if(cp.stiprybės&&cp.stiprybės.length) lines.push('Konkurenciniai pranašumai: '+(cp.stiprybės||[]).join(', '));
   if(cp.tipinieKonkursai) lines.push('Tinka konkursų tipams: '+cp.tipinieKonkursai);
+  if(cp.apyvarta)        lines.push('Metinė apyvarta: '+cp.apyvarta);
+  if(cp.darbuotojuSkaicius) lines.push('Darbuotojų skaičius: '+cp.darbuotojuSkaicius);
+  if(cp.referensai)      lines.push('Referensai / ankstesnės sutartys: '+cp.referensai);
+  if(cp.veiklosSritys)   lines.push('Veiklos sritys: '+cp.veiklosSritys);
+  if(cp.cpvKodai)        lines.push('CPV kodai: '+cp.cpvKodai);
+  if(cp.specialistai)    lines.push('Specialistai: '+cp.specialistai);
+  if(cp.partneriai)      lines.push('Partneriai / subtiekėjai: '+cp.partneriai);
+  if(cp.finansiniaiRodikliai) lines.push('Finansiniai rodikliai: '+cp.finansiniaiRodikliai);
+  if(cp.vpPatirtis)      lines.push('Patirtis viešajame sektoriuje: '+cp.vpPatirtis);
   if(cp.profilioSantrauka) lines.push('\nAI profilio santrauka:\n'+cp.profilioSantrauka);
   // Include any extra freeform answers stored during onboarding
   const extras=['apyvarta','darbuotojai','konkurencisPranasumas','pirkimuPatirtis','max_sutartis','kiti'];
@@ -2792,7 +2801,80 @@ function renderResult(r){
   const term=r.terminai||{};
   const deadlineCl=deadlineClass(term.pasiulymoTerminas||'');
 
+  const decision=r.sprendimas||(sc>=70?'GO':sc>=40?'CLARIFY':'NO-GO');
+  const decisionMeta={
+    'GO':{label:'GO — galima ruoštis pasiūlymui',color:'#10b981',bg:'rgba(16,185,129,.1)',border:'rgba(16,185,129,.25)'},
+    'CLARIFY':{label:'CLARIFY — verta svarstyti, būtina tikslinti',color:'#f59e0b',bg:'rgba(245,158,11,.1)',border:'rgba(245,158,11,.25)'},
+    'NO-GO':{label:'NO-GO — yra blokuojanti sąlyga ar per didelė rizika',color:'#ef4444',bg:'rgba(239,68,68,.1)',border:'rgba(239,68,68,.25)'}
+  }[decision]||{label:decision,color:'#94a3b8',bg:'rgba(148,163,184,.1)',border:'rgba(148,163,184,.25)'};
+
+  const sub=r.subBalai||{};
+  const riskBadge=(lvl)=>{
+    const l=(lvl||'').toLowerCase();
+    const c=l.includes('blok')?'#ef4444':l.includes('aukšt')||l.includes('aukst')?'#ef4444':l.includes('vidutin')?'#f59e0b':l.includes('žem')||l.includes('zem')?'#10b981':'#94a3b8';
+    return `<span style="font-size:10px;font-weight:700;text-transform:uppercase;color:${c};background:${c}1a;border:1px solid ${c}40;padding:2px 8px;border-radius:8px">${lvl||'–'}</span>`;
+  };
+
+  window._poRiskItems=[];
+  const confBadge=(it)=>{
+    const conf=it.pasitikejimas||'';
+    const c=conf.includes('aukšt')?'#10b981':conf.includes('vidutin')?'#f59e0b':conf.includes('žem')?'#94a3b8':'';
+    const paremtaLbl=it.paremta==='dokumentu'?'📄 Pagal dokumentą':it.paremta==='bendra_praktika'?'📚 Pagal bendrą praktiką':'';
+    if(!conf&&!paremtaLbl)return '';
+    return `<div style="display:flex;gap:6px;flex-wrap:wrap;margin-bottom:4px">
+      ${conf?`<span style="font-size:10px;color:${c};border:1px solid ${c}40;background:${c}1a;padding:1px 7px;border-radius:7px">Pasitikėjimas: ${conf}</span>`:''}
+      ${paremtaLbl?`<span style="font-size:10px;color:var(--text3);border:1px solid var(--border);padding:1px 7px;border-radius:7px">${paremtaLbl}</span>`:''}
+      ${it.privalomas?`<span style="font-size:10px;color:var(--text3);border:1px solid var(--border);padding:1px 7px;border-radius:7px">Privalomas</span>`:''}
+      ${it.arbaLygiavertis?`<span style="font-size:10px;color:var(--text3);border:1px solid var(--border);padding:1px 7px;border-radius:7px">Leidžiamas lygiavertis</span>`:''}
+    </div>`;
+  };
+  const riskBlock=(title,icon,items,emptyTxt)=>{
+    if(!items||!items.length)return '';
+    return `<div class="r-card r-full-width" style="margin-bottom:16px">
+      <h4>${icon} ${title}</h4>
+      ${items.map(it=>{
+        const idx=window._poRiskItems.length;
+        window._poRiskItems.push(it);
+        return `<div style="border:1px solid var(--border);border-radius:10px;padding:12px 14px;margin-top:10px">
+        <div style="display:flex;justify-content:space-between;gap:10px;flex-wrap:wrap;margin-bottom:6px">
+          <strong style="font-size:13px">${it.pavadinimas||''}</strong>${riskBadge(it.rizikosLygis)}
+        </div>
+        ${confBadge(it)}
+        ${it.rastaDokumente?`<div style="font-size:11px;color:var(--text3);margin-bottom:4px">📄 Rasta dokumente: ${it.rastaDokumente}</div>`:''}
+        ${it.salyga?`<div style="font-size:12px;color:var(--text2);margin-bottom:4px">${it.salyga}</div>`:''}
+        ${it.aiVertinimas?`<div style="font-size:12px;color:var(--text2);margin-bottom:4px"><strong style="color:var(--text)">AI vertinimas:</strong> ${it.aiVertinimas}</div>`:''}
+        ${it.veiksmas?`<div style="font-size:12px;color:var(--blue3);margin-bottom:6px"><strong>Veiksmas:</strong> ${it.veiksmas}</div>`:''}
+        <button class="btn btn-sec" style="font-size:11px;padding:5px 10px" onclick="generatePOQuestion(${idx},this)">❓ Generuoti klausimą PO</button>
+        <div id="po-q-${idx}" style="display:none;margin-top:8px;font-size:12px;color:var(--text2);background:rgba(59,130,246,.06);border:1px solid rgba(59,130,246,.15);border-radius:8px;padding:8px 10px"></div>
+      </div>`;}).join('')}
+    </div>`;
+  };
+
+  const matrixTable=(title,icon,rows,cols)=>{
+    if(!rows||!rows.length)return '';
+    return `<div class="r-card r-full-width" style="margin-bottom:16px;overflow-x:auto">
+      <h4>${icon} ${title}</h4>
+      <table style="width:100%;border-collapse:collapse;margin-top:10px;font-size:12px">
+        <thead><tr>${cols.map(c=>`<th style="text-align:left;padding:6px 8px;border-bottom:1px solid var(--border);color:var(--text3);font-weight:600">${c.label}</th>`).join('')}</tr></thead>
+        <tbody>${rows.map(row=>`<tr>${cols.map(c=>{
+          let v=row[c.key];
+          if(c.key==='rizika'||c.key==='kastuPoveikis')v=riskBadge(v);
+          else if(typeof v==='boolean')v=v?'Taip':'Ne';
+          else v=v||'–';
+          return `<td style="padding:6px 8px;border-bottom:1px solid var(--border);color:var(--text2)">${v}</td>`;
+        }).join('')}</tr>`).join('')}</tbody>
+      </table>
+    </div>`;
+  };
+
   rb.innerHTML=`
+    <div class="r-card r-full-width" style="margin-bottom:16px;background:${decisionMeta.bg};border:1px solid ${decisionMeta.border}">
+      <div style="display:flex;align-items:center;gap:16px;flex-wrap:wrap">
+        <div style="font-size:22px;font-weight:900;color:${decisionMeta.color}">${decisionMeta.label}</div>
+      </div>
+      ${r.sprendimoPriezastis?`<div style="font-size:13px;color:var(--text2);margin-top:8px;line-height:1.6">${r.sprendimoPriezastis}</div>`:''}
+    </div>
+
     <div class="r-score">
       <div class="r-score-num ${scCl}">${sc}%</div>
       <div class="r-score-info">
@@ -2800,6 +2882,13 @@ function renderResult(r){
         <div style="font-size:13px;color:var(--text2)">${r.pavadinimas||'–'}</div>
         <div class="r-score-bar"><div class="r-score-fill" style="width:${sc}%;background:${scFill}"></div></div>
       </div>
+    </div>
+
+    <div class="r-cards" style="margin-bottom:16px">
+      <div class="r-card"><div style="font-size:11px;color:var(--text3);margin-bottom:4px">Tiekėjo tinkamumas</div><div style="font-size:22px;font-weight:800">${sub.tinkamumas??'–'}${typeof sub.tinkamumas==='number'?'%':''}</div></div>
+      <div class="r-card"><div style="font-size:11px;color:var(--text3);margin-bottom:4px">Konkurso patrauklumas</div><div style="font-size:22px;font-weight:800">${sub.patrauklumas??'–'}${typeof sub.patrauklumas==='number'?'%':''}</div></div>
+      <div class="r-card"><div style="font-size:11px;color:var(--text3);margin-bottom:4px">Rizikos lygis</div><div style="font-size:22px;font-weight:800">${sub.rizikosLygis||'–'}</div></div>
+      <div class="r-card"><div style="font-size:11px;color:var(--text3);margin-bottom:4px">Laimėjimo potencialas</div><div style="font-size:22px;font-weight:800">${sub.laimejimoPotencialas??'–'}${typeof sub.laimejimoPotencialas==='number'?'%':''}</div></div>
     </div>
 
     <div class="r-cards">
@@ -2821,6 +2910,10 @@ function renderResult(r){
     </div>
 
     ${r.strategija?`<div class="r-strat"><h4>🎯 Laimėjimo strategija</h4><p>${r.strategija}</p></div>`:''}
+
+    ${riskBlock('Blokuojančios sąlygos','🚫',r.blokuojanciosSalygos)}
+    ${riskBlock('Komercinės rizikos','💸',r.komercinesRizikos)}
+    ${riskBlock('Strateginės rizikos','♟️',r.strateginesRizikos)}
 
     <div class="r-cards">
       <div class="r-card">
@@ -2851,10 +2944,60 @@ function renderResult(r){
       </div>
     </div>
 
+    ${(()=>{
+      const m=r.kvalifikacijosMatrica;
+      if(!m||!m.length||!r.personalizuota)return '';
+      const total=m.length;
+      const ok=m.filter(x=>x.tiekejasTuri==='Taip').length;
+      const missing=m.filter(x=>x.tiekejasTuri!=='Taip').map(x=>x.reikalavimas).filter(Boolean);
+      return `<div style="background:rgba(59,130,246,.05);border:1px solid rgba(59,130,246,.12);border-radius:12px;padding:14px 18px;margin-bottom:16px;font-size:13px;color:var(--text2)">
+        <strong style="color:var(--text)">Jūsų įmonė atitinka ${ok} iš ${total} reikalavimų.</strong>
+        ${missing.length?`<div style="margin-top:4px">Trūksta: ${missing.join(', ')}.</div>`:''}
+      </div>`;
+    })()}
+
+    ${matrixTable('Kvalifikacijos atitikties matrica','📊',r.kvalifikacijosMatrica,[
+      {key:'reikalavimas',label:'Reikalavimas'},{key:'reikalaujama',label:'Reikalaujama'},{key:'saltinisPunktas',label:'Šaltinis'},{key:'tiekejasTuri',label:'Tiekėjas turi?'},
+      {key:'irodymas',label:'Įrodymas'},{key:'rizika',label:'Rizika'},{key:'veiksmas',label:'Veiksmas'}
+    ])}
+
+    ${matrixTable('Techninės specifikacijos atitiktis','🔧',r.techninesSpecifikacijosMatrica,[
+      {key:'reikalavimas',label:'Reikalavimas'},{key:'privalomas',label:'Privalomas?'},{key:'tiekejasAtitinka',label:'Atitinka?'},
+      {key:'kastuPoveikis',label:'Kaštų poveikis'},{key:'aiskumoLygis',label:'Aiškumas'},{key:'reikiaKlausimoPO',label:'Klausimas PO?'},{key:'veiksmas',label:'Veiksmas'}
+    ])}
+
+    ${r.sutartiesRizikos&&r.sutartiesRizikos.length?`
+    <div class="r-card r-full-width" style="margin-bottom:16px">
+      <h4>📜 Sutarties rizikų analizė</h4>
+      ${r.sutartiesRizikos.map(s=>`<div class="r-item"><span class="r-item-k">${s.salyga||''} ${riskBadge(s.rizikosLygis)}</span><span class="r-item-v" style="text-align:left">${s.komentaras||''}</span></div>`).join('')}
+    </div>`:''}
+
     ${(r.vertinimoKriterijai&&r.vertinimoKriterijai.length)?`
     <div class="r-card" style="margin-bottom:16px">
       <h4>⚖️ Vertinimo kriterijai</h4>
       ${r.vertinimoKriterijai.map(k=>`<div class="r-item"><span class="r-item-k">${k.kriterijus}</span><span class="r-item-v"><span class="badge badge-blue">${k.svoris}</span></span></div>`).join('')}
+    </div>`:''}
+
+    ${matrixTable('Vertinimo kriterijų simuliatorius','🧮',r.vertinimoSimuliacija,[
+      {key:'scenarijus',label:'Scenarijus'},{key:'kaina',label:'Kaina'},{key:'techninisBalas',label:'Tech. balas'},
+      {key:'garantijosBalas',label:'Garantijos balas'},{key:'prognozuojamasBalas',label:'Prognozė'},{key:'tiketinaMarza',label:'Marža'},{key:'rekomendacija',label:'Rekomendacija'}
+    ])}
+
+    ${r.klausimaiPO&&r.klausimaiPO.length?`
+    <div class="r-card r-full-width" style="margin-bottom:16px">
+      <h4>❓ Klausimai perkančiajai organizacijai</h4>
+      ${r.klausimaiPO.map(q=>`<div style="border:1px solid var(--border);border-radius:10px;padding:12px 14px;margin-top:10px">
+        <div style="font-size:11px;color:var(--text3);margin-bottom:4px">${q.tema||''}</div>
+        <div style="font-size:13px;color:var(--text2);line-height:1.6">${q.klausimas||''}</div>
+      </div>`).join('')}
+    </div>`:''}
+
+    ${r.ebvpdSusieta?`
+    <div class="r-card r-full-width" style="margin-bottom:16px">
+      <h4>📋 EBVPD/ESPD susiejimas su šiuo pirkimu</h4>
+      ${r.ebvpdSusieta.deklaruojamaDabar&&r.ebvpdSusieta.deklaruojamaDabar.length?`<div style="margin-top:8px"><strong style="font-size:12px;color:var(--success)">Deklaruojama EBVPD:</strong><ul class="r-list" style="margin-top:4px">${r.ebvpdSusieta.deklaruojamaDabar.map(x=>`<li>${x}</li>`).join('')}</ul></div>`:''}
+      ${r.ebvpdSusieta.reikesIrodymoVeliau&&r.ebvpdSusieta.reikesIrodymoVeliau.length?`<div style="margin-top:8px"><strong style="font-size:12px;color:var(--warn)">Reikės pateikti įrodymą vėliau:</strong><ul class="r-list" style="margin-top:4px">${r.ebvpdSusieta.reikesIrodymoVeliau.map(x=>`<li>${x}</li>`).join('')}</ul></div>`:''}
+      ${r.ebvpdSusieta.rizikingiAtsakymai&&r.ebvpdSusieta.rizikingiAtsakymai.length?`<div style="margin-top:8px"><strong style="font-size:12px;color:var(--danger)">Rizikingi atsakymai:</strong><ul class="r-list" style="margin-top:4px">${r.ebvpdSusieta.rizikingiAtsakymai.map(x=>`<li>${x}</li>`).join('')}</ul></div>`:''}
     </div>`:''}
 
     ${r.butinaiIttraukti&&r.butinaiIttraukti.length?`
@@ -2866,11 +3009,47 @@ function renderResult(r){
     ${r.scorePaaiskinimas?`<div style="background:rgba(59,130,246,.05);border:1px solid rgba(59,130,246,.12);border-radius:12px;padding:16px 20px;margin-bottom:16px;font-size:13px;color:var(--text2);line-height:1.65"><strong style="color:var(--text)">📊 Balo pagrindimas:</strong> ${r.scorePaaiskinimas}</div>`:''}
     ${r.prioritetiniaiZingsniai&&r.prioritetiniaiZingsniai.length?`<div class="r-card r-full-width" style="margin-bottom:16px"><h4>📋 PRIORITETINIAI ŽINGSNIAI</h4>${r.prioritetiniaiZingsniai.map(z=>'<div class="r-item"><span class="r-item-k">'+(z.terminas||'')+'</span><span class="r-item-v" style="text-align:left">'+(z.zingsnis||z)+'</span></div>').join('')}</div>`:''}
     ${r.pasleptosNuostatos&&r.pasleptosNuostatos.length?`<div style="background:rgba(245,158,11,.05);border:1px solid rgba(245,158,11,.15);border-radius:12px;padding:14px 18px;margin-bottom:16px"><strong style="color:var(--warn);font-size:12px">⚠️ PASLĖPTOS NUOSTATOS</strong><ul style="list-style:none;margin-top:8px">${r.pasleptosNuostatos.map(n=>'<li style="font-size:13px;color:var(--text2);padding:4px 0">• '+n+'</li>').join('')}</ul></div>`:''}
-    ${r.isViso?`<div class="r-summ"><h4>📝 Išvada</h4><p>${r.isViso}</p></div>`:''}
+
+    ${r.isvadaStruktura?`
+    <div class="r-summ">
+      <h4>📝 Išvada</h4>
+      <div style="font-weight:800;color:${decisionMeta.color};margin-bottom:6px">Sprendimas: ${r.isvadaStruktura.sprendimas||decision}</div>
+      ${r.isvadaStruktura.kodel?`<p>${r.isvadaStruktura.kodel}</p>`:''}
+      ${r.isvadaStruktura.pagrindinesBlokuojancios&&r.isvadaStruktura.pagrindinesBlokuojancios.length?`<p><strong>Pagrindinės blokuojančios sąlygos:</strong> ${r.isvadaStruktura.pagrindinesBlokuojancios.join('; ')}</p>`:''}
+      ${r.isvadaStruktura.pagrindinesKomercines&&r.isvadaStruktura.pagrindinesKomercines.length?`<p><strong>Pagrindinės komercinės rizikos:</strong> ${r.isvadaStruktura.pagrindinesKomercines.join('; ')}</p>`:''}
+      ${r.isvadaStruktura.kaPadarytiPriesTeikiant&&r.isvadaStruktura.kaPadarytiPriesTeikiant.length?`<p><strong>Ką padaryti prieš teikiant pasiūlymą:</strong> ${r.isvadaStruktura.kaPadarytiPriesTeikiant.join('; ')}</p>`:''}
+      ${r.isvadaStruktura.rekomenduojamaKainodara?`<p><strong>Rekomenduojama kainodara:</strong> ${r.isvadaStruktura.rekomenduojamaKainodara}</p>`:''}
+      ${r.isvadaStruktura.artiVertaDalyvauti?`<p><strong>Ar verta dalyvauti:</strong> ${r.isvadaStruktura.artiVertaDalyvauti}</p>`:''}
+    </div>`:(r.isViso?`<div class="r-summ"><h4>📝 Išvada</h4><p>${r.isViso}</p></div>`:'')}
+    <div style="font-size:11px;color:var(--text3);text-align:center;margin-top:8px">Šis vertinimas yra praktinis sprendimų ir rizikų įrankis, ne galutinė teisinė išvada.</div>
   `;
   rv.scrollIntoView({behavior:'smooth',block:'start'});
   // Open chat with analysis context
   if(r&&document.getElementById('chat-wrap'))openChat(r);
+}
+
+async function generatePOQuestion(idx,btn){
+  const it=(window._poRiskItems||[])[idx];
+  const box=document.getElementById('po-q-'+idx);
+  if(!it||!box)return;
+  btn.disabled=true; btn.textContent='Generuojama...';
+  try{
+    const tok=localStorage.getItem(TK);
+    const r=await fetch(API+'/api/po-question',{
+      method:'POST',
+      headers:{'Content-Type':'application/json','Authorization':'Bearer '+tok},
+      body:JSON.stringify({pavadinimas:it.pavadinimas,salyga:it.salyga,aiVertinimas:it.aiVertinimas,rastaDokumente:it.rastaDokumente,rizikosLygis:it.rizikosLygis})
+    });
+    const d=await r.json();
+    if(!r.ok)throw new Error(d.error||'Klaida');
+    box.style.display='block';
+    box.innerHTML='<strong style="color:var(--text)">Klausimas PO:</strong> '+d.klausimas+
+      '<button class="btn btn-sec" style="font-size:10px;padding:3px 8px;margin-left:8px" onclick="navigator.clipboard.writeText('+JSON.stringify(d.klausimas)+');toast(\'Nukopijuota\',\'success\')">Kopijuoti</button>';
+    btn.style.display='none';
+  }catch(e){
+    toast('Nepavyko sugeneruoti klausimo: '+e.message,'error');
+    btn.disabled=false; btn.textContent='❓ Generuoti klausimą PO';
+  }
 }
 
 function ri(k,v,extraClass=''){
@@ -3013,6 +3192,24 @@ async function renderAcc(){
       <button class="btn btn-outline btn-sm" style="margin-top:14px" onclick="openOnboardingEdit()">✏️ ${cp.profilioSantrauka?'Atnaujinti profilį':'Užpildyti profilį'}</button>
       ${!cp.profilioSantrauka?`<div style="background:rgba(245,158,11,.07);border:1px solid rgba(245,158,11,.2);border-radius:8px;padding:10px 12px;margin-top:10px;font-size:12px;line-height:1.6"><strong style="color:var(--warn)">⚠️ Profilis neužpildytas</strong><br><span style="color:var(--text2)">Užpildykite profilį — AI analizė taps tikslingesnė: atitiks jūsų įmonės pajėgumus, sertifikatus ir patirtį, o laimėjimo tikimybės balas bus apskaičiuotas konkrečiai jums.</span></div>`:''}
     </div>
+    <div class="acc-card" style="grid-column:1/-1">
+      <h3>📋 Detalus profilis (kvalifikacijai)</h3>
+      <p style="font-size:12px;color:var(--text2);margin-bottom:14px">Šie duomenys naudojami tik AI analizei palyginti jūsų pajėgumus su pirkimo reikalavimais. Niekur viešai nerodomi.</p>
+      <div style="display:grid;grid-template-columns:1fr 1fr;gap:12px">
+        <div class="fg"><label style="font-size:12px;color:var(--text2)">Metinė apyvarta (paskutiniai 3 m.)</label><input class="inp" id="dp-apyvarta" value="${esc(cp.apyvarta)}" placeholder="pvz. 1.2 mln EUR (2023), 0.9 mln (2022)..."></div>
+        <div class="fg"><label style="font-size:12px;color:var(--text2)">Darbuotojų skaičius</label><input class="inp" id="dp-darbuotojai" value="${esc(cp.darbuotojuSkaicius)}" placeholder="pvz. 24"></div>
+        <div class="fg"><label style="font-size:12px;color:var(--text2)">Sertifikatai / licencijos</label><input class="inp" id="dp-sertifikatai" value="${esc(cp.sertifikatai)}" placeholder="pvz. ISO 9001, ISO 27001"></div>
+        <div class="fg"><label style="font-size:12px;color:var(--text2)">CPV kodai (jūsų veiklos)</label><input class="inp" id="dp-cpv" value="${esc(cp.cpvKodai)}" placeholder="pvz. 72000000, 48000000"></div>
+        <div class="fg" style="grid-column:1/-1"><label style="font-size:12px;color:var(--text2)">Referensai / ankstesnės įvykdytos sutartys</label><textarea class="inp" id="dp-referensai" rows="2" placeholder="pvz. 2022 m. įvykdyta sutartis su X, vertė 150 000 EUR...">${esc(cp.referensai)}</textarea></div>
+        <div class="fg"><label style="font-size:12px;color:var(--text2)">Veiklos sritys</label><input class="inp" id="dp-veiklossritys" value="${esc(cp.veiklosSritys)}" placeholder="pvz. IT infrastruktūra, kibernetinis saugumas"></div>
+        <div class="fg"><label style="font-size:12px;color:var(--text2)">Patirtis viešajame sektoriuje</label><input class="inp" id="dp-vppatirtis" value="${esc(cp.vpPatirtis)}" placeholder="pvz. 8 metai, 12 sutarčių su VPĮ"></div>
+        <div class="fg" style="grid-column:1/-1"><label style="font-size:12px;color:var(--text2)">Specialistai (kvalifikacija, sertifikatai)</label><textarea class="inp" id="dp-specialistai" rows="2" placeholder="pvz. 2 PMI sertifikuoti projektų vadovai...">${esc(cp.specialistai)}</textarea></div>
+        <div class="fg" style="grid-column:1/-1"><label style="font-size:12px;color:var(--text2)">Partneriai / subtiekėjai</label><textarea class="inp" id="dp-partneriai" rows="2" placeholder="pvz. Galime pasitelkti subtiekėją X dėl Y kompetencijos...">${esc(cp.partneriai)}</textarea></div>
+        <div class="fg" style="grid-column:1/-1"><label style="font-size:12px;color:var(--text2)">Finansiniai rodikliai (likvidumas, mokumas ir pan.)</label><textarea class="inp" id="dp-finansai" rows="2" placeholder="pvz. Mokumo koeficientas 1.4, nuosavo kapitalo dalis 35%...">${esc(cp.finansiniaiRodikliai)}</textarea></div>
+      </div>
+      <button class="btn btn-primary btn-sm" style="margin-top:14px" onclick="saveDetailedProfile()">💾 Išsaugoti detalų profilį</button>
+      <span id="dp-status" style="font-size:12px;color:var(--success);margin-left:10px"></span>
+    </div>
     ${!pro?`
     <div class="acc-card" style="grid-column:1/-1;background:linear-gradient(135deg,rgba(26,86,219,.08),rgba(124,58,237,.08));border-color:rgba(59,130,246,.2)">
       <h3>🚀 Atnaujinti į Pro</h3>
@@ -3026,6 +3223,41 @@ async function renderAcc(){
 }
 
 function ri2(k,v){return `<div class="r-item"><span class="r-item-k">${k}</span><span class="r-item-v">${v||'–'}</span></div>`}
+function esc(v){return v?String(v).replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;').replace(/"/g,'&quot;'):''}
+
+async function saveDetailedProfile(){
+  const cp=(curUser&&curUser.company_profile)||{};
+  const updated={
+    ...cp,
+    apyvarta:document.getElementById('dp-apyvarta').value.trim(),
+    darbuotojuSkaicius:document.getElementById('dp-darbuotojai').value.trim(),
+    sertifikatai:document.getElementById('dp-sertifikatai').value.trim(),
+    cpvKodai:document.getElementById('dp-cpv').value.trim(),
+    referensai:document.getElementById('dp-referensai').value.trim(),
+    veiklosSritys:document.getElementById('dp-veiklossritys').value.trim(),
+    vpPatirtis:document.getElementById('dp-vppatirtis').value.trim(),
+    specialistai:document.getElementById('dp-specialistai').value.trim(),
+    partneriai:document.getElementById('dp-partneriai').value.trim(),
+    finansiniaiRodikliai:document.getElementById('dp-finansai').value.trim()
+  };
+  const statusEl=document.getElementById('dp-status');
+  const tok=localStorage.getItem(TK);
+  try{
+    const r=await fetch(API+'/api/profile',{
+      method:'POST',
+      headers:{'Content-Type':'application/json','Authorization':'Bearer '+tok},
+      body:JSON.stringify({companyProfile:updated})
+    });
+    if(!r.ok) throw new Error('save failed');
+    const d=await r.json();
+    if(curUser){curUser.company_profile=(d.user&&d.user.company_profile)||updated;localStorage.setItem(UK,JSON.stringify(curUser));}
+    if(statusEl){statusEl.textContent='✓ Išsaugota';setTimeout(()=>{if(statusEl)statusEl.textContent='';},3000);}
+    if(typeof toast==='function') toast('Detalus profilis išsaugotas','success');
+  }catch(e){
+    if(statusEl)statusEl.textContent='Klaida išsaugant';
+    if(typeof toast==='function') toast('Nepavyko išsaugoti profilio','error');
+  }
+}
 
 
 
@@ -4196,23 +4428,56 @@ function runDemo(){
   const demo = {
     pavadinimas:'IT infrastruktūros modernizavimas (Vilniaus m. savivaldybė)',
     score:72, scoreLabel:'Geros galimybės',
+    sprendimas:'CLARIFY',
+    sprendimoPriezastis:'Konkursas turi gerą potencialą, tačiau prieš dalyvaujant būtina patikrinti ISO 27001 reikalavimą, 24/7 pagalbos kaštus ir garantinių įsipareigojimų apimtį.',
+    subBalai:{tinkamumas:68, patrauklumas:78, rizikosLygis:'Vidutinė', laimejimoPotencialas:72},
     scorePaaiskinimas:'Kaina sudaro 60% — pagrindinis veiksnys. Techninės kokybės dalis (30%) suteikia galimybę išsiskirti.',
     perkanciojiOrganizacija:'Vilniaus miesto savivaldybės administracija',
     pirkimoTipas:'Atviras konkursas', bendraVerte:'285 000 EUR be PVM', cpt:'30200000-1',
     terminai:{pasiulymoTerminas:'2026-06-15 10:00', klausimaiIki:'2026-06-05', vykdymoTerminas:'12 mėnesių', garantija:'24 mėnesiai'},
-    kainuStrategija:'Kaina sudaro 60% vertinimo — rekomenduojama pateikti kuo konkurencingesnę kainą. Techninės kokybės dalis (30%) leidžia kompensuoti šiek tiek aukštesnę kainą, jei pasiūlymas techniškai stipresnis.',
-    atitikimasKvalifikacijai:'Privaloma patikrinti: (1) ar apyvarta viršija 200 000 EUR per 3 metus; (2) ar turimas ISO 27001 sertifikatas; (3) ar yra dokumentuotos IT diegimo patirties referensai.',
     kvalifikacija:{apyvarta:'min. 200 000 EUR / 3 metai', darbuotojai:'min. 5', patirtis:'min. 3 m. IT diegimo', sertifikatai:'ISO 27001 arba lygiavertis', finansinis:'Nėra bankroto procedūros'},
-    vertinimoKriterijai:[{kriterijus:'Kaina',svoris:'60%',aprasas:'Mažesnė kaina = daugiau taškų'},{kriterijus:'Techninė kokybė',svoris:'30%',aprasas:'Pagal techninį pasiūlymą'},{kriterijus:'Garantija',svoris:'10%',aprasas:'Ilgesnė = daugiau taškų'}],
+    kvalifikacijosMatrica:[
+      {reikalavimas:'Apyvarta', reikalaujama:'min. 200 000 EUR / 3 metai', tiekejasTuri:'Taip', irodymas:'finansinės ataskaitos', rizika:'žema', veiksmas:'Patikrinti paskutinių 3 metų pajamas'},
+      {reikalavimas:'ISO 27001', reikalaujama:'ISO 27001 arba lygiavertis', tiekejasTuri:'Neaišku', irodymas:'sertifikatas arba ISMS dokumentacija', rizika:'blokuojanti', veiksmas:'Patikrinti, ar turimas galiojantis sertifikatas arba partneris'}
+    ],
+    techninesSpecifikacijosMatrica:[
+      {reikalavimas:'24/7 pagalba', privalomas:true, tiekejasAtitinka:'Neaišku', kastuPoveikis:'vidutinis', aiskumoLygis:'dviprasmiškas', reikiaKlausimoPO:true, veiksmas:'Patikslinti su PO, ar reikia nuolatinio budėjimo'},
+      {reikalavimas:'Diegimo planas', privalomas:true, tiekejasAtitinka:'Taip', kastuPoveikis:'žemas', aiskumoLygis:'aiškus', reikiaKlausimoPO:false, veiksmas:'Pateikti standartinį diegimo planą'}
+    ],
+    vertinimoKriterijai:[{kriterijus:'Kaina',svoris:'60%'},{kriterijus:'Techninė kokybė',svoris:'30%'},{kriterijus:'Garantija',svoris:'10%'}],
+    vertinimoSimuliacija:[
+      {scenarijus:'Agresyvi kaina', kaina:'-10% nuo vidurkio', techninisBalas:'vidutinis', garantijosBalas:'vidutinis', prognozuojamasBalas:'92/100', tiketinaMarza:'žema', rekomendacija:'Taikyti, jei techninė dalis stipri'},
+      {scenarijus:'Subalansuota kaina', kaina:'rinkos vidurkis', techninisBalas:'aukštas', garantijosBalas:'aukštas', prognozuojamasBalas:'85/100', tiketinaMarza:'vidutinė', rekomendacija:'Rekomenduojamas variantas'}
+    ],
     finansinesSalygos:{avansas:'20% po pasirašymo', apmokejimas:'80% po priėmimo', baudos:'0.02%/d', garantinis:'24 mėn.'},
+    sutartiesRizikos:[{salyga:'Apmokėjimas tik po priėmimo', rizikosLygis:'vidutinė', komentaras:'Gali atitolinti pinigų srautą — derėtis dėl tarpinių mokėjimų'}],
+    blokuojanciosSalygos:[{pavadinimas:'ISO 27001 reikalavimas', rastaDokumente:'Pirkimo sąlygų 5.3 punktas', salyga:'Tiekėjas turi turėti ISO 27001 sertifikatą arba lygiavertį ISMS įrodymą', aiVertinimas:'Jei nėra sertifikato ar lygiaverčio įrodymo — tai blokuojanti sąlyga', rizikosLygis:'blokuojanti', veiksmas:'Patikrinti sertifikato galiojimą, įvertinti galimybę remtis partneriu arba užduoti klausimą PO'}],
+    komercinesRizikos:[{pavadinimas:'24/7 pagalbos kaštai', rastaDokumente:'Techninė specifikacija, 3.2 p.', salyga:'Reikalaujama 24/7 pagalba visam sutarties laikotarpiui', aiVertinimas:'Gali didinti einamąsias sąnaudas ir mažinti maržą', rizikosLygis:'vidutinė', veiksmas:'Įvertinti budėjimo kaštus prieš teikiant kainą'}],
+    strateginesRizikos:[{pavadinimas:'Kaina sudaro 60% vertinimo', rastaDokumente:'Vertinimo kriterijai', salyga:'Pagrindinis vertinimo svoris — kaina', aiVertinimas:'Reikalinga agresyvi, bet ne nuostolinga kainodara', rizikosLygis:'vidutinė', veiksmas:'Parengti kelis kainodaros scenarijus'}],
+    klausimaiPO:[
+      {tema:'ISO 27001', klausimas:'Prašome patvirtinti, ar vietoje ISO 27001 sertifikato galima pateikti lygiaverčius informacijos saugumo valdymo sistemos įrodymus.'},
+      {tema:'24/7 pagalba', klausimas:'Prašome patikslinti, ar 24/7 pagalbos reikalavimas reiškia nuolatinį budėjimą, ar tik incidentų registravimo galimybę visą parą, ir nurodyti reakcijos SLA laikus.'}
+    ],
+    ebvpdSusieta:{
+      deklaruojamaDabar:['Bendri tiekėjo duomenys','Apyvartos atitikimas'],
+      reikesIrodymoVeliau:['ISO 27001 sertifikatas arba lygiavertis įrodymas','3 referensai iš IT projektų'],
+      rizikingiAtsakymai:['Informacijos saugumo valdymo sistemos atitikimas']
+    },
     rizikos:['ISO 27001 sertifikato trūkumas eliminuoja iš konkurso','24/7 pagalbos reikalavimas didina einamąsias sąnaudas','Techniniai reikalavimai gali didinti kaštus'],
     galimybes:['60% kainodara leidžia konkuruoti su nedidele marža','Referensai iš viešojo sektoriaus didina pasitikėjimą','Galima subtiekėjų pagalba sertifikatams'],
     strategija:'Pagrindinis tikslas — konkurencinga kaina. Techninėje dalyje akcentuokite: praeities sėkmingus projektus viešajame sektoriuje, 24/7 reagavimo procedūras, detalų diegimo planą.',
     prioritetiniaiZingsniai:[{zingsnis:'1. Patikrinti ISO 27001 sertifikato galiojimą',terminas:'Nedelsiant'},{zingsnis:'2. Parengti 3 referensus iš IT projektų',terminas:'Per 3 dienas'},{zingsnis:'3. Apskaičiuoti minimalią pelningą kainą',terminas:'Prieš terminą'}],
     butinaiIttraukti:[{dokumentas:'ISO 27001 sertifikatas',pastaba:'Būtina kvalifikacinė sąlyga'},{dokumentas:'3 referensai (paskutiniai 5 metai)',pastaba:'IT infrastruktūros projektai'}],
-    dazniausiasKlaidos:['Neįtraukiamos visos papildomos sąnaudos','Referensų datos neatitinka reikalaujamo laikotarpio'],
-    klausimaiPerkanciajai:['Ar lygiavertis sertifikatas priimamas vietoj ISO 27001?','Ar 24/7 SLA detalizuotas techninėje specifikacijoje?'],
-    isViso:'Konkursas tinkamas įmonėms su tvirtomis IT kompetencijomis ir ISO 27001 sertifikatu. 60% kainodara reiškia, kad agresyvi kainodara yra raktas. Prieš teikiant — patikrinti apyvartos atitikimą ir sertifikatų galiojimą.'
+    isViso:'Konkursas tinkamas įmonėms su tvirtomis IT kompetencijomis ir ISO 27001 sertifikatu. 60% kainodara reiškia, kad agresyvi kainodara yra raktas. Prieš teikiant — patikrinti apyvartos atitikimą ir sertifikatų galiojimą.',
+    isvadaStruktura:{
+      sprendimas:'CLARIFY',
+      kodel:'Konkursas potencialiai tinkamas įmonei su stipriomis IT kompetencijomis, nes vertinime 60% sudaro kaina, o techninės kokybės dalis leidžia išsiskirti patirtimi ir įgyvendinimo planu.',
+      pagrindinesBlokuojancios:['ISO 27001 arba lygiaverčio įrodymo reikalavimas'],
+      pagrindinesKomercines:['24/7 pagalbos kaštai','Apmokėjimas tik po priėmimo'],
+      kaPadarytiPriesTeikiant:['Patikrinti sertifikato galiojimą','Įvertinti galimybę remtis partneriu','Apskaičiuoti 24/7 pagalbos kaštus'],
+      rekomenduojamaKainodara:'Agresyvi, bet ne nuostolinga kaina, kompensuojant stipriu techniniu pasiūlymu.',
+      artiVertaDalyvauti:'Taip, jei blokuojanti sąlyga išsprendžiama per nustatytą terminą.'
+    }
   };
   curResult = demo;
   document.getElementById('landing').style.display = 'none';
@@ -4684,38 +4949,23 @@ function renderBVPZTree(){
   });
 }
 
-function openCVPByCode(code, name){
-  // POST forma — CVP IS priima cpvCodes per POST išplėstinėje paieškoje
-  const form = document.createElement('form');
-  form.method = 'POST';
-  form.action = 'https://viesiejipirkimai.lt/epps/searchNotices.do?type=cftFTS';
-  form.target = '_blank';
-  form.style.display = 'none';
+async function openCVPByCode(code, name){
+  // CVP IS naršyklėje negali būti automatiškai užpildomas iš kitos svetainės (saugumo apribojimas).
+  // Nukopijuojame kodą, atidarome paiešką ir parodome sąžiningą instrukciją, ką daryti toliau.
+  let copied = false;
+  try{ await navigator.clipboard.writeText(code); copied = true; }catch(e){ copied = false; }
 
-  // cpvCodes laukas — portalas filtruoja pagal šį parametrą
-  const f1 = document.createElement('input');
-  f1.type = 'hidden';
-  f1.name = 'cpvCodes';
-  f1.value = code;
-  form.appendChild(f1);
+  window.open('https://viesiejipirkimai.lt/epps/prepareAdvancedSearch.do?type=cftFTS', '_blank', 'noopener');
 
-  // Būsena — tik aktyvūs pirkimai (Pasiūlymų teikimas)
-  const f2 = document.createElement('input');
-  f2.type = 'hidden';
-  f2.name = 'cftStatus';
-  f2.value = 'TENDERING';
-  form.appendChild(f2);
-
-  document.body.appendChild(form);
-  form.submit();
-  document.body.removeChild(form);
-
-  // Trumpa žinutė
   const tip = document.createElement('div');
-  tip.style.cssText = 'position:fixed;top:80px;right:24px;background:#10b981;color:#fff;padding:14px 18px;border-radius:12px;font-size:13px;z-index:999;box-shadow:0 4px 20px rgba(0,0,0,.3);max-width:340px;line-height:1.6';
-  tip.innerHTML = '✅ <strong>CVP atidarytas su filtru</strong><br><span style="font-family:monospace;background:rgba(255,255,255,.2);padding:2px 8px;border-radius:4px;font-size:12px">' + code + '</span> ' + (name||'') + '<br><span style="opacity:.85;font-size:11px;margin-top:4px;display:inline-block">Rezultatai filtruoti pagal BVPŽ kodą</span>';
+  tip.style.cssText = 'position:fixed;top:80px;right:24px;background:var(--card);border:1px solid var(--border);color:var(--text);padding:14px 18px;border-radius:12px;font-size:13px;z-index:999;box-shadow:0 4px 20px rgba(0,0,0,.3);max-width:340px;line-height:1.6';
+  tip.innerHTML = (copied
+    ? '📋 <strong>BVPŽ kodas nukopijuotas</strong><br>'
+    : '⚠️ <strong>Nepavyko nukopijuoti automatiškai</strong><br>')
+    + '<span style="font-family:monospace;background:rgba(120,120,120,.15);padding:2px 8px;border-radius:4px;font-size:12px">' + code + '</span> ' + (name||'') +
+    '<br><span style="opacity:.85;font-size:11px;margin-top:6px;display:inline-block">1. Atsidariusiame CVP IS lange raskite lauką „BVPŽ kodai"<br>2. Įklijuokite (Ctrl+V) nukopijuotą kodą<br>3. Paspauskite „Ieškoti"</span>';
   document.body.appendChild(tip);
-  setTimeout(() => tip && tip.remove(), 6000);
+  setTimeout(() => tip && tip.remove(), 9000);
 }
 
 // Textarea auto-resize
