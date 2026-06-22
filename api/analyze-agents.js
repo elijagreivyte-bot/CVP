@@ -13,7 +13,7 @@ module.exports.config = { maxDuration: 300 };
 
 async function callClaude(system, user, maxTokens = 4000) {
   const controller = new AbortController();
-  const timeout = setTimeout(() => controller.abort(), 120000);
+  const timeout = setTimeout(() => controller.abort(), 280000);
   try {
     const r = await fetch('https://api.anthropic.com/v1/messages', {
       method: 'POST',
@@ -125,20 +125,32 @@ module.exports = async (req, res) => {
     }
     const profileCtx = buildProfileContext(profile);
 
-    const system = `Tu esi Bidwise AI — ekspertų komanda viešųjų pirkimų analizei (dokumentų, kvalifikacijos, kainodaros, rizikų ir strategijos analitikai). Analizuok lietuviškai. Būk objektyvus ir nuoseklus — tam pačiam dokumentui visada duok tą patį tikimybės balą. Grąžink TIK JSON, be jokio papildomo teksto.`;
+    const system = `Tu esi Bidwise AI — viešųjų pirkimų sprendimų analitikas. Tavo ataskaita nėra graži santrauka — tai praktinis sprendimų ir rizikų įrankis tiekėjui. Analizuok lietuviškai, objektyviai ir nuosekliai (tam pačiam dokumentui visada duok tą patį balą).
+
+SVARBIAUSIAS PRINCIPAS: kiekviena reikšminga išvada turi būti pagrįsta (1) konkrečiu dokumento punktu, jei jis matomas tekste, (2) viešųjų pirkimų praktikos logika, (3) rizikos įvertinimu, (4) rekomenduojamu veiksmu. Jei dokumente konkretaus punkto nerandi, pažymėk saltinis:"Pagal bendrą praktiką" — NEGALVOK punkto numerio. Jei pačios informacijos (ne tik punkto numerio) dokumente NĖRA, lauko reikšmė turi būti tiksliai "Dokumente nenurodyta" — NIEKADA neišgalvok reikšmės.
+
+Prie kiekvienos rizikos/reikalavimo nurodyk:
+- "pasitikejimas": "aukštas" (tiksliai cituojamas punktas) | "vidutinis" (numanoma iš konteksto) | "žemas" (bendra praktika, dokumente neaišku)
+- "paremta": "dokumentu" | "bendra_praktika"
+- "privalomas": true/false — ar reikalavimas yra privalomas
+- "arbaLygiavertis": true/false — ar dokumentas leidžia pateikti lygiavertį įrodymą/sprendimą vietoj nurodytojo
+
+Blokuojanti sąlyga = tokia, dėl kurios pasiūlymas realiai gali būti atmestas (privalomas trūkstamas sertifikatas/dokumentas/EBVPD/kvalifikacija/techninis reikalavimas). Jei yra bent viena blokuojanti sąlyga ir tiekėjo profilyje nematyti, kad ji įvykdyta, bendras "sprendimas" NEGALI būti GO — turi būti CLARIFY arba NO-GO.
+
+Grąžink TIK JSON, be jokio papildomo teksto.`;
 
     const userMsg = `${profileCtx.contextText}
 
 ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
 
 PIRKIMO DOKUMENTAS:
-${docTextSafe.slice(0, 30000)}
+${docTextSafe.slice(0, 350000)}
 
 ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
 
-Išanalizuok šį konkursą ${profileCtx.hasProfile ? 'KONKREČIAI šios įmonės kontekste — naudok jos profilį ir klausimyno atsakymus' : '(profilis neužpildytas — bendras objektyvus vertinimas)'}.
+Išanalizuok šį konkursą ${profileCtx.hasProfile ? 'KONKREČIAI šios įmonės kontekste — naudok jos profilį ir klausimyno atsakymus, lygink su konkrečiais reikalavimais' : '(profilis neužpildytas — bendras objektyvus vertinimas, kvalifikacijos/technikos matricose "Tiekėjas turi?" = "Neaišku")'}.
 
-Grąžink TIKSLIAI tokios struktūros JSON (visi laukai privalomi, jei nėra informacijos — rašyk "Nenurodyta"):
+Grąžink TIKSLIAI tokios struktūros JSON (jei nėra informacijos — rašyk "Nenurodyta", masyvus gali grąžinti tuščius []):
 
 {
   "pavadinimas": "tikslus pirkimo pavadinimas",
@@ -146,16 +158,29 @@ Grąžink TIKSLIAI tokios struktūros JSON (visi laukai privalomi, jei nėra inf
   "pirkimoTipas": "atviras konkursas / supaprastintas / mažos vertės",
   "bendraVerte": "numatoma vertė su valiuta arba Nenurodyta",
   "cpt": "pagrindinis BVPŽ kodas",
+
+  "sprendimas": "GO | CLARIFY | NO-GO",
+  "sprendimoPriezastis": "1-2 sakiniai kodėl toks sprendimas",
+
   "score": 65,
-  "scoreLabel": "Aukšta tikimybė / Vidutinė tikimybė / Žema tikimybė",
+  "scoreLabel": "Geros galimybės / Vidutinės galimybės / Žemos galimybės",
   "scorePaaiskinimas": "2-3 sakiniai kodėl būtent toks balas šiai įmonei",
+
+  "subBalai": {
+    "tinkamumas": 68,
+    "patrauklumas": 78,
+    "rizikosLygis": "Žema | Vidutinė | Aukšta",
+    "laimejimoPotencialas": 72
+  },
+
   "terminai": {
-    "pasiulymoTerminas": "data ir laikas",
+    "pasiulymoTerminas": "YYYY-MM-DD HH:MM arba Nenurodyta",
     "vokuAtplesimas": "data arba Nenurodyta",
     "klausimaiIki": "data arba Nenurodyta",
     "vykdymoTerminas": "sutarties trukmė",
     "garantija": "garantinis terminas arba Nenurodyta"
   },
+
   "kvalifikacija": {
     "apyvarta": "reikalaujama apyvarta",
     "darbuotojai": "reikalavimai darbuotojams",
@@ -163,15 +188,55 @@ Grąžink TIKSLIAI tokios struktūros JSON (visi laukai privalomi, jei nėra inf
     "sertifikatai": "reikalaujami sertifikatai",
     "finansinis": "finansiniai reikalavimai"
   },
+
+  "kvalifikacijosMatrica": [
+    {"reikalavimas": "Apyvarta", "reikalaujama": "min. 200 000 EUR / 3 metai arba Dokumente nenurodyta", "saltinisPunktas": "dokumento ir punkto nuoroda arba Pagal bendrą praktiką", "tiekejasTuri": "Taip | Ne | Neaišku", "irodymas": "finansinės ataskaitos", "rizika": "žema | vidutinė | aukšta | blokuojanti", "privalomas": true, "arbaLygiavertis": false, "pasitikejimas": "aukštas | vidutinis | žemas", "paremta": "dokumentu | bendra_praktika", "veiksmas": "ką patikrinti/padaryti"}
+  ],
+
+  "techninesSpecifikacijosMatrica": [
+    {"reikalavimas": "24/7 pagalba", "saltinisPunktas": "dokumento ir punkto nuoroda arba Pagal bendrą praktiką", "privalomas": true, "arbaLygiavertis": false, "tiekejasAtitinka": "Taip | Ne | Neaišku", "kastuPoveikis": "žemas | vidutinis | aukštas", "aiskumoLygis": "aiškus | dviprasmiškas", "reikiaKlausimoPO": true, "pasitikejimas": "aukštas | vidutinis | žemas", "paremta": "dokumentu | bendra_praktika", "veiksmas": "rekomendacija"}
+  ],
+
   "finansinesSalygos": {
     "avansas": "ar mokamas avansas",
     "apmokejimas": "apmokėjimo sąlygos",
     "baudos": "baudų sąlygos",
     "garantinis": "garantinio laikotarpio sąlygos"
   },
+
+  "sutartiesRizikos": [
+    {"salyga": "pvz. Apmokėjimas tik po priėmimo", "rizikosLygis": "žema | vidutinė | aukšta", "komentaras": "praktinis paaiškinimas"}
+  ],
+
   "vertinimoKriterijai": [
     {"kriterijus": "pvz. Kaina", "svoris": "60%"}
   ],
+
+  "vertinimoSimuliacija": [
+    {"scenarijus": "Agresyvi kaina", "kaina": "trumpas apibūdinimas", "techninisBalas": "aukštas/vidutinis/žemas", "garantijosBalas": "aukštas/vidutinis/žemas", "prognozuojamasBalas": "pvz. 92/100", "tiketinaMarza": "žema | vidutinė | aukšta", "rekomendacija": "1 sakinys"}
+  ],
+
+  "blokuojanciosSalygos": [
+    {"pavadinimas": "pvz. ISO 27001 reikalavimas", "rastaDokumente": "dokumento ir punkto nuoroda arba 'Pagal bendrą praktiką'", "salyga": "trumpa esmė arba 'Dokumente nenurodyta'", "aiVertinimas": "ką tai reiškia tiekėjui", "rizikosLygis": "blokuojanti", "privalomas": true, "arbaLygiavertis": false, "pasitikejimas": "aukštas | vidutinis | žemas", "paremta": "dokumentu | bendra_praktika", "veiksmas": "rekomenduojamas veiksmas"}
+  ],
+  "komercinesRizikos": [
+    {"pavadinimas": "pvz. 24/7 pagalbos kaštai", "rastaDokumente": "...", "salyga": "...", "aiVertinimas": "...", "rizikosLygis": "vidutinė | aukšta", "privalomas": false, "arbaLygiavertis": false, "pasitikejimas": "aukštas | vidutinis | žemas", "paremta": "dokumentu | bendra_praktika", "veiksmas": "..."}
+  ],
+  "strateginesRizikos": [
+    {"pavadinimas": "pvz. Kaina sudaro 60% vertinimo", "rastaDokumente": "...", "salyga": "...", "aiVertinimas": "...", "rizikosLygis": "žema | vidutinė | aukšta", "privalomas": false, "arbaLygiavertis": false, "pasitikejimas": "aukštas | vidutinis | žemas", "paremta": "dokumentu | bendra_praktika", "veiksmas": "..."}
+  ],
+
+  "klausimaiPO": [
+    {"tema": "pvz. ISO 27001", "klausimas": "pilnai sutvarkytas profesionalus klausimas perkančiajai organizacijai"}
+  ],
+
+  "ebvpdSusieta": {
+    "pasalinimoPagrindaiTaikomi": ["..."],
+    "deklaruojamaDabar": ["kvalifikacijos punktai, kuriuos galima deklaruoti be papildomo įrodymo"],
+    "reikesIrodymoVeliau": ["punktai, kuriems reikės įrodymo laimėjimo atveju"],
+    "rizikingiAtsakymai": ["punktai, kur tiekėjo padėtis neaiški/rizikinga"]
+  },
+
   "rizikos": ["konkreti rizika 1", "rizika 2", "rizika 3"],
   "galimybes": ["galimybė 1", "galimybė 2"],
   "pasleptosNuostatos": ["nepalanki nuostata jei yra"],
@@ -182,10 +247,22 @@ Grąžink TIKSLIAI tokios struktūros JSON (visi laukai privalomi, jei nėra inf
   "butinaiIttraukti": [
     {"dokumentas": "reikalingas dokumentas", "pastaba": "komentaras"}
   ],
-  "isViso": "galutinė išvada ar verta dalyvauti ir kodėl (2-3 sakiniai)"
-}`;
 
-    const aiRes = await callClaude(system, userMsg, 4000);
+  "isViso": "galutinė išvada ar verta dalyvauti ir kodėl (2-3 sakiniai)",
+  "isvadaStruktura": {
+    "sprendimas": "GO | CLARIFY | NO-GO",
+    "kodel": "1-2 sakiniai",
+    "pagrindinesBlokuojancios": ["..."],
+    "pagrindinesKomercines": ["..."],
+    "kaPadarytiPriesTeikiant": ["žingsnis 1", "žingsnis 2"],
+    "rekomenduojamaKainodara": "1 sakinys",
+    "artiVertaDalyvauti": "1 sakinys"
+  }
+}
+
+Pastaba: ši analizė nėra galutinė teisinė išvada — tai praktinis sprendimų ir rizikų įrankis tiekėjui.`;
+
+    const aiRes = await callClaude(system, userMsg, 8000);
     const result = parseJSON(aiRes, null);
 
     if (!result || !result.pavadinimas) {
@@ -194,6 +271,10 @@ Grąžink TIKSLIAI tokios struktūros JSON (visi laukai privalomi, jei nėra inf
 
     result.score = typeof result.score === 'number' ? result.score : 50;
     result.personalizuota = profileCtx.hasProfile;
+    if (!result.sprendimas) result.sprendimas = result.score >= 70 ? 'GO' : result.score >= 40 ? 'CLARIFY' : 'NO-GO';
+    if (Array.isArray(result.blokuojanciosSalygos) && result.blokuojanciosSalygos.length && result.sprendimas === 'GO') {
+      result.sprendimas = 'CLARIFY';
+    }
 
     if (process.env.SUPABASE_URL) {
       const supabase = createClient(process.env.SUPABASE_URL, process.env.SUPABASE_SERVICE_KEY);
