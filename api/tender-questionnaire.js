@@ -204,7 +204,7 @@ TIEKĖJO PROFILIS, JEI YRA:
 ${tiekejoProfilis || 'Nepateiktas'}
 
 PIRKIMO DOKUMENTŲ TEKSTAS:
-${dokumentaiText.slice(0, 80000)}`;
+${dokumentaiText.slice(0, 350000)}`;
 
   try {
     const response = await fetch('https://api.anthropic.com/v1/messages', {
