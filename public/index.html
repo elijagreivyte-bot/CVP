@@ -1739,7 +1739,7 @@ footer{background:var(--navy2);border-top:1px solid var(--border);padding:48px 3
       <!-- QUICK CPV CATEGORY CHIPS -->
       <div style="margin-top:28px">
         <p style="font-family:Sora,sans-serif;font-size:15px;font-weight:700;color:var(--text);margin-bottom:4px">Greitos kryptys pagal BVPŽ kategoriją</p>
-        <p style="font-size:12px;color:var(--text2);margin-bottom:14px;line-height:1.6">Pasirinkite sritį, o mes nukopijuosime tinkamą BVPŽ kodą ir atidarysime CVP išplėstinę paiešką.</p>
+        <p style="font-size:12px;color:var(--text2);margin-bottom:14px;line-height:1.6">Pasirinkite sritį — parodysime BVPŽ kodą ir veiksmus, kaip juo pasinaudoti CVP IS paieškoje.</p>
         <div id="cvp-quick-chips" style="display:flex;flex-wrap:wrap;gap:8px;margin-bottom:20px"></div>
       </div>
 
@@ -4331,7 +4331,7 @@ function initCVPPage(){
   // Render quick CPV category chips
   const chips = document.getElementById('cvp-quick-chips');
   if(chips) chips.innerHTML = QUICK_CVP_CATEGORIES.map((c, i) =>
-    `<button onclick="searchByCpvCode(${i})"
+    `<button onclick="selectCvpCategory(${i})"
       style="background:var(--card);border:1px solid var(--border);border-radius:20px;padding:8px 16px;cursor:pointer;font-size:13px;color:var(--text2);font-family:Inter,sans-serif;transition:all .2s;display:inline-flex;align-items:center;gap:6px"
       onmouseover="this.style.borderColor='var(--blue3)';this.style.color='var(--text)'"
       onmouseout="this.style.borderColor='var(--border)';this.style.color='var(--text2)'">${c.icon} ${c.title}</button>`
@@ -4368,33 +4368,28 @@ function openCVP(){
   window.open('https://cvpp.eviesiejipirkimai.lt/?Query=' + encodeURIComponent(q), '_blank', 'noopener');
 }
 
-// Pasirinkus greitą BVPŽ kategoriją: nukopijuojamas kodas, atidaroma CVP išplėstinė paieška,
-// rodoma "Pasirinkta kryptis" kortelė su tolesniu žingsniu.
+// Pasirinkus BVPŽ kategoriją (greitas chip arba medžio mygtukas), sistema NEDAUG iškart neatidaro CVP —
+// pirma parodo "Pasirinkta kryptis" kortelę su kodu ir veiksmų mygtukais. CVP atidaroma tik kai
+// vartotojas pats paspaudžia mygtuką. Naršyklė negali užpildyti kitos svetainės formos lauko po
+// atidarymo (saugumo apribojimas), todėl visada nukopijuojame kodą į iškarpinę vietoje to.
 let cvpSelectedCategory = null;
+const CVP_SEARCH_URL = 'https://viesiejipirkimai.lt/epps/prepareAdvancedSearch.do?type=cftFTS';
 
-async function searchByCpvCode(index){
+function selectCvpCategory(index){
   const category = QUICK_CVP_CATEGORIES[index];
   if(!category) return;
-  cvpSelectedCategory = category;
-
-  let copied = false;
-  try{
-    await navigator.clipboard.writeText(category.cpv);
-    copied = true;
-  }catch(e){ copied = false; }
-
-  window.open('https://viesiejipirkimai.lt/epps/prepareAdvancedSearch.do?type=cftFTS', '_blank', 'noopener');
-
-  if(copied){
-    toast(`BVPŽ kodas nukopijuotas: ${category.cpv}. Atsidariusiame CVP lange įklijuokite jį į lauką „BVPŽ kodai".`, 'success');
-  } else {
-    toast(`BVPŽ kodas: ${category.cpv}. Nukopijuokite jį rankiniu būdu ir įklijuokite CVP paieškoje.`, 'warn');
-  }
-
-  renderCvpSelectedCard(copied);
+  selectCvpCode(category.cpv, category.title, category.icon);
 }
 
-function renderCvpSelectedCard(copied){
+function selectCvpCode(code, name, icon){
+  cvpSelectedCategory = { cpv: code, title: name, icon: icon || '📂' };
+  cvpTab('search');
+  renderCvpSelectedCard();
+  const card = document.getElementById('cvp-selected-card');
+  if(card) card.scrollIntoView({ behavior: 'smooth', block: 'start' });
+}
+
+function renderCvpSelectedCard(){
   const card = document.getElementById('cvp-selected-card');
   const body = document.getElementById('cvp-selected-body');
   const openBtn = document.getElementById('cvp-selected-open');
@@ -4404,12 +4399,21 @@ function renderCvpSelectedCard(copied){
 
   card.style.display = 'block';
   body.innerHTML =
-    '<div><strong style="color:var(--text)">Paieškos kryptis:</strong> ' + c.icon + ' ' + c.title + '</div>' +
+    '<div><strong style="color:var(--text)">Pasirinkta kryptis:</strong> ' + c.icon + ' ' + c.title + '</div>' +
     '<div><strong style="color:var(--text)">BVPŽ kodas:</strong> <span style="font-family:monospace">' + c.cpv + '</span></div>' +
-    '<div><strong style="color:var(--text)">CVP veiksmas:</strong> ' + (copied ? 'kodas nukopijuotas' : 'nukopijuokite kodą rankiniu būdu') + '</div>' +
-    '<div><strong style="color:var(--text)">Kitas žingsnis:</strong> įklijuokite kodą CVP paieškoje</div>';
+    '<div style="font-size:12px;color:var(--text3);margin-top:4px">CVP IS ne visada leidžia automatiškai užpildyti paieškos laukus, todėl kodą nukopijuosime — jį tereikės įklijuoti.</div>' +
+    '<div style="font-size:12px;color:var(--text3);margin-top:8px">1 žingsnis: paspauskite „Kopijuoti BVPŽ kodą"<br>2 žingsnis: paspauskite „Atidaryti CVP paiešką" ir įklijuokite kodą į BVPŽ / CPV laukelį<br>3 žingsnis: paspauskite „Ieškoti"</div>';
 
-  openBtn.onclick = () => window.open('https://viesiejipirkimai.lt/epps/prepareAdvancedSearch.do?type=cftFTS', '_blank', 'noopener');
+  openBtn.textContent = 'Kopijuoti kodą ir atidaryti CVP paiešką →';
+  openBtn.onclick = async () => {
+    let copied = false;
+    try{ await navigator.clipboard.writeText(c.cpv); copied = true; }catch(e){ copied = false; }
+    window.open(CVP_SEARCH_URL, '_blank', 'noopener');
+    toast(copied
+      ? `BVPŽ kodas ${c.cpv} nukopijuotas. Įklijuokite jį CVP IS BVPŽ / CPV kodo laukelyje.`
+      : `BVPŽ kodas: ${c.cpv}. Nepavyko nukopijuoti automatiškai — nukopijuokite rankiniu būdu.`, copied ? 'success' : 'warn');
+  };
+  copyBtn.textContent = 'Kopijuoti BVPŽ kodą';
   copyBtn.onclick = async () => {
     try{
       await navigator.clipboard.writeText(c.cpv);
@@ -4919,8 +4923,8 @@ function renderBVPZTree(){
 
     const catBtn = document.createElement('button');
     catBtn.style.cssText = 'background:var(--grad);color:#fff;border:none;padding:7px 14px;border-radius:8px;cursor:pointer;font-size:12px;font-weight:600;font-family:Inter,sans-serif;white-space:nowrap';
-    catBtn.textContent = '→ CVP';
-    catBtn.onclick = (e) => { e.stopPropagation(); openCVPByCode(cat.code, cat.name); };
+    catBtn.textContent = 'Pasirinkti →';
+    catBtn.onclick = (e) => { e.stopPropagation(); selectCvpCode(cat.code, cat.name, cat.icon); };
     summary.appendChild(catBtn);
 
     const arrow = document.createElement('span');
@@ -4939,33 +4943,14 @@ function renderBVPZTree(){
         '<span style="font-size:12px;color:var(--text2);flex:1;line-height:1.4">' + s.name + '</span>';
       const sBtn = document.createElement('button');
       sBtn.style.cssText = 'background:var(--card2);border:1px solid var(--border);color:var(--text);padding:5px 10px;border-radius:6px;cursor:pointer;font-size:11px;font-family:Inter,sans-serif';
-      sBtn.textContent = '→ Konkursai';
-      sBtn.onclick = () => openCVPByCode(s.code, s.name);
+      sBtn.textContent = 'Pasirinkti →';
+      sBtn.onclick = () => selectCvpCode(s.code, s.name, cat.icon);
       row.appendChild(sBtn);
       subsWrap.appendChild(row);
     });
     details.appendChild(subsWrap);
     el.appendChild(details);
   });
-}
-
-async function openCVPByCode(code, name){
-  // CVP IS naršyklėje negali būti automatiškai užpildomas iš kitos svetainės (saugumo apribojimas).
-  // Nukopijuojame kodą, atidarome paiešką ir parodome sąžiningą instrukciją, ką daryti toliau.
-  let copied = false;
-  try{ await navigator.clipboard.writeText(code); copied = true; }catch(e){ copied = false; }
-
-  window.open('https://viesiejipirkimai.lt/epps/prepareAdvancedSearch.do?type=cftFTS', '_blank', 'noopener');
-
-  const tip = document.createElement('div');
-  tip.style.cssText = 'position:fixed;top:80px;right:24px;background:var(--card);border:1px solid var(--border);color:var(--text);padding:14px 18px;border-radius:12px;font-size:13px;z-index:999;box-shadow:0 4px 20px rgba(0,0,0,.3);max-width:340px;line-height:1.6';
-  tip.innerHTML = (copied
-    ? '📋 <strong>BVPŽ kodas nukopijuotas</strong><br>'
-    : '⚠️ <strong>Nepavyko nukopijuoti automatiškai</strong><br>')
-    + '<span style="font-family:monospace;background:rgba(120,120,120,.15);padding:2px 8px;border-radius:4px;font-size:12px">' + code + '</span> ' + (name||'') +
-    '<br><span style="opacity:.85;font-size:11px;margin-top:6px;display:inline-block">1. Atsidariusiame CVP IS lange raskite lauką „BVPŽ kodai"<br>2. Įklijuokite (Ctrl+V) nukopijuotą kodą<br>3. Paspauskite „Ieškoti"</span>';
-  document.body.appendChild(tip);
-  setTimeout(() => tip && tip.remove(), 9000);
 }
 
 // Textarea auto-resize
