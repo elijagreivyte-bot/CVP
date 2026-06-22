@@ -113,3 +113,5 @@ Taisyklės:
     throw error;
   }
 });
+
+module.exports.config = { maxDuration: 120 };
