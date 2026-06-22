@@ -9,8 +9,6 @@ const { verifyToken, applyCors } = require('./security');
 const ANTHROPIC_API_KEY = process.env.ANTHROPIC_API_KEY;
 const MODEL = 'claude-sonnet-4-6';
 
-module.exports.config = { maxDuration: 300 };
-
 async function callClaude(system, user, maxTokens = 4000) {
   const controller = new AbortController();
   const timeout = setTimeout(() => controller.abort(), 280000);
@@ -320,3 +318,5 @@ Pastaba: ši analizė nėra galutinė teisinė išvada — tai praktinis sprendi
     return res.status(500).json({ error: 'Analizės klaida: ' + e.message });
   }
 };
+
+module.exports.config = { maxDuration: 300 };
