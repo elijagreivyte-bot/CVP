@@ -46,16 +46,42 @@ async function callClaude(system, user, maxTokens = 4000) {
 }
 
 function parseJSON(text, fallback = {}) {
-  try {
-    let clean = text.replace(/```json|```/g, '').trim();
-    const start = clean.indexOf('{');
-    const end = clean.lastIndexOf('}');
-    if (start >= 0 && end > start) clean = clean.slice(start, end + 1);
-    return JSON.parse(clean);
-  } catch (e) {
-    console.error('JSON parse failed:', e.message);
-    return fallback;
+  let cleaned = text.replace(/```json|```/g, '').trim();
+  const start = cleaned.indexOf('{');
+  if (start === -1) return fallback;
+  cleaned = cleaned.slice(start);
+
+  try { return JSON.parse(cleaned); } catch (e) {}
+
+  // Atsakymas nutrūko per anksti (max_tokens) — bandome surasti paskutinį pilną „}" gylyje 0
+  let depth = 0, inStr = false, esc = false, lastClose = -1;
+  for (let i = 0; i < cleaned.length; i++) {
+    const c = cleaned[i];
+    if (esc) { esc = false; continue; }
+    if (c === '\\') { esc = true; continue; }
+    if (c === '"') { inStr = !inStr; continue; }
+    if (inStr) continue;
+    if (c === '{') depth++;
+    if (c === '}') { depth--; if (depth === 0) lastClose = i; }
   }
+  if (lastClose > 0) {
+    try { return JSON.parse(cleaned.slice(0, lastClose + 1)); } catch (e) {}
+  }
+
+  // Vis tiek nepilnas — apkarpome nutrūkusį paskutinį lauką/elementą ir uždarome skliaustus
+  if (depth > 0) {
+    let attempt = cleaned;
+    attempt = attempt.replace(/,\s*"[^"]*":\s*"[^"]*$/, '');
+    attempt = attempt.replace(/,\s*"[^"]*":?\s*$/, '');
+    attempt = attempt.replace(/,\s*\{[^{}]*$/, '');
+    attempt = attempt.replace(/,\s*$/, '');
+    let closeDepth = depth;
+    while (closeDepth-- > 0) attempt += '}';
+    try { return JSON.parse(attempt); } catch (e) {}
+  }
+
+  console.error('JSON parse failed completely');
+  return fallback;
 }
 
 function buildProfileContext(profile) {
@@ -262,7 +288,7 @@ Grąžink TIKSLIAI tokios struktūros JSON (jei nėra informacijos — rašyk "N
 
 Pastaba: ši analizė nėra galutinė teisinė išvada — tai praktinis sprendimų ir rizikų įrankis tiekėjui.`;
 
-    const aiRes = await callClaude(system, userMsg, 8000);
+    const aiRes = await callClaude(system, userMsg, 16000);
     const result = parseJSON(aiRes, null);
 
     if (!result || !result.pavadinimas) {
