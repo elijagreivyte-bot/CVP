@@ -19,7 +19,7 @@ const commonFields = {
 // ═══════════════════════════════════════════════════════════════
 
 const analyzeRequestSchema = Joi.object({
-  text: Joi.string().min(100).max(500000).required(),
+  text: Joi.string().min(100).max(2000000).required(),
   documentName: Joi.string().max(255),
   projectId: Joi.string().uuid(),
   companyProfile: Joi.object({
@@ -61,14 +61,14 @@ const loginSchema = Joi.object({
 
 const profileSchema = Joi.object({
   companyProfile: Joi.object({
-    name: Joi.string().max(255),
-    sector: Joi.string().max(100),
-    size: Joi.string().max(50),
-    specialization: Joi.string().max(500),
-    experience: Joi.string().max(500),
-    certificates: Joi.string().max(500),
-    revenue: Joi.string().max(100)
-  }).required()
+    name: Joi.string().max(255).allow(''),
+    sector: Joi.string().max(100).allow(''),
+    size: Joi.string().max(50).allow(''),
+    specialization: Joi.string().max(500).allow(''),
+    experience: Joi.string().max(500).allow(''),
+    certificates: Joi.string().max(500).allow(''),
+    revenue: Joi.string().max(100).allow('')
+  }).unknown(true).required()
 });
 
 // ═══════════════════════════════════════════════════════════════
