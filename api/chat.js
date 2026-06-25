@@ -91,7 +91,7 @@ Taisyklės:
         'anthropic-version': '2023-06-01'
       },
       body: JSON.stringify({
-        model: 'claude-3-5-sonnet-20241022',
+        model: 'claude-sonnet-4-6',
         max_tokens: 4000,
         temperature: mode === 'chat' ? 0.3 : 0,
         system: systemPrompt,
@@ -100,8 +100,16 @@ Taisyklės:
     });
 
     if (!response.ok) {
-      const err = await response.text();
-      throw serverError('AI klaida: ' + err.slice(0, 200));
+      const errText = await response.text();
+      logger.error('Anthropic API error in chat:', errText.slice(0, 300));
+      let userMsg = 'AI asistentas laikinai neprieinamas. Bandykite dar kartą po minutės.';
+      try {
+        const errJson = JSON.parse(errText);
+        if (errJson?.error?.type === 'overloaded_error') userMsg = 'AI asistentas šiuo metu perkrautas. Bandykite po kelių minučių.';
+        else if (errJson?.error?.type === 'rate_limit_error') userMsg = 'Pasiektas užklausų limitas. Bandykite po minutės.';
+        else if (errJson?.error?.message?.includes('credit')) userMsg = 'Paslauga laikinai sustabdyta. Susisiekite su administracija.';
+      } catch {}
+      throw serverError(userMsg);
     }
 
     const data = await response.json();
