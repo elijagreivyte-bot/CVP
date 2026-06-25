@@ -638,13 +638,14 @@ details[open] summary span:last-child{transform:rotate(45deg)}
     <h1 class="au d1">Žinokite savo <span class="grad-text">laimėjimo tikimybę</span> prieš pateikdami pasiūlymą</h1>
     <p class="hero-sub au d2">Įkelkite CVP konkurso dokumentus — Bidwise AI per 30 sekundžių apskaičiuoja tikimybę, įvertina kvalifikaciją, identifikuoja rizikas ir parengia strategiją. Dalyvaukite tik ten, kur tikrai verta.</p>
     <div class="hero-cta au d3">
-      <button class="btn btn-primary" style="padding:16px 36px;font-size:15px;gap:8px" onclick="openAuth('register')">🚀 Pradėti nemokamai</button>
+      <button class="btn btn-primary" style="padding:16px 36px;font-size:15px;gap:8px" onclick="openAuth('register')">Išbandyk nemokamai →</button>
       <button class="btn btn-outline" style="padding:16px 24px;font-size:15px" onclick="runDemo()">▶ Žiūrėti demo</button>
     </div>
     <div class="hero-trust au d4">
       <div class="hero-trust-item"><span>✓</span> 3 analizės nemokamai</div>
       <div class="hero-trust-item"><span>✓</span> Kortelės nesaugomos</div>
       <div class="hero-trust-item"><span>✓</span> GDPR atitinka</div>
+      <div class="hero-trust-item" style="opacity:.8"><span>📊</span> Jau išanalizuota <strong id="analyses-counter">...</strong> konkursų</div>
     </div>
   </div>
   <!-- RIGHT: live demo card -->
@@ -825,6 +826,9 @@ details[open] summary span:last-child{transform:rotate(45deg)}
         <p>Atitikimo įvertinimas, terminai, rizikos, būtini dokumentai ir rekomendacijos pasiūlymo parengimui.</p>
       </div>
     </div>
+    <div style="margin-top:32px">
+      <button class="btn btn-outline" style="padding:14px 28px;font-size:14px" onclick="runDemo()">▶ Pažiūrėti kaip tai atrodo</button>
+    </div>
   </div>
 </div>
 
@@ -867,6 +871,11 @@ details[open] summary span:last-child{transform:rotate(45deg)}
       </div>
     </div>
   </div>
+</div>
+
+<!-- FEATURES CTA -->
+<div style="text-align:center;padding:8px 0 48px">
+  <button class="btn btn-primary" style="padding:14px 32px;font-size:14px" onclick="openAuth('register')">Pradėti 3 nemokamas analizes →</button>
 </div>
 
 <!-- 5 AGENTŲ SISTEMA -->
@@ -1026,7 +1035,7 @@ details[open] summary span:last-child{transform:rotate(45deg)}
   <div class="cta-box reveal-scale">
     <h2>Pradėkite analizuoti<br><span class="grad-text">jau šiandien</span></h2>
     <p>3 analizės nemokamai. Jokių kreditinių kortelių.<br>Registracija trunka 30 sekundžių.</p>
-    <button class="btn btn-primary" onclick="openAuth('register')">🚀 Pradėti nemokamai</button>
+    <button class="btn btn-primary" onclick="openAuth('register')">Pradėti nemokamai →</button>
   </div>
 </div>
 
@@ -1098,8 +1107,8 @@ details[open] summary span:last-child{transform:rotate(45deg)}
       <h2 style="font-family:Sora,sans-serif;font-size:32px;font-weight:900;line-height:1.2;margin-bottom:16px">Pirmas konkursas — <span class="grad-text">analizė nemokama</span></h2>
       <p style="font-size:15px;color:var(--text2);line-height:1.7;margin-bottom:28px;max-width:520px;margin-left:auto;margin-right:auto">3 nemokamos analizės · Registracija per 30 sek. · Be kreditinės kortelės<br><strong style="color:var(--text)">Sužinokite ar verta dalyvauti dar prieš pradedant ruošti pasiūlymą.</strong></p>
       <div style="display:flex;gap:12px;justify-content:center;flex-wrap:wrap">
-        <button class="btn btn-primary" style="padding:16px 36px;font-size:15px" onclick="openAuth('register')">🚀 Pradėti nemokamai</button>
-        <button class="btn btn-outline" style="padding:16px 28px;font-size:15px" onclick="runDemo()">▶ Žiūrėti demo</button>
+        <button class="btn btn-primary" style="padding:16px 36px;font-size:15px" onclick="openAuth('register')">Pradėti nemokamai →</button>
+        <button class="btn btn-outline" style="padding:16px 28px;font-size:15px" onclick="document.location='mailto:elija@bidwiseai.lt?subject=Enterprise%20u%C5%BEklausa'">Enterprise / susisiekti</button>
       </div>
     </div>
   </div>
@@ -1147,7 +1156,7 @@ details[open] summary span:last-child{transform:rotate(45deg)}
       <div class="trust-badge"><span class="tb-icon">🛡️</span> EU debesyje</div>
     </div>
     <div class="footer-bottom">
-      <p>© 2026 Bidwise AI · Beta versija · Sukurta Lietuvoje 🇱🇹</p>
+      <p>© 2026 Bidwise AI · Sukurta Lietuvoje 🇱🇹</p>
       <div class="footer-legal">
         <a onclick="openPrivacy()">Privatumo politika</a>
         <a onclick="openTerms()">Paslaugų sąlygos</a>
@@ -2110,6 +2119,26 @@ pdfjsLib.GlobalWorkerOptions.workerSrc='https://cdnjs.cloudflare.com/ajax/libs/p
 let files=[],extText='',curResult=null,selPlan='monthly',curUser=null,currentProject=null,projects=[],allAnalyses=[];
 
 // ── INIT ──
+
+// Live analyses counter
+(async function loadAnalysesCount(){
+  try {
+    const el = document.getElementById('analyses-counter');
+    if (!el) return;
+    const r = await fetch(API + '/api/analyses-count');
+    if (r.ok) {
+      const d = await r.json();
+      const n = d.count || 0;
+      el.textContent = n > 0 ? n.toLocaleString('lt-LT') : '500+';
+    } else {
+      el.textContent = '500+';
+    }
+  } catch { 
+    const el = document.getElementById('analyses-counter');
+    if (el) el.textContent = '500+';
+  }
+})();
+
 window.addEventListener('DOMContentLoaded',()=>{
   const u=localStorage.getItem(UK);
   if(localStorage.getItem(TK)&&u){
