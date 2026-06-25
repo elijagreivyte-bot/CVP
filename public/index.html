@@ -596,6 +596,8 @@ footer{background:var(--navy2);border-top:1px solid var(--border);padding:48px 3
 .stagger-reveal.visible>*:nth-child(6){opacity:1;transform:none;transition-delay:.55s}
 @keyframes glowPulse{0%,100%{text-shadow:0 0 0 transparent}50%{text-shadow:0 0 40px rgba(59,130,246,.25)}}
 .section-title.visible .grad-text{animation:glowPulse 3s ease-in-out 1s}
+details summary span:last-child{transition:transform .2s}
+details[open] summary span:last-child{transform:rotate(45deg)}
 </style>
 </head>
 <body>
@@ -683,7 +685,7 @@ footer{background:var(--navy2);border-top:1px solid var(--border);padding:48px 3
           <span class="hdc-tag ok">Kaina 60%</span>
           <span class="hdc-tag ok">Patirtis atitinka</span>
           <span class="hdc-tag warn">Baudos ↑</span>
-          <span class="hdc-tag">48 000 €</span>
+          <span class="hdc-tag">Vertė: 48 000 €</span>
         </div>
       </div>
       <div class="hero-float-2">📊 78% laimėjimo šansas</div>
@@ -896,7 +898,7 @@ footer{background:var(--navy2);border-top:1px solid var(--border);padding:48px 3
       <div style="display:flex;gap:18px;align-items:flex-start;background:var(--card);border:1px solid var(--border);border-radius:14px;padding:20px 24px">
         <div style="font-size:28px;flex-shrink:0">💰</div>
         <div>
-          <h4 style="font-family:Sora,sans-serif;font-size:15px;font-weight:700;color:var(--text);margin-bottom:4px">3. Kainodaron agentas</h4>
+          <h4 style="font-family:Sora,sans-serif;font-size:15px;font-weight:700;color:var(--text);margin-bottom:4px">3. Kainodaros agentas</h4>
           <p style="font-size:13px;color:var(--text2);line-height:1.6">Analizuoja vertinimo kriterijus ir svorius. Pataria kaip formuoti kainą kad gautumėte daugiausiai taškų neprarandant pelno.</p>
         </div>
       </div>
@@ -1108,7 +1110,7 @@ footer{background:var(--navy2);border-top:1px solid var(--border);padding:48px 3
   <div class="footer-inner">
     <div class="footer-top">
       <div class="footer-brand">
-        <div class="footer-brand-name">Bidwise <span class="grad-text">AI</span> <span style="font-size:11px;background:rgba(245,158,11,.15);color:#fbbf24;border-radius:6px;padding:2px 8px;vertical-align:middle">BETA</span></div>
+        <div class="footer-brand-name">Bidwise <span class="grad-text">AI</span></div>
         <p>AI platforma viešųjų pirkimų analizei: dokumentų nuskaitymas, kvalifikacijos atitikimo vertinimas, rizikų identifikavimas ir laimėjimo tikimybės skaičiavimas.</p>
         <div style="display:flex;align-items:center;gap:8px;margin-top:14px;font-size:12px;color:var(--text2)">
           <span style="width:8px;height:8px;border-radius:50%;background:#10b981;box-shadow:0 0 8px #10b981;display:inline-block"></span>
@@ -1290,7 +1292,7 @@ footer{background:var(--navy2);border-top:1px solid var(--border);padding:48px 3
       <h3>1. Duomenų valdytojas</h3>
       <p>Jūsų asmens duomenų valdytojas yra Bidwise AI projekto valdytojas (toliau – „mes", „mūsų").</p>
       <p>Kontaktinis el. paštas: <strong>elija@bidwiseai.lt</strong></p>
-      <div style="background:rgba(245,158,11,.08);border:1px solid rgba(245,158,11,.2);border-radius:8px;padding:10px 14px;margin-top:10px;font-size:12px;color:var(--text2)">⚠️ Bidwise AI šiuo metu yra <strong>beta versija</strong>. Paslauga teikiama testavimo tikslais. Komercinė veikla pradedama registravus verslą.</div>
+      <div style="background:rgba(245,158,11,.08);border:1px solid rgba(245,158,11,.2);border-radius:8px;padding:10px 14px;margin-top:10px;font-size:12px;color:var(--text2)">⚠️ Bidwise AI šiuo metu yra <strong>ankstyvo priėjimo versija</strong>. Paslauga teikiama aktyviai tobulinama.</div>
 
       <h3>2. Kokie duomenys renkami</h3>
       <p>Registracijos metu renkame:</p>
@@ -1395,8 +1397,8 @@ footer{background:var(--navy2);border-top:1px solid var(--border);padding:48px 3
 
       <h3>4. Pro planas ir mokėjimai</h3>
       <ul>
-        <li>Pro planas suteikia neribotą analizių skaičių</li>
-        <li>Kaina: 29 EUR/mėn. arba 249 EUR/metus</li>
+        <li>Pro planas suteikia iki 20 analizių per mėnesį</li>
+        <li>Kaina: 49 EUR/mėn. arba 340 EUR/metus</li>
         <li>Mokėjimai tvarkomi per saugius mokėjimo tarpininkus</li>
         <li>Prenumerata atnaujinama automatiškai iki atšaukimo</li>
         <li>Atšaukti galima bet kuriuo metu</li>
@@ -1418,7 +1420,7 @@ footer{background:var(--navy2);border-top:1px solid var(--border);padding:48px 3
       <p>Bidwise AI platforma ir jos turinys priklauso mums. Jūsų įkelti dokumentai lieka jūsų nuosavybe. Generuotos analizės priklauso jums.</p>
 
       <h3>8. Atsakomybės ribojimas</h3>
-      <p>Bidwise AI teikia analitinę informaciją kaip <strong>pagalbinę priemonę</strong>, o ne kaip teisinę ar finansinę konsultaciją. Galutiniai sprendimai dėl konkursų dalyvaimo priimami jūsų atsakomybe. Negarantuojame analizės tikslumo ar laimėjimo.</p>
+      <p>Bidwise AI teikia analitinę informaciją kaip <strong>pagalbinę priemonę</strong>, o ne kaip teisinę ar finansinę konsultaciją. Galutiniai sprendimai dėl konkursų dalyvavimo priimami jūsų atsakomybe. Negarantuojame analizės tikslumo ar laimėjimo.</p>
 
       <h3>9. Paskyros panaikinimas</h3>
       <p>Turime teisę sustabdyti ar panaikinti paskyrą pažeidus šias Sąlygas. Jūs bet kuriuo metu galite ištrinti paskyrą kreipdamiesi į elija@bidwiseai.lt.</p>
@@ -1819,7 +1821,7 @@ footer{background:var(--navy2);border-top:1px solid var(--border);padding:48px 3
         <div style="display:flex;flex-direction:column;gap:12px">
           <div style="display:flex;gap:12px;align-items:flex-start"><div style="background:rgba(59,130,246,.15);color:var(--blue3);width:24px;height:24px;border-radius:50%;display:flex;align-items:center;justify-content:center;font-size:12px;font-weight:700;flex-shrink:0">1</div><p style="font-size:13px;color:var(--text2);line-height:1.6">Atidarykite <strong>Sutarčių duomenis</strong> ir filtruokite pagal BVPŽ kodą arba perkančiąją organizaciją</p></div>
           <div style="display:flex;gap:12px;align-items:flex-start"><div style="background:rgba(59,130,246,.15);color:var(--blue3);width:24px;height:24px;border-radius:50%;display:flex;align-items:center;justify-content:center;font-size:12px;font-weight:700;flex-shrink:0">2</div><p style="font-size:13px;color:var(--text2);line-height:1.6">Pažiūrėkite <strong>kas laimėjo panašius konkursus</strong> ir už kokią kainą — tai parodys realų rinkos lygį</p></div>
-          <div style="display:flex;gap:12px;align-items:flex-start"><div style="background:rgba(59,130,246,.15);color:var(--blue3);width:24px;height:24px;border-radius:50%;display:flex;align-items:center;justify-content:center;font-size:12px;font-weight:700;flex-shrink:0">3</div><p style="font-size:13px;color:var(--text2);line-height:1.6">Pastebėkite <strong>laimėtojų kainodaron tendencijas</strong> — ar laimi pigiausi, ar geriausios kokybės</p></div>
+          <div style="display:flex;gap:12px;align-items:flex-start"><div style="background:rgba(59,130,246,.15);color:var(--blue3);width:24px;height:24px;border-radius:50%;display:flex;align-items:center;justify-content:center;font-size:12px;font-weight:700;flex-shrink:0">3</div><p style="font-size:13px;color:var(--text2);line-height:1.6">Pastebėkite <strong>laimėtojų kainodaros tendencijas</strong> — ar laimi pigiausi, ar geriausios kokybės</p></div>
           <div style="display:flex;gap:12px;align-items:flex-start"><div style="background:rgba(16,185,129,.15);color:var(--success);width:24px;height:24px;border-radius:50%;display:flex;align-items:center;justify-content:center;font-size:12px;font-weight:700;flex-shrink:0">4</div><p style="font-size:13px;color:var(--text2);line-height:1.6">Grįžkite į <strong>Bidwise analizę</strong> ir pritaikykite žinias formuodami konkurencingą pasiūlymą</p></div>
         </div>
       </div>
@@ -4998,7 +5000,7 @@ const AI_STEPS = [
   'Nuskaitomas tekstas (OCR jei reikia)...',
   '🤖 Agentas 1: dokumentų struktūros analizė',
   '🤖 Agentas 2: kvalifikacijos reikalavimų tikrinimas',
-  '🤖 Agentas 3: kainodaron strategija',
+  '🤖 Agentas 3: kainodaros strategija',
   '🤖 Agentas 4: rizikų ir paslėptų sąlygų paieška',
   '🤖 Agentas 5: laimėjimo tikimybės sintezė',
   'Generuojama personalizuota strategija...',
