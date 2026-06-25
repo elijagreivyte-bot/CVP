@@ -473,12 +473,12 @@ footer{background:var(--navy2);border-top:1px solid var(--border);padding:48px 3
 .proj-del:hover{color:var(--danger)}
 
 /* CHAT */
-.chat-wrap{position:fixed;bottom:24px;right:24px;z-index:200;display:none}
+.chat-wrap{position:fixed;bottom:24px;right:24px;z-index:200;display:none;flex-direction:column;align-items:flex-end;gap:8px}
 .chat-wrap.open{display:block}
 #app.open .chat-wrap{display:block}
 .chat-bubble{width:56px;height:56px;border-radius:50%;background:var(--grad);border:none;cursor:pointer;font-size:24px;box-shadow:0 4px 20px rgba(26,86,219,.4);transition:all .2s;display:flex;align-items:center;justify-content:center}
 .chat-bubble:hover{transform:scale(1.1)}
-.chat-panel{position:absolute;bottom:68px;right:0;width:380px;background:var(--navy2);border:1px solid var(--border);border-radius:20px;box-shadow:0 20px 60px rgba(0,0,0,.5);display:none;flex-direction:column;overflow:hidden;max-height:520px}
+.chat-panel{position:fixed;bottom:24px;right:24px;width:400px;background:var(--navy2);border:1px solid var(--border);border-radius:20px;box-shadow:0 20px 60px rgba(0,0,0,.5);display:none;flex-direction:column;overflow:hidden;max-height:580px;z-index:201}
 .chat-panel.show{display:flex}
 .chat-hdr{padding:16px 18px;border-bottom:1px solid var(--border);display:flex;justify-content:space-between;align-items:center;flex-shrink:0}
 .chat-hdr h4{font-family:Sora,sans-serif;font-size:14px;font-weight:700;margin:0}
@@ -1694,6 +1694,13 @@ details[open] summary span:last-child{transform:rotate(45deg)}
       </div>
     </div>
 
+    <!-- EMPTY STATE (shown when 0 analyses) -->
+    <div id="dash-empty" style="display:none;background:linear-gradient(135deg,rgba(26,86,219,.06),rgba(124,58,237,.06));border:1px solid rgba(59,130,246,.15);border-radius:16px;padding:40px 32px;text-align:center;margin-bottom:24px">
+      <div style="font-size:48px;margin-bottom:16px">📄</div>
+      <h3 style="font-family:Sora,sans-serif;font-size:18px;font-weight:800;margin-bottom:8px">Jūs dar neatlikote nė vienos analizės</h3>
+      <p style="font-size:13px;color:var(--text2);line-height:1.7;margin-bottom:20px;max-width:420px;margin-left:auto;margin-right:auto">Įkelkite pirmą CVP konkursą — per 30 sekundžių gausite tikimybės balą, rizikų sąrašą, kvalifikacijos atitikimą ir pasiūlymo parengimo gidą.</p>
+      <button class="btn btn-primary" onclick="pg('analyze')">Atlikti pirmą analizę →</button>
+    </div>
     <!-- TWO COLUMNS -->
     <div style="display:grid;grid-template-columns:1fr 1fr;gap:18px;margin-bottom:24px" id="dash-grid">
       <!-- SCORE DISTRIBUTION -->
@@ -2915,11 +2922,12 @@ function renderResult(r){
       </div>
     </div>
 
-    <div class="r-cards" style="margin-bottom:16px">
-      <div class="r-card"><div style="font-size:11px;color:var(--text3);margin-bottom:4px">Tiekėjo tinkamumas</div><div style="font-size:22px;font-weight:800">${sub.tinkamumas??'–'}${typeof sub.tinkamumas==='number'?'%':''}</div></div>
-      <div class="r-card"><div style="font-size:11px;color:var(--text3);margin-bottom:4px">Konkurso patrauklumas</div><div style="font-size:22px;font-weight:800">${sub.patrauklumas??'–'}${typeof sub.patrauklumas==='number'?'%':''}</div></div>
-      <div class="r-card"><div style="font-size:11px;color:var(--text3);margin-bottom:4px">Rizikos lygis</div><div style="font-size:22px;font-weight:800">${sub.rizikosLygis||'–'}</div></div>
-      <div class="r-card"><div style="font-size:11px;color:var(--text3);margin-bottom:4px">Laimėjimo potencialas</div><div style="font-size:22px;font-weight:800">${sub.laimejimoPotencialas??'–'}${typeof sub.laimejimoPotencialas==='number'?'%':''}</div></div>
+    <div style="margin-bottom:16px;font-size:12px;color:var(--text3);display:flex;gap:6px;flex-wrap:wrap;align-items:center">
+      <span style="color:var(--text2);font-weight:600">Detaliau:</span>
+      <span style="background:var(--card);border:1px solid var(--border);border-radius:6px;padding:3px 8px">Tinkamumas: <strong>${sub.tinkamumas??'–'}${typeof sub.tinkamumas==='number'?'%':''}</strong></span>
+      <span style="background:var(--card);border:1px solid var(--border);border-radius:6px;padding:3px 8px">Patrauklumas: <strong>${sub.patrauklumas??'–'}${typeof sub.patrauklumas==='number'?'%':''}</strong></span>
+      <span style="background:var(--card);border:1px solid var(--border);border-radius:6px;padding:3px 8px">Potencialas: <strong>${sub.laimejimoPotencialas??'–'}${typeof sub.laimejimoPotencialas==='number'?'%':''}</strong></span>
+      <span style="background:var(--card);border:1px solid var(--border);border-radius:6px;padding:3px 8px">Rizika: <strong>${sub.rizikosLygis||'–'}</strong></span>
     </div>
 
     <div class="r-cards">
@@ -4765,6 +4773,11 @@ async function renderDashboard(){
 function renderDashStats(items){
   const total = items.length;
   document.getElementById('stat-total').textContent = total;
+  // Show empty state when no analyses
+  const emptyEl = document.getElementById('dash-empty');
+  const gridEl = document.getElementById('dash-grid');
+  if (emptyEl) emptyEl.style.display = total === 0 ? 'block' : 'none';
+  if (gridEl) gridEl.style.display = total === 0 ? 'none' : 'grid';
 
   // Average score
   const avgs = items.filter(a => a.score != null).map(a => a.score);
