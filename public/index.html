@@ -1172,7 +1172,7 @@ details[open] summary span:last-child{transform:rotate(45deg)}
       <div class="trust-badge"><span class="tb-icon">🔒</span> SSL šifravimas</div>
       <div class="trust-badge"><span class="tb-icon">🇪🇺</span> GDPR / BDAR</div>
       <div class="trust-badge"><span class="tb-icon">🤖</span> Dokumentai nenaudojami AI mokymui</div>
-      <div class="trust-badge"><span class="tb-icon">🛡️</span> EU debesyje</div>
+      <div class="trust-badge"><span class="tb-icon">🛡️</span> ES infrastruktūra</div>
     </div>
     <div class="footer-bottom">
       <p>© 2026 Bidwise AI · Sukurta Lietuvoje 🇱🇹</p>
@@ -1418,7 +1418,7 @@ details[open] summary span:last-child{transform:rotate(45deg)}
     <div class="legal-header">
       <div>
         <h2>🔒 Privatumo politika</h2>
-        <p>Atnaujinta: 2025 m. sausio 1 d.</p>
+        <p>Atnaujinta: 2026 m. birželio 28 d.</p>
       </div>
       <button class="legal-close" onclick="closePrivacy()">✕ Uždaryti</button>
     </div>
@@ -1428,7 +1428,7 @@ details[open] summary span:last-child{transform:rotate(45deg)}
         <strong>Jūsų įkelti dokumentai NIEKADA nėra naudojami AI modelių apmokymui.</strong> Mes naudojame Anthropic Claude API, kuri pagal sutartį užtikrina, kad jūsų duomenys nebus naudojami modelių mokymui ar kitiems tikslams.
       </p>
       <p style="background:rgba(16,185,129,.04);border:1px solid rgba(16,185,129,.15);border-radius:10px;padding:14px 18px;margin-bottom:24px">
-        <strong>Įkelti pirkimo dokumentai automatiškai ištrinami iš mūsų serverių iškart po analizės.</strong> Mūsų duomenų bazėje saugomi tik analizės rezultatai (struktūruoti duomenys), nuorodos į originalius failus neišlieka. Galite bet kada ištrinti visas savo analizes iš paskyros nustatymų.
+        <strong>Dokumentų tekstas ištraukiamas jūsų naršyklėje — originalūs failai į mūsų serverius neįkeliami.</strong> Į duomenų bazę (Supabase, ES) patenka analizės rezultatai; o tų analizių, kurias tęsiate pokalbyje su asistentu, — ir dokumento tekstas bei pokalbio žinutės, kad asistentas išlaikytų kontekstą. Visa tai galite bet kada ištrinti pašalindami analizę arba paskyrą.
       </p>
       <h3>1. Duomenų valdytojas</h3>
       <p>Jūsų asmens duomenų valdytojas yra Bidwise AI projekto valdytojas (toliau – „mes", „mūsų").</p>
@@ -1449,7 +1449,7 @@ details[open] summary span:last-child{transform:rotate(45deg)}
         <li>Projektų duomenis</li>
         <li>Naudojimosi statistiką (analizių skaičius)</li>
       </ul>
-      <p><strong>Įkeltų dokumentų tekstas nėra saugomas</strong> — jis perduodamas AI analizei ir po to ištrinamas.</p>
+      <p><strong>Dokumentų tekstas:</strong> ištraukiamas naršyklėje ir perduodamas AI analizei. Tų analizių, kurias tęsiate pokalbyje su asistentu, dokumento tekstas ir pokalbio žinutės saugomi jūsų paskyroje (Supabase, ES), kad būtų išlaikytas kontekstas. Originalūs failai į serverius neįkeliami.</p>
 
       <h3>3. Duomenų naudojimo tikslas</h3>
       <ul>
@@ -1471,7 +1471,7 @@ details[open] summary span:last-child{transform:rotate(45deg)}
       <ul>
         <li>Paskyros duomenys saugomi iki paskyros ištrynimo</li>
         <li>Analizių istorija — iki paskyros ištrynimo</li>
-        <li>Įkelti dokumentai — neišsaugomi</li>
+        <li>Dokumentų tekstas ir pokalbiai — saugomi kartu su analize iki jos arba paskyros ištrynimo; originalūs failai neįkeliami</li>
       </ul>
 
       <h3>6. Jūsų teisės</h3>
@@ -1511,7 +1511,7 @@ details[open] summary span:last-child{transform:rotate(45deg)}
     <div class="legal-header">
       <div>
         <h2>📋 Paslaugų sąlygos</h2>
-        <p>Atnaujinta: 2025 m. sausio 1 d.</p>
+        <p>Atnaujinta: 2026 m. birželio 28 d.</p>
       </div>
       <button class="legal-close" onclick="closeTerms()">✕ Uždaryti</button>
     </div>
@@ -2138,7 +2138,7 @@ details[open] summary span:last-child{transform:rotate(45deg)}
     <p>Visa komunikacija tarp jūsų naršyklės ir mūsų serverių šifruojama naudojant TLS/SSL (HTTPS). Slaptažodžiai saugomi tik bcrypt hash pavidalu — net mes negalime jų matyti.</p>
 
     <h3>Dokumentų apsauga</h3>
-    <p>Įkelti pirkimo dokumentai apdorojami analizei ir <strong>automatiškai ištrinami iš serverių iškart po analizės</strong>. Mūsų duomenų bazėje saugomi tik struktūruoti analizės rezultatai, ne originalūs failai.</p>
+    <p>Dokumentų tekstas ištraukiamas jūsų naršyklėje, todėl <strong>originalūs failai į serverius neįkeliami</strong>. Saugomi struktūruoti analizės rezultatai, o tęsiamų pokalbių atveju — ir dokumento tekstas bei žinutės (Supabase, ES), kuriuos galite bet kada ištrinti.</p>
 
     <h3>Infrastruktūra</h3>
     <p>Sistema veikia ES teritorijoje esančiuose serveriuose (Vercel + Supabase). Duomenys neperduodami už ES ribų be tinkamų apsaugos priemonių.</p>
