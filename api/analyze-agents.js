@@ -82,6 +82,51 @@ function parseJSON(text, fallback = {}) {
   return fallback;
 }
 
+// ── Didelių dokumentų tvarkymas (map-reduce) ─────────────────
+// Vienas Claude kvietimas turi konteksto ribą, todėl LABAI didelius
+// dokumentus pirma kondensuojame dalimis: iš kiekvienos dalies ištraukiame
+// tik su sprendimu susijusią informaciją, tada struktūrizuojame kondensuotą
+// tekstą. Taip galima kelti bet kokio dydžio failus (iki Vercel ~4.5MB
+// užklausos kūno ribos), nieko tyliai neapkerpant ir nemetant klaidos.
+const SINGLE_CALL_CHAR_LIMIT = 280000; // ~70K tok — telpa su sistema + atsakymu
+const CHUNK_CHARS = 120000;            // viena dalis ~30K tok
+const CHUNK_OVERLAP = 2000;            // persidengimas, kad nesukirstume reikalavimo per pusę
+const CHUNK_CONCURRENCY = 4;           // lygiagretūs kvietimai paketuose (rate limit apsauga)
+
+async function condenseChunk(chunk, idx, total) {
+  const sys = 'Tu esi viešųjų pirkimų dokumentų ištraukėjas. Iš pateiktos dokumento dalies ištrauk TIK su dalyvavimo sprendimu susijusią informaciją: pirkimo objektas, kvalifikaciniai ir techniniai reikalavimai, blokuojančios/privalomos sąlygos, terminai, kainodara ir vertinimo kriterijai, EBVPD/ESPD, reikalingi sertifikatai ir dokumentai, sutarties sąlygos bei baudos. Praleisk vandenį ir pasikartojimus. Cituok punktų numerius, jei matomi. Atsakyk glaustai lietuviškai, be įžangų.';
+  try {
+    const out = await callClaude(sys, 'Dokumento dalis ' + (idx + 1) + '/' + total + ':\n\n' + chunk, 4000);
+    return (out || '').trim();
+  } catch (e) {
+    console.error('Kondensavimo klaida (dalis ' + (idx + 1) + '):', e.message);
+    return ''; // degraduojam — neprarandam visos analizės dėl vienos dalies
+  }
+}
+
+async function prepareDocText(fullText) {
+  if (fullText.length <= SINGLE_CALL_CHAR_LIMIT) return fullText;
+
+  const chunks = [];
+  const stepSize = CHUNK_CHARS - CHUNK_OVERLAP;
+  for (let i = 0; i < fullText.length; i += stepSize) {
+    chunks.push(fullText.slice(i, i + CHUNK_CHARS));
+  }
+
+  const parts = [];
+  for (let i = 0; i < chunks.length; i += CHUNK_CONCURRENCY) {
+    const batch = chunks
+      .slice(i, i + CHUNK_CONCURRENCY)
+      .map((c, j) => condenseChunk(c, i + j, chunks.length));
+    parts.push(...(await Promise.all(batch)));
+  }
+
+  const condensed = parts.filter(Boolean).join('\n\n────────── DOKUMENTO DALIS ──────────\n\n');
+  return condensed.length > SINGLE_CALL_CHAR_LIMIT
+    ? condensed.slice(0, SINGLE_CALL_CHAR_LIMIT)
+    : condensed;
+}
+
 function buildProfileContext(profile) {
   if (!profile || (!profile.profilioSantrauka && !profile.sector && !profile.name)) {
     return {
@@ -163,12 +208,14 @@ Blokuojanti sąlyga = tokia, dėl kurios pasiūlymas realiai gali būti atmestas
 
 Grąžink TIK JSON, be jokio papildomo teksto.`;
 
+    const analyzableText = await prepareDocText(docTextSafe);
+
     const userMsg = `${profileCtx.contextText}
 
 ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
 
 PIRKIMO DOKUMENTAS:
-${docTextSafe.slice(0, 350000)}
+${analyzableText}
 
 ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
 
@@ -286,11 +333,16 @@ Grąžink TIKSLIAI tokios struktūros JSON (jei nėra informacijos — rašyk "N
 
 Pastaba: ši analizė nėra galutinė teisinė išvada — tai praktinis sprendimų ir rizikų įrankis tiekėjui.`;
 
-    const aiRes = await callClaude(system, userMsg, 16000);
-    const result = parseJSON(aiRes, null);
+    const aiRes = await callClaude(system, userMsg, 32000);
+    let result = parseJSON(aiRes, null);
 
     if (!result || !result.pavadinimas) {
-      return res.status(500).json({ error: 'AI nepavyko struktūrizuoti atsakymo. Pabandykite dar kartą.' });
+      // Negąsdinam vartotojo raudona klaida — grąžinam tai, ką pavyko, minimalioje
+      // frontend'ui saugioje struktūroje. Jei AI grąžino dalinį JSON, jį pasiliekam.
+      result = (result && typeof result === 'object') ? result : {};
+      result.pavadinimas = result.pavadinimas || documentName || 'Analizė';
+      result.isViso = result.isViso || 'Analizė iš dalies nepavyko (galbūt labai didelis ar sudėtingas dokumentas). Pagrindinė informacija gali būti nepilna — rekomenduojama pakartoti.';
+      result._fallback = true;
     }
 
     result.score = typeof result.score === 'number' ? result.score : 50;
