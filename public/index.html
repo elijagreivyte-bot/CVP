@@ -1180,7 +1180,7 @@ details[open] summary span:last-child{transform:rotate(45deg)}
       <div class="nav-logo-img"><img src="/public/logo.png" alt="Bidwise AI" onerror="this.parentElement.innerHTML='<span style=\'font-size:22px;font-weight:900;color:#1a56db\'>B</span>'"></div>
       <div class="nav-brand-text">
         <span class="nav-brand-name">Bidwise <span class="grad-text">AI</span></span>
-        <span class="nav-brand-sub">Viešųjų pirkimų gidas</span>
+        <span class="nav-brand-sub">Išmani CVP analizė &nbsp;<span style="background:rgba(245,158,11,.2);color:#fbbf24;border-radius:4px;padding:1px 6px;font-size:9px;letter-spacing:1px">BETA</span></span>
       </div>
     </div>
     <div style="display:flex;align-items:center;gap:8px">
@@ -4812,7 +4812,7 @@ function openChat(result){
   if(wall) wall.classList.toggle('hidden', pro);
   if(msgs){
     msgs.style.display = pro ? 'flex' : 'none';
-    if(pro) msgs.innerHTML = '<div class="cm cm-ai">Išanalizavau <strong>'+(result.pavadinimas||'šį konkursą')+'</strong>. Kuo galiu padėti?</div>';
+    if(pro) msgs.innerHTML = '<div class="cm cm-ai">Išanalizavau <strong>'+(result.pavadinimas||'šį konkursą')+'</strong>. Atsakinėsiu remdamasis šio konkurso dokumentų faktais ir viešųjų pirkimų teise. Jei informacijos dokumente nėra — pasakysiu. Kuo galiu padėti?</div>';
   }
   if(inp) inp.style.display = pro ? 'flex' : 'none';
   initAssistant();
@@ -5333,8 +5333,9 @@ function hideBlogArticles(){
     </div>
     <div id="chat-no-analysis" style="text-align:center;padding:20px 16px">
       <div style="font-size:28px;margin-bottom:8px">📄</div>
-      <p style="font-size:12px;color:var(--text2);line-height:1.5">Atlikite analizę — tada galėsite klausti AI apie konkursą</p>
-      <button class="btn btn-primary btn-sm" style="margin-top:8px;width:100%;justify-content:center" onclick="toggleChat();pg('analyze')">→ Pradėti analizę</button>
+      <p style="font-size:13px;font-weight:600;color:var(--text);margin-bottom:6px">Nėra įkelto konkurso</p>
+      <p style="font-size:12px;color:var(--text2);line-height:1.5">Atlikite analizę — tada AI atsakys remdamasis <strong>konkretaus konkurso dokumentų faktais</strong> ir viešųjų pirkimų teise.</p>
+      <button class="btn btn-primary btn-sm" style="margin-top:10px;width:100%;justify-content:center" onclick="toggleChat();pg('analyze')">→ Pradėti analizę</button>
     </div>
     <div id="chat-pro-wall" class="chat-pro-wall hidden">
       <div style="font-size:32px;margin-bottom:12px">🔒</div>
@@ -5342,7 +5343,7 @@ function hideBlogArticles(){
       <button class="btn btn-primary btn-sm" onclick="selP('pro');goChk()">Gauti Pro →</button>
     </div>
     <div id="chat-msgs" class="chat-msgs" style="display:none">
-      <div class="cm cm-ai">Sveiki! Aš galiu atsakyti į klausimus apie šį konkursą — reikalavimus, terminus, rizikas ar strategiją. Kuo galiu padėti?</div>
+      <div class="cm cm-ai">Sveiki! Atsakinėju remdamasis <strong>šio konkurso dokumentų analize</strong> ir Lietuvos viešųjų pirkimų teise. Jei informacijos dokumente nėra — taip ir pasakysiu. Kuo galiu padėti?</div>
     </div>
     <div class="chat-inp" id="chat-input-area" style="display:none">
       <textarea id="chat-q" placeholder="Klauskite apie konkursą..." rows="1" 
