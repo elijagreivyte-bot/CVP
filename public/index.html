@@ -482,24 +482,37 @@ footer{background:var(--navy2);border-top:1px solid var(--border);padding:48px 3
 #app.open .chat-wrap{display:block}
 .chat-bubble{width:56px;height:56px;border-radius:50%;background:var(--grad);border:none;cursor:pointer;font-size:24px;box-shadow:0 4px 20px rgba(26,86,219,.4);transition:all .2s;display:flex;align-items:center;justify-content:center}
 .chat-bubble:hover{transform:scale(1.1)}
-.chat-panel{position:fixed;bottom:24px;right:24px;width:400px;background:var(--navy2);border:1px solid var(--border);border-radius:20px;box-shadow:0 20px 60px rgba(0,0,0,.5);display:none;flex-direction:column;overflow:hidden;max-height:580px;z-index:201}
+.chat-panel{position:fixed;bottom:24px;right:24px;width:460px;background:var(--navy2);border:1px solid var(--border);border-radius:20px;box-shadow:0 20px 60px rgba(0,0,0,.5);display:none;flex-direction:column;overflow:hidden;height:min(720px,calc(100vh - 40px));max-height:calc(100vh - 40px);z-index:201;transition:width .2s ease,height .2s ease,right .2s ease,bottom .2s ease}
 .chat-panel.show{display:flex}
-.chat-hdr{padding:16px 18px;border-bottom:1px solid var(--border);display:flex;justify-content:space-between;align-items:center;flex-shrink:0}
+.chat-panel.fullscreen{width:min(960px,calc(100vw - 32px));height:calc(100vh - 32px);max-height:calc(100vh - 32px);right:16px;bottom:16px}
+.chat-hdr{padding:16px 18px;border-bottom:1px solid var(--border);display:flex;justify-content:space-between;align-items:center;flex-shrink:0;gap:10px}
 .chat-hdr h4{font-family:Sora,sans-serif;font-size:14px;font-weight:700;margin:0}
-.chat-hdr p{font-size:11px;color:var(--text2);margin:0}
-.chat-msgs{flex:1;overflow-y:auto;padding:16px;display:flex;flex-direction:column;gap:10px;min-height:200px}
+.chat-hdr p{font-size:11px;color:var(--text2);margin:0;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;max-width:240px}
+.chat-hdr-actions{display:flex;align-items:center;gap:2px;flex-shrink:0}
+.chat-hdr-btn{background:none;border:none;color:var(--text2);cursor:pointer;font-size:15px;padding:6px;border-radius:8px;line-height:1;display:flex;align-items:center;justify-content:center;transition:background .15s,color .15s}
+.chat-hdr-btn:hover{background:rgba(255,255,255,.06);color:var(--text)}
+.chat-msgs{flex:1;overflow-y:auto;padding:16px;display:flex;flex-direction:column;gap:10px;min-height:120px}
 .cm{max-width:88%;padding:10px 14px;border-radius:12px;font-size:13px;line-height:1.6;word-break:break-word;overflow-wrap:anywhere}
 .cm-user{background:var(--grad);color:#fff;align-self:flex-end;border-bottom-right-radius:4px}
 .cm-ai{background:rgba(255,255,255,.06);color:var(--text);align-self:flex-start;border-bottom-left-radius:4px}
 .cm-thinking{color:var(--text2);font-style:italic;animation:pulse 1.5s infinite}
-.chat-inp{padding:12px 14px;border-top:1px solid var(--border);display:flex;gap:8px;flex-shrink:0}
-.chat-inp textarea{flex:1;background:rgba(255,255,255,.05);border:1px solid var(--border);border-radius:10px;color:var(--text);font-family:Inter,sans-serif;font-size:13px;padding:8px 12px;outline:none;resize:none;line-height:1.5;max-height:80px}
+/* Pridėtų dokumentų lustai virš įvedimo lauko */
+.chat-attach-chips{display:none;flex-wrap:wrap;gap:6px;padding:8px 14px 0;flex-shrink:0}
+.chat-attach-chips.show{display:flex}
+.chat-chip{display:inline-flex;align-items:center;gap:6px;background:rgba(26,86,219,.14);border:1px solid rgba(26,86,219,.3);color:var(--text);font-size:11px;font-weight:600;padding:5px 8px 5px 10px;border-radius:8px;max-width:200px}
+.chat-chip span{white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.chat-chip button{background:none;border:none;color:var(--text2);cursor:pointer;font-size:14px;line-height:1;padding:0;flex-shrink:0}
+.chat-chip button:hover{color:var(--danger)}
+.chat-inp{padding:12px 14px;border-top:1px solid var(--border);display:flex;gap:8px;align-items:flex-end;flex-shrink:0}
+.chat-inp textarea{flex:1;background:rgba(255,255,255,.05);border:1px solid var(--border);border-radius:12px;color:var(--text);font-family:Inter,sans-serif;font-size:14px;padding:11px 14px;outline:none;resize:none;line-height:1.5;min-height:46px;max-height:180px}
 .chat-inp textarea:focus{border-color:var(--blue3)}
-.chat-inp button{background:var(--grad);border:none;color:#fff;width:38px;height:38px;border-radius:10px;cursor:pointer;font-size:16px;flex-shrink:0;align-self:flex-end}
+.chat-inp .chat-attach-btn{background:rgba(255,255,255,.06);border:1px solid var(--border);color:var(--text2);width:44px;height:46px;border-radius:12px;cursor:pointer;font-size:18px;flex-shrink:0;display:flex;align-items:center;justify-content:center;transition:background .15s,color .15s}
+.chat-inp .chat-attach-btn:hover{background:rgba(255,255,255,.1);color:var(--text)}
+.chat-inp .chat-send-btn{background:var(--grad);border:none;color:#fff;width:46px;height:46px;border-radius:12px;cursor:pointer;font-size:18px;flex-shrink:0}
 .chat-inp button:disabled{opacity:.5;cursor:not-allowed}
 .chat-pro-wall{text-align:center;padding:28px 20px}
 .chat-pro-wall p{font-size:13px;color:var(--text2);margin-bottom:16px;line-height:1.6}
-@media(max-width:768px){.chat-panel{width:calc(100vw - 32px);right:-8px}}
+@media(max-width:768px){.chat-panel{width:calc(100vw - 16px);height:calc(100vh - 90px);max-height:calc(100vh - 90px);right:8px;bottom:80px}.chat-panel.fullscreen{width:calc(100vw - 16px);height:calc(100vh - 16px);right:8px;bottom:8px}.chat-hdr p{max-width:150px}}
 
 /* RESPONSIVE */
 @media(max-width:768px){
@@ -530,7 +543,8 @@ footer{background:var(--navy2);border-top:1px solid var(--border);padding:48px 3
 .file-list { max-height: 280px; overflow-y: auto; padding-right: 4px; scrollbar-width: thin; }
 .file-list::-webkit-scrollbar { width: 6px; }
 .file-list::-webkit-scrollbar-thumb { background: rgba(255,255,255,.1); border-radius: 3px; }
-#chat-q, #asst-q { max-height: 120px; min-height: 38px; resize: none; transition: height .15s; }
+#chat-q { max-height: 180px; min-height: 46px; resize: none; transition: height .15s; }
+#asst-q { max-height: 160px; min-height: 38px; resize: none; transition: height .15s; }
 
 /* Sklandus perėjimas */
 #landing, #app { transition: opacity .25s ease; }
@@ -2242,6 +2256,7 @@ pdfjsLib.GlobalWorkerOptions.workerSrc='https://cdnjs.cloudflare.com/ajax/libs/p
 
 // ── STATE ──
 let files=[],extText='',curResult=null,selPlan='monthly',curUser=null,currentProject=null,projects=[],allAnalyses=[];
+let chatContext=null, chatHistory=[], chatAttachments=[];
 
 // ── INIT ──
 
@@ -4245,6 +4260,139 @@ async function sendChat(){
   }
 }
 
+// ══════════════════════════════════
+// CHAT: FAILŲ PRIDĖJIMAS / PATOGUMAS
+// ══════════════════════════════════
+
+// Pridėti dokumentus tiesiai pokalbyje. Tekstas ištraukiamas kliento pusėje
+// (extPDF/extDOCX/extZIP/extTXT) ir įdedamas į chatContext, kurį /api/chat
+// jau priima kaip kontekstą — backend keisti nereikia.
+async function chatAttachFiles(fileList){
+  const list = Array.from(fileList || []);
+  if(!list.length) return;
+  const btn = document.getElementById('chat-attach-btn');
+  const msgs = document.getElementById('chat-msgs');
+  const origLabel = btn ? btn.textContent : '📎';
+  if(btn){ btn.disabled = true; btn.textContent = '⏳'; }
+  if(msgs){
+    msgs.style.display = 'flex';
+    const noAn = document.getElementById('chat-no-analysis');
+    if(noAn) noAn.style.display = 'none';
+  }
+
+  let added = 0; const failed = [];
+  for(const f of list){
+    const name = (f.name || '').toLowerCase();
+    try{
+      let text = '';
+      if(name.endsWith('.pdf')) text = await extPDF(f);
+      else if(name.endsWith('.docx') || name.endsWith('.doc')) text = await extDOCX(f);
+      else if(name.endsWith('.zip')) text = await extZIP(f);
+      else if(name.endsWith('.txt')) text = await extTXT(f);
+      else { failed.push(f.name + ' (netinkamas formatas)'); continue; }
+
+      if(!text || !text.trim()){ failed.push(f.name + ' (nepavyko nuskaityti teksto)'); continue; }
+      // Nedubliuojam to paties failo
+      chatAttachments = chatAttachments.filter(a => a.name !== f.name);
+      chatAttachments.push({ name: f.name, text: text.trim() });
+      added++;
+    } catch(e){
+      console.warn('chatAttachFiles klaida:', f.name, e);
+      failed.push(f.name + ' (' + (e.message || 'klaida') + ')');
+    }
+  }
+
+  applyChatAttachmentsToContext();
+  renderChatChips();
+
+  if(added > 0 && msgs){
+    const names = chatAttachments.slice(-added).map(a => a.name).join(', ');
+    msgs.innerHTML += `<div class="cm cm-ai" style="background:rgba(34,197,94,.1);border:1px solid rgba(34,197,94,.2)">✓ <strong>Pridėta dokumentų: ${added}</strong><br><span style="font-size:12px;color:var(--text2)">${names.replace(/</g,'&lt;')}</span><br><br>Dabar galite klausti AI apie šiuos dokumentus.</div>`;
+    msgs.scrollTop = msgs.scrollHeight;
+    if(typeof toast === 'function') toast('Pridėta ' + added + ' dok. — AI dabar juos mato', 'success', 3500);
+  }
+  if(failed.length && typeof toast === 'function'){
+    toast('Nepavyko: ' + failed.join('; '), 'warn', 5000);
+  }
+
+  if(btn){ btn.disabled = false; btn.textContent = origLabel; }
+  const fi = document.getElementById('chat-attach-input');
+  if(fi) fi.value = '';
+}
+
+// Sujungia pridėtus dokumentus į chatContext (papildomas laukas _pridetiDokumentai)
+function applyChatAttachmentsToContext(){
+  const combined = chatAttachments
+    .map(a => `\n═══ PRIDĖTAS DOKUMENTAS: ${a.name} ═══\n${a.text}`)
+    .join('\n');
+
+  if(chatContext && typeof chatContext === 'object'){
+    chatContext = Object.assign({}, chatContext, { _pridetiDokumentai: combined });
+  } else if(typeof chatContext === 'string' && chatContext.trim()){
+    // jei kontekstas buvo tekstas — nepametam jo
+    chatContext = { _bazinisKontekstas: chatContext, _pridetiDokumentai: combined };
+  } else {
+    chatContext = combined ? { _pridetiDokumentai: combined } : null;
+  }
+}
+
+// Atvaizduoja pridėtų dokumentų lustus virš įvedimo lauko
+function renderChatChips(){
+  const box = document.getElementById('chat-attach-chips');
+  if(!box) return;
+  if(!chatAttachments.length){
+    box.classList.remove('show');
+    box.innerHTML = '';
+    return;
+  }
+  box.classList.add('show');
+  box.innerHTML = chatAttachments.map((a, i) => {
+    const safe = (a.name || 'dokumentas').replace(/</g,'&lt;');
+    return `<div class="chat-chip" title="${safe}">📄 <span>${safe}</span><button onclick="removeChatAttachment(${i})" title="Pašalinti">×</button></div>`;
+  }).join('');
+}
+
+// Pašalina pridėtą dokumentą
+function removeChatAttachment(idx){
+  if(idx < 0 || idx >= chatAttachments.length) return;
+  chatAttachments.splice(idx, 1);
+  applyChatAttachmentsToContext();
+  renderChatChips();
+}
+
+// Išplečia / sumažina chat langą
+function toggleChatFullscreen(){
+  const panel = document.getElementById('chat-panel');
+  if(!panel) return;
+  panel.classList.toggle('fullscreen');
+  const btn = document.getElementById('chat-fs-btn');
+  if(btn) btn.title = panel.classList.contains('fullscreen') ? 'Sumažinti' : 'Išplėsti';
+  setTimeout(() => {
+    const inp = document.getElementById('chat-q');
+    if(inp) inp.focus();
+    const msgs = document.getElementById('chat-msgs');
+    if(msgs) msgs.scrollTop = msgs.scrollHeight;
+  }, 220);
+}
+
+// Išvalo pokalbį ekrane (DB istorija, jei tokia būtų, neliečiama)
+function clearChatUI(){
+  if((!chatHistory || !chatHistory.length) && !chatAttachments.length){
+    if(typeof toast === 'function') toast('Pokalbis jau tuščias', 'info', 2000);
+    return;
+  }
+  if(!confirm('Išvalyti šio pokalbio žinutes ir pridėtus dokumentus?')) return;
+  chatHistory = [];
+  chatAttachments = [];
+  applyChatAttachmentsToContext();
+  renderChatChips();
+  const msgs = document.getElementById('chat-msgs');
+  if(msgs){
+    msgs.innerHTML = '<div class="cm cm-ai">Pokalbis išvalytas. Kuo galiu padėti?</div>';
+    msgs.scrollTop = 0;
+  }
+}
+
 
 // ══════════════════════════════════
 // CVP.lt GATEWAY
@@ -4800,6 +4948,8 @@ async function sendFullChat(){
 function openChat(result){
   chatContext = result;
   chatHistory = [];
+  chatAttachments = [];
+  renderChatChips();
   const pro = (curUser && (curUser.plan==='pro' || curUser.plan==='team'));
   const msgs = document.getElementById('chat-msgs');
   const label = document.getElementById('chat-context-label');
@@ -5122,7 +5272,8 @@ function renderBVPZTree(){
 // Textarea auto-resize
 function autoResizeTextarea(el){
   el.style.height = 'auto';
-  el.style.height = Math.min(el.scrollHeight, 120) + 'px';
+  const cap = el.id === 'chat-q' ? 180 : 160;
+  el.style.height = Math.min(el.scrollHeight, cap) + 'px';
 }
 document.addEventListener('input', function(e){
   if(e.target.matches('#chat-q, #asst-q')) autoResizeTextarea(e.target);
@@ -5325,11 +5476,15 @@ function hideBlogArticles(){
 <div class="chat-wrap" id="chat-wrap">
   <div class="chat-panel" id="chat-panel">
     <div class="chat-hdr">
-      <div>
+      <div style="min-width:0">
         <h4>💬 AI Asistentas</h4>
         <p id="chat-context-label">Klauskite apie šį konkursą</p>
       </div>
-      <button onclick="toggleChat()" style="background:none;border:none;color:var(--text2);cursor:pointer;font-size:18px;padding:4px">✕</button>
+      <div class="chat-hdr-actions">
+        <button class="chat-hdr-btn" id="chat-clear-btn" onclick="clearChatUI()" title="Išvalyti pokalbį">🗑️</button>
+        <button class="chat-hdr-btn" id="chat-fs-btn" onclick="toggleChatFullscreen()" title="Išplėsti">⛶</button>
+        <button class="chat-hdr-btn" onclick="toggleChat()" title="Uždaryti">✕</button>
+      </div>
     </div>
     <div id="chat-no-analysis" style="text-align:center;padding:20px 16px">
       <div style="font-size:28px;margin-bottom:8px">📄</div>
@@ -5345,11 +5500,14 @@ function hideBlogArticles(){
     <div id="chat-msgs" class="chat-msgs" style="display:none">
       <div class="cm cm-ai">Sveiki! Atsakinėju remdamasis <strong>šio konkurso dokumentų analize</strong> ir Lietuvos viešųjų pirkimų teise. Jei informacijos dokumente nėra — taip ir pasakysiu. Kuo galiu padėti?</div>
     </div>
+    <div class="chat-attach-chips" id="chat-attach-chips"></div>
     <div class="chat-inp" id="chat-input-area" style="display:none">
-      <textarea id="chat-q" placeholder="Klauskite apie konkursą..." rows="1" 
-        oninput="this.style.height='auto';this.style.height=this.scrollHeight+'px'"
+      <input type="file" id="chat-attach-input" multiple accept=".pdf,.doc,.docx,.txt,.zip" style="display:none" onchange="chatAttachFiles(this.files)">
+      <button class="chat-attach-btn" id="chat-attach-btn" onclick="document.getElementById('chat-attach-input').click()" title="Pridėti dokumentus (PDF, Word, TXT, ZIP)">📎</button>
+      <textarea id="chat-q" placeholder="Klauskite apie konkursą... (Shift+Enter — nauja eilutė)" rows="1" 
+        oninput="autoResizeTextarea(this)"
         onkeydown="if(event.key==='Enter'&&!event.shiftKey){event.preventDefault();sendChat()}"></textarea>
-      <button onclick="sendChat()" id="chat-send-btn" title="Siųsti">↑</button>
+      <button class="chat-send-btn" onclick="sendChat()" id="chat-send-btn" title="Siųsti (Enter)">↑</button>
     </div>
   </div>
   <button class="chat-bubble" onclick="toggleChat()" title="AI Asistentas">💬</button>
