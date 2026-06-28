@@ -4,17 +4,8 @@
 // chat'e prideda papildomus dokumentus (PDF, SAK ir t.t.)
 // ═══════════════════════════════════════════════════════════
 const { createClient } = require('@supabase/supabase-js');
-const jwt = require('jsonwebtoken');
-
-const JWT_SECRET = process.env.JWT_SECRET || 'bidwise-secret-2025';
+const { verifyToken } = require('./security');
 const MAX_DOC_TEXT = 300000; // ~75K tokenų — saugumui ir vietai DB
-
-function verifyToken(req) {
-  const auth = req.headers.authorization || '';
-  const token = auth.replace('Bearer ', '');
-  if (!token) return null;
-  try { return jwt.verify(token, JWT_SECRET); } catch { return null; }
-}
 
 module.exports = async (req, res) => {
   res.setHeader('Access-Control-Allow-Origin', '*');
