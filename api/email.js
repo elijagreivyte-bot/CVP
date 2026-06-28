@@ -1,13 +1,5 @@
 const { createClient } = require('@supabase/supabase-js');
-const jwt = require('jsonwebtoken');
-const JWT_SECRET = process.env.JWT_SECRET || 'bidwise-secret-2025';
-
-function verifyToken(req) {
-  const auth = req.headers.authorization || '';
-  const token = auth.replace('Bearer ', '');
-  if (!token) return null;
-  try { return jwt.verify(token, JWT_SECRET); } catch { return null; }
-}
+const { verifyToken } = require('./security');
 
 async function sendViaResend(to, subject, html, from) {
   const fromAddr = from || process.env.EMAIL_FROM || 'Bidwise AI <onboarding@resend.dev>';
