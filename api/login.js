@@ -4,7 +4,7 @@ const { createClient } = require('@supabase/supabase-js');
 const bcrypt = require('bcryptjs');
 const jwt = require('jsonwebtoken');
 const { logger } = require('../middleware/logger');
-const { JWT_SECRET, applyCors } = require('./security');
+const { getJwtSecret, applyCors } = require('./security');
 
 module.exports = asyncHandler(async (req, res) => {
   applyCors(res);
@@ -29,7 +29,7 @@ module.exports = asyncHandler(async (req, res) => {
     throw authError('Neteisingas el. paštas arba slaptažodis');
   }
 
-  const token = jwt.sign({ id: user.id, email: user.email }, JWT_SECRET, { expiresIn: '30d' });
+  const token = jwt.sign({ id: user.id, email: user.email }, getJwtSecret(), { expiresIn: '30d' });
   logger.info('User logged in', { userId: user.id, email });
   
   return res.status(200).json({
