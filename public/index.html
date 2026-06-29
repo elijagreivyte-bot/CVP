@@ -3054,7 +3054,8 @@ function renderResult(r){
       <div class="r-score-num ${scCl}">${sc}%</div>
       <div class="r-score-info">
         <div class="r-score-label">${r.scoreLabel||'Galimybių įvertinimas'}</div>
-        <div style="font-size:13px;color:var(--text2)">${r.pavadinimas||'–'}</div>
+        <div style="font-size:13px;color:var(--text2)">${(()=>{const t=(r.pavadinimas||'').trim();return (!t||/\.(zip|pdf|docx?|xlsx?)$/i.test(t))?'Konkurso analizė':t.replace(/</g,'&lt;');})()}</div>
+        ${r._fallback?'<div style="font-size:11px;color:var(--warn);margin-top:2px">⚠ Analizė dalinė — kai kurie laukai gali būti nepilni. Galite pakartoti arba klausti AI asistento.</div>':''}
         <div class="r-score-bar"><div class="r-score-fill" style="width:${sc}%;background:${scFill}"></div></div>
       </div>
     </div>
@@ -3402,6 +3403,67 @@ async function renderAcc(){
 
 function ri2(k,v){return `<div class="r-item"><span class="r-item-k">${k}</span><span class="r-item-v">${v||'–'}</span></div>`}
 function esc(v){return v?String(v).replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;').replace(/"/g,'&quot;'):''}
+
+// ── Markdown -> saugus HTML (kad chat'e nesimatytų **, |, ## ir pan.) ──
+function renderMd(raw){
+  if(raw==null) return '';
+  let t = String(raw).replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;');
+  const lines = t.split(/\r?\n/);
+  const out = [];
+  let i = 0;
+  const inline = (x) => x
+    .replace(/`([^`]+)`/g, '<code style="background:rgba(255,255,255,.08);padding:1px 5px;border-radius:4px;font-size:.92em">$1</code>')
+    .replace(/\*\*([^*]+)\*\*/g, '<strong>$1</strong>')
+    .replace(/(^|[^*])\*([^*\n]+)\*(?!\*)/g, '$1<em>$2</em>')
+    .replace(/(^|[^_])_([^_\n]+)_(?!_)/g, '$1<em>$2</em>');
+  const isTableSep = (l) => /^\s*\|?\s*:?-{2,}:?\s*(\|\s*:?-{2,}:?\s*)+\|?\s*$/.test(l);
+  const splitRow = (l) => l.replace(/^\s*\|/,'').replace(/\|\s*$/,'').split('|').map(c=>c.trim());
+  while(i < lines.length){
+    const line = lines[i];
+    if(/^\s*\|.*\|/.test(line) && i+1<lines.length && isTableSep(lines[i+1])){
+      const head = splitRow(line);
+      i += 2;
+      const rows = [];
+      while(i<lines.length && /^\s*\|.*\|/.test(lines[i])){ rows.push(splitRow(lines[i])); i++; }
+      let html = '<table style="border-collapse:collapse;width:100%;margin:8px 0;font-size:13px">';
+      html += '<thead><tr>' + head.map(h=>'<th style="text-align:left;padding:6px 10px;border-bottom:1px solid var(--border);color:var(--text3);font-weight:600">'+inline(h)+'</th>').join('') + '</tr></thead>';
+      html += '<tbody>' + rows.map(r=>'<tr>'+r.map(c=>'<td style="padding:6px 10px;border-bottom:1px solid var(--border);color:var(--text2);vertical-align:top">'+inline(c)+'</td>').join('')+'</tr>').join('') + '</tbody></table>';
+      out.push(html);
+      continue;
+    }
+    const h = line.match(/^\s*(#{1,4})\s+(.*)$/);
+    if(h){ out.push('<div style="font-weight:700;margin:8px 0 2px;color:var(--text)">'+inline(h[2])+'</div>'); i++; continue; }
+    if(/^\s*([-*•]|\d+[.)])\s+/.test(line)){
+      const items = [];
+      const ordered = /^\s*\d+[.)]\s+/.test(line);
+      while(i<lines.length && /^\s*([-*•]|\d+[.)])\s+/.test(lines[i])){
+        items.push('<li style="margin:2px 0">'+inline(lines[i].replace(/^\s*([-*•]|\d+[.)])\s+/,''))+'</li>');
+        i++;
+      }
+      out.push('<'+(ordered?'ol':'ul')+' style="margin:6px 0;padding-left:20px">'+items.join('')+'</'+(ordered?'ol':'ul')+'>');
+      continue;
+    }
+    if(line.trim()===''){ out.push('<div style="height:6px"></div>'); i++; continue; }
+    out.push('<div>'+inline(line)+'</div>');
+    i++;
+  }
+  return out.join('');
+}
+
+// ── Vientisas chat konteksto kūrimas: analizė + TIKRAS dokumento tekstas ──
+function buildChatContext(){
+  const ctx = {};
+  if(curResult && typeof curResult === 'object') ctx.analize = curResult;
+  if(typeof extText === 'string' && extText.trim().length > 30){
+    ctx.dokumentoTekstas = extText.length > 120000 ? extText.slice(0,120000) : extText;
+  }
+  const added = (typeof chatAttachments !== 'undefined' && chatAttachments.length)
+    ? chatAttachments.map(a => '— '+(a.name||'dokumentas')+' —\n'+(a.text||'')).join('\n\n')
+    : '';
+  if(added) ctx._pridetiDokumentai = added;
+  return Object.keys(ctx).length ? ctx : null;
+}
+
 
 async function saveDetailedProfile(){
   const cp=(curUser&&curUser.company_profile)||{};
@@ -4238,7 +4300,7 @@ async function sendChat(){
     const r = await fetch(API+'/api/chat',{
       method:'POST',
       headers:{'Content-Type':'application/json','Authorization':'Bearer '+tok},
-      body: JSON.stringify({messages: chatHistory, context: chatContext, mode:'chat'})
+      body: JSON.stringify({messages: chatHistory, context: buildChatContext(), mode:'chat'})
     });
     const data = await r.json();
     const t = document.getElementById('cm-thinking');
@@ -4252,7 +4314,7 @@ async function sendChat(){
     } else {
       const text = data.text || '';
       chatHistory.push({role:'assistant', content:text});
-      msgs.innerHTML += `<div class="cm cm-ai">${text.replace(/</g,'&lt;').replace(/\n/g,'<br>')}</div>`;
+      msgs.innerHTML += `<div class="cm cm-ai">${renderMd(text)}</div>`;
     }
   } catch(e){
     const t = document.getElementById('cm-thinking');
@@ -4904,7 +4966,7 @@ function initAssistant(){
       ? '<div class="cm cm-ai">Sveiki! Aš galiu atsakyti į klausimus apie šį konkursą — reikalavimus, terminus, rizikas ar strategiją.</div>'
       : '<div class="cm cm-ai">Sveiki! Galiu atsakyti į bendrus klausimus apie viešuosius pirkimus — kvalifikacijos reikalavimus, terminus, dažniausias klaidas ir pan. Jei norite konkretaus konkurso analizės, pirma atlikite analizę, ir aš žinosiu jo kontekstą.</div>';
   } else if(msgs && chatHistory.length > 0){
-    msgs.innerHTML = chatHistory.map(m=>`<div class="cm ${m.role==='user'?'cm-user':'cm-ai'}">${m.content.replace(/</g,'&lt;').replace(/\n/g,'<br>')}</div>`).join('');
+    msgs.innerHTML = chatHistory.map(m=>`<div class="cm ${m.role==='user'?'cm-user':'cm-ai'}">${m.role==='user'?m.content.replace(/</g,'&lt;').replace(/\n/g,'<br>'):renderMd(m.content)}</div>`).join('');
     msgs.scrollTop = msgs.scrollHeight;
   }
   if(typeof renderChatChips === 'function') renderChatChips();
@@ -4924,8 +4986,7 @@ async function sendFullChat(){
   const btn = document.getElementById('asst-send');
   if(!msgs) return;
   inp.value = ''; if(btn) btn.disabled = true;
-  chatContext = curResult;
-  applyChatAttachmentsToContext(); // neprarandam pridėtų dokumentų
+  chatContext = buildChatContext();
   chatHistory.push({role:'user', content:q});
   msgs.innerHTML += `<div class="cm cm-user">${q.replace(/</g,'&lt;')}</div>`;
   msgs.innerHTML += `<div class="cm cm-ai" id="asst-thinking" style="color:var(--text2);font-style:italic">⏳ Galvoju...</div>`;
@@ -4941,7 +5002,7 @@ async function sendFullChat(){
     } else {
       const text = data.text||'';
       chatHistory.push({role:'assistant',content:text});
-      msgs.innerHTML += `<div class="cm cm-ai">${text.replace(/</g,'&lt;').replace(/\n/g,'<br>')}</div>`;
+      msgs.innerHTML += `<div class="cm cm-ai">${renderMd(text)}</div>`;
     }
   } catch(e){
     const t = document.getElementById('asst-thinking'); if(t) t.remove();
@@ -4957,7 +5018,8 @@ async function sendFullChat(){
 // OPEN CHAT WITH CONTEXT
 // ══════════════════════════════════
 function openChat(result){
-  chatContext = result;
+  if(result && (typeof curResult!=='object' || !curResult)) curResult = result;
+  chatContext = buildChatContext() || result;
   chatHistory = [];
   chatAttachments = [];
   renderChatChips();
