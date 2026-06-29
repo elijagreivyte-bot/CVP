@@ -1321,6 +1321,7 @@ details[open] summary span:last-child{transform:rotate(45deg)}
       <div class="fg"><label>Slaptažodis</label>
         <div class="pw-wrap"><input class="inp" type="password" id="l-p" placeholder="••••••••" onkeydown="if(event.key==='Enter')doLogin()"><button class="pw-eye" onclick="pwEye('l-p',this)">👁</button></div>
       </div>
+      <div style="text-align:right;margin:-2px 0 10px"><a onclick="openForgot()" style="font-size:12px;color:var(--text2);cursor:pointer">Pamiršau slaptažodį?</a></div>
       <div class="err" id="l-err"></div>
       <button class="btn btn-primary" style="width:100%;justify-content:center" onclick="doLogin()">Prisijungti →</button>
     </div>
@@ -1339,6 +1340,37 @@ details[open] summary span:last-child{transform:rotate(45deg)}
       <button class="btn btn-primary" style="width:100%;justify-content:center" onclick="doRegister()">Registruotis nemokamai →</button>
       <div class="auth-terms">Registruodamiesi sutinkate su <a onclick="closeAuth();openTerms()">Paslaugų sąlygomis</a> ir <a onclick="closeAuth();openPrivacy()">Privatumo politika</a></div>
     </div>
+  </div>
+</div>
+
+<!-- ═══════════════════ FORGOT PASSWORD MODAL ═══════════════════ -->
+<div class="overlay" id="forgot-modal">
+  <div class="auth-box">
+    <button class="auth-close" onclick="closeForgot()">×</button>
+    <h2 style="font-family:Sora,sans-serif;font-size:22px;font-weight:800;margin-bottom:6px">Pamiršote slaptažodį?</h2>
+    <p style="font-size:13px;color:var(--text2);margin-bottom:18px">Įveskite el. paštą — atsiųsime nuorodą naujam slaptažodžiui nustatyti.</p>
+    <div class="fg"><label>El. paštas</label><input class="inp" type="email" id="fp-e" placeholder="jusu@imone.lt" onkeydown="if(event.key==='Enter')doForgotRequest()"></div>
+    <div class="err" id="fp-err"></div>
+    <div id="fp-ok" style="display:none;background:rgba(16,185,129,.08);border:1px solid rgba(16,185,129,.25);border-radius:10px;padding:12px 14px;font-size:13px;color:var(--success);margin-bottom:12px">Jei šis el. paštas registruotas, netrukus gausite atstatymo nuorodą. Patikrinkite ir šlamšto (spam) aplanką.</div>
+    <button class="btn btn-primary" id="fp-btn" style="width:100%;justify-content:center" onclick="doForgotRequest()">Siųsti nuorodą →</button>
+    <div style="text-align:center;margin-top:12px"><a onclick="closeForgot();openAuth('login')" style="font-size:12px;color:var(--text2);cursor:pointer">← Grįžti prisijungti</a></div>
+  </div>
+</div>
+
+<!-- ═══════════════════ RESET PASSWORD MODAL ═══════════════════ -->
+<div class="overlay" id="reset-modal">
+  <div class="auth-box">
+    <button class="auth-close" onclick="closeReset()">×</button>
+    <h2 style="font-family:Sora,sans-serif;font-size:22px;font-weight:800;margin-bottom:6px">Naujas slaptažodis</h2>
+    <p style="font-size:13px;color:var(--text2);margin-bottom:18px">Sukurkite naują slaptažodį savo paskyrai.</p>
+    <div class="fg"><label>Naujas slaptažodis</label>
+      <div class="pw-wrap"><input class="inp" type="password" id="rs-p" placeholder="Min. 6 simboliai" onkeydown="if(event.key==='Enter')doResetPassword()"><button class="pw-eye" onclick="pwEye('rs-p',this)">👁</button></div>
+    </div>
+    <div class="fg"><label>Pakartoti slaptažodį</label>
+      <div class="pw-wrap"><input class="inp" type="password" id="rs-p2" placeholder="Pakartokite slaptažodį" onkeydown="if(event.key==='Enter')doResetPassword()"><button class="pw-eye" onclick="pwEye('rs-p2',this)">👁</button></div>
+    </div>
+    <div class="err" id="rs-err"></div>
+    <button class="btn btn-primary" id="rs-btn" style="width:100%;justify-content:center" onclick="doResetPassword()">Išsaugoti ir prisijungti →</button>
   </div>
 </div>
 
@@ -2296,6 +2328,7 @@ window.addEventListener('DOMContentLoaded',()=>{
     const u2=JSON.parse(localStorage.getItem(UK)||'{}');
     if(u2.id){u2.plan='pro';localStorage.setItem(UK,JSON.stringify(u2));alert('✓ Sėkmingai atnaujinta į Pro!');history.replaceState({},'','/')}
   }
+  checkResetLink();
 });
 
 // ── VIEWS ──
@@ -2372,6 +2405,60 @@ function updSB(){
 // ── AUTH ──
 function openAuth(t){document.getElementById('auth-modal').classList.add('open');authTab(t)}
 function closeAuth(){document.getElementById('auth-modal').classList.remove('open')}
+
+// ── SLAPTAŽODŽIO ATSTATYMAS ──
+let resetToken=null;
+function openForgot(){
+  closeAuth();
+  he('fp-err');
+  document.getElementById('fp-ok').style.display='none';
+  const b=document.getElementById('fp-btn');b.disabled=false;b.textContent='Siųsti nuorodą →';
+  document.getElementById('forgot-modal').classList.add('open');
+}
+function closeForgot(){document.getElementById('forgot-modal').classList.remove('open')}
+async function doForgotRequest(){
+  he('fp-err');
+  const email=document.getElementById('fp-e').value.trim();
+  if(!email)return se('fp-err','Įveskite el. paštą');
+  const b=document.getElementById('fp-btn');b.disabled=true;b.textContent='Siunčiama…';
+  try{
+    await fetch(API+'/api/password-reset',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({action:'request',email})});
+    document.getElementById('fp-ok').style.display='block';
+    b.textContent='Nuoroda išsiųsta';
+  }catch(e){se('fp-err','Serverio klaida. Bandykite vėliau.');b.disabled=false;b.textContent='Siųsti nuorodą →';}
+}
+function closeReset(){
+  document.getElementById('reset-modal').classList.remove('open');
+  resetToken=null;
+  try{history.replaceState(null,'',location.pathname);}catch(e){}
+}
+function checkResetLink(){
+  try{
+    const t=new URLSearchParams(location.search).get('reset');
+    if(t){resetToken=t;document.getElementById('reset-modal').classList.add('open');}
+  }catch(e){}
+}
+async function doResetPassword(){
+  he('rs-err');
+  if(!resetToken)return se('rs-err','Nuoroda negalioja');
+  const pw=document.getElementById('rs-p').value;
+  const pw2=document.getElementById('rs-p2').value;
+  if(!pw||pw.length<6)return se('rs-err','Min. 6 simboliai');
+  if(pw!==pw2)return se('rs-err','Slaptažodžiai nesutampa');
+  const b=document.getElementById('rs-btn');b.disabled=true;b.textContent='Išsaugoma…';
+  try{
+    const r=await fetch(API+'/api/password-reset',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({action:'reset',token:resetToken,password:pw})});
+    const d=await r.json();
+    if(!r.ok){se('rs-err',d.error||'Atstatymo klaida');b.disabled=false;b.textContent='Išsaugoti ir prisijungti →';return;}
+    localStorage.setItem(TK,d.token);
+    localStorage.setItem(UK,JSON.stringify(d.user));
+    curUser=d.user;
+    document.getElementById('reset-modal').classList.remove('open');
+    resetToken=null;
+    try{history.replaceState(null,'',location.pathname);}catch(e){}
+    showApp();
+  }catch(e){se('rs-err','Serverio klaida');b.disabled=false;b.textContent='Išsaugoti ir prisijungti →';}
+}
 function authTab(t){
   document.getElementById('af-login').classList.toggle('hidden',t!=='login');
   document.getElementById('af-reg').classList.toggle('hidden',t==='login');
@@ -3054,8 +3141,7 @@ function renderResult(r){
       <div class="r-score-num ${scCl}">${sc}%</div>
       <div class="r-score-info">
         <div class="r-score-label">${r.scoreLabel||'Galimybių įvertinimas'}</div>
-        <div style="font-size:13px;color:var(--text2)">${(()=>{const t=(r.pavadinimas||'').trim();return (!t||/\.(zip|pdf|docx?|xlsx?)$/i.test(t))?'Konkurso analizė':t.replace(/</g,'&lt;');})()}</div>
-        ${r._fallback?'<div style="font-size:11px;color:var(--warn);margin-top:2px">⚠ Analizė dalinė — kai kurie laukai gali būti nepilni. Galite pakartoti arba klausti AI asistento.</div>':''}
+        <div style="font-size:13px;color:var(--text2)">${r.pavadinimas||'–'}</div>
         <div class="r-score-bar"><div class="r-score-fill" style="width:${sc}%;background:${scFill}"></div></div>
       </div>
     </div>
@@ -3087,6 +3173,29 @@ function renderResult(r){
     </div>
 
     ${r.strategija?`<div class="r-strat"><h4>🎯 Laimėjimo strategija</h4><p>${r.strategija}</p></div>`:''}
+
+    ${(()=>{
+      const pa=r.personalizuotaAnalize;
+      const aBadge=(a)=>{const s=(a||'').toLowerCase();const c=s.includes('neatitinka')?'var(--danger)':s.includes('dalies')?'var(--warn)':s.includes('atitinka')?'var(--success)':'var(--text3)';return `<span style="display:inline-block;padding:2px 9px;border-radius:20px;font-size:11px;font-weight:700;color:#fff;background:${c}">${a||'Neaišku'}</span>`;};
+      if(!pa){
+        if(!r.personalizuota) return `<div style="background:rgba(245,158,11,.06);border:1px solid rgba(245,158,11,.2);border-radius:12px;padding:14px 18px;margin-bottom:16px;font-size:13px;color:var(--text2)">⚠️ <strong style="color:var(--warn)">Analizė nepersonalizuota</strong> — užpildykite įmonės profilį, kad kiekviena spec. grupė būtų įvertinta pagal jūsų veiklos sferą. <a onclick="openOnboarding()" style="color:var(--accent);cursor:pointer;font-weight:600">Užpildyti profilį →</a></div>`;
+        return '';
+      }
+      const rows=(pa.specGrupes||[]).filter(g=>g&&g.grupe).map(g=>`<div style="border:1px solid var(--border);border-radius:10px;padding:12px 14px;margin-top:10px">
+        <div style="display:flex;justify-content:space-between;align-items:center;gap:10px;margin-bottom:6px"><strong style="font-size:13px;color:var(--text)">${g.grupe||''}</strong>${aBadge(g.atitiktis)}</div>
+        ${g.reikalavimas&&g.reikalavimas!=='...'?`<div style="font-size:12px;color:var(--text2);margin-bottom:4px"><strong>Reikalavimas:</strong> ${g.reikalavimas}</div>`:''}
+        ${g.pagrindimas&&g.pagrindimas!=='...'?`<div style="font-size:12px;color:var(--text2);margin-bottom:4px">${g.pagrindimas}</div>`:''}
+        ${g.koTruksta&&g.koTruksta!=='Nieko'&&g.koTruksta!=='...'?`<div style="font-size:12px;color:var(--warn);margin-bottom:4px"><strong>Trūksta:</strong> ${g.koTruksta}</div>`:''}
+        ${g.kaDaryti&&g.kaDaryti!=='...'?`<div style="font-size:12px;color:var(--accent)"><strong>Veiksmas:</strong> ${g.kaDaryti}</div>`:''}
+      </div>`).join('');
+      return `<div class="r-card r-full-width" style="margin-bottom:16px;border:1px solid rgba(59,130,246,.25)">
+        <h4>🎯 Personalizuota analizė jūsų įmonei</h4>
+        ${pa.bendrasVertinimas?`<div style="font-size:12px;color:var(--text2);margin-top:6px"><strong style="color:var(--text)">1) Bendras etapas:</strong> ${pa.bendrasVertinimas}</div>`:''}
+        ${pa.sferosKontekstas?`<div style="font-size:12px;color:var(--text2);margin-top:4px"><strong style="color:var(--text)">Veiklos sferos kontekstas:</strong> ${pa.sferosKontekstas}</div>`:''}
+        ${rows?`<div style="margin-top:6px"><strong style="font-size:12px;color:var(--text)">2) Spec. grupių atitiktis pagal jūsų sferą:</strong>${rows}</div>`:''}
+        ${pa.tinkamumoIsvada?`<div style="background:rgba(59,130,246,.06);border-radius:10px;padding:12px 14px;margin-top:12px;font-size:13px;color:var(--text2)"><strong style="color:var(--text)">Išvada šiai įmonei:</strong> ${pa.tinkamumoIsvada}</div>`:''}
+      </div>`;
+    })()}
 
     ${riskBlock('Blokuojančios sąlygos','🚫',r.blokuojanciosSalygos)}
     ${riskBlock('Komercinės rizikos','💸',r.komercinesRizikos)}
@@ -3403,67 +3512,6 @@ async function renderAcc(){
 
 function ri2(k,v){return `<div class="r-item"><span class="r-item-k">${k}</span><span class="r-item-v">${v||'–'}</span></div>`}
 function esc(v){return v?String(v).replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;').replace(/"/g,'&quot;'):''}
-
-// ── Markdown -> saugus HTML (kad chat'e nesimatytų **, |, ## ir pan.) ──
-function renderMd(raw){
-  if(raw==null) return '';
-  let t = String(raw).replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;');
-  const lines = t.split(/\r?\n/);
-  const out = [];
-  let i = 0;
-  const inline = (x) => x
-    .replace(/`([^`]+)`/g, '<code style="background:rgba(255,255,255,.08);padding:1px 5px;border-radius:4px;font-size:.92em">$1</code>')
-    .replace(/\*\*([^*]+)\*\*/g, '<strong>$1</strong>')
-    .replace(/(^|[^*])\*([^*\n]+)\*(?!\*)/g, '$1<em>$2</em>')
-    .replace(/(^|[^_])_([^_\n]+)_(?!_)/g, '$1<em>$2</em>');
-  const isTableSep = (l) => /^\s*\|?\s*:?-{2,}:?\s*(\|\s*:?-{2,}:?\s*)+\|?\s*$/.test(l);
-  const splitRow = (l) => l.replace(/^\s*\|/,'').replace(/\|\s*$/,'').split('|').map(c=>c.trim());
-  while(i < lines.length){
-    const line = lines[i];
-    if(/^\s*\|.*\|/.test(line) && i+1<lines.length && isTableSep(lines[i+1])){
-      const head = splitRow(line);
-      i += 2;
-      const rows = [];
-      while(i<lines.length && /^\s*\|.*\|/.test(lines[i])){ rows.push(splitRow(lines[i])); i++; }
-      let html = '<table style="border-collapse:collapse;width:100%;margin:8px 0;font-size:13px">';
-      html += '<thead><tr>' + head.map(h=>'<th style="text-align:left;padding:6px 10px;border-bottom:1px solid var(--border);color:var(--text3);font-weight:600">'+inline(h)+'</th>').join('') + '</tr></thead>';
-      html += '<tbody>' + rows.map(r=>'<tr>'+r.map(c=>'<td style="padding:6px 10px;border-bottom:1px solid var(--border);color:var(--text2);vertical-align:top">'+inline(c)+'</td>').join('')+'</tr>').join('') + '</tbody></table>';
-      out.push(html);
-      continue;
-    }
-    const h = line.match(/^\s*(#{1,4})\s+(.*)$/);
-    if(h){ out.push('<div style="font-weight:700;margin:8px 0 2px;color:var(--text)">'+inline(h[2])+'</div>'); i++; continue; }
-    if(/^\s*([-*•]|\d+[.)])\s+/.test(line)){
-      const items = [];
-      const ordered = /^\s*\d+[.)]\s+/.test(line);
-      while(i<lines.length && /^\s*([-*•]|\d+[.)])\s+/.test(lines[i])){
-        items.push('<li style="margin:2px 0">'+inline(lines[i].replace(/^\s*([-*•]|\d+[.)])\s+/,''))+'</li>');
-        i++;
-      }
-      out.push('<'+(ordered?'ol':'ul')+' style="margin:6px 0;padding-left:20px">'+items.join('')+'</'+(ordered?'ol':'ul')+'>');
-      continue;
-    }
-    if(line.trim()===''){ out.push('<div style="height:6px"></div>'); i++; continue; }
-    out.push('<div>'+inline(line)+'</div>');
-    i++;
-  }
-  return out.join('');
-}
-
-// ── Vientisas chat konteksto kūrimas: analizė + TIKRAS dokumento tekstas ──
-function buildChatContext(){
-  const ctx = {};
-  if(curResult && typeof curResult === 'object') ctx.analize = curResult;
-  if(typeof extText === 'string' && extText.trim().length > 30){
-    ctx.dokumentoTekstas = extText.length > 120000 ? extText.slice(0,120000) : extText;
-  }
-  const added = (typeof chatAttachments !== 'undefined' && chatAttachments.length)
-    ? chatAttachments.map(a => '— '+(a.name||'dokumentas')+' —\n'+(a.text||'')).join('\n\n')
-    : '';
-  if(added) ctx._pridetiDokumentai = added;
-  return Object.keys(ctx).length ? ctx : null;
-}
-
 
 async function saveDetailedProfile(){
   const cp=(curUser&&curUser.company_profile)||{};
@@ -4276,6 +4324,21 @@ function showChatPanel(){
   if(panel) panel.classList.add('show');
 }
 
+function mdLite(t){
+  if(!t) return '';
+  let s = t.replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;');
+  s = s.replace(/^\s*\|?[\s:|-]*\|[\s:|-]*\|?\s*$/gm,'');           // lentelės skirtuko eilutės
+  s = s.replace(/^\s*\|(.+)\|\s*$/gm, (m,row)=>row.split('|').map(c=>c.trim()).filter(Boolean).join(' — '));
+  s = s.replace(/^\s*#{1,6}\s*(.+)$/gm,'<strong>$1</strong>');         // antraštės
+  s = s.replace(/\*\*([^*]+)\*\*/g,'<strong>$1</strong>');           // **bold**
+  s = s.replace(/__([^_]+)__/g,'<strong>$1</strong>');
+  s = s.replace(/(^|[\s(])\*([^*\n]+)\*(?=[\s).,!?]|$)/g,'$1<em>$2</em>'); // *italic*
+  s = s.replace(/^\s*[-*]\s+/gm,'• ');                                  // sąrašo punktai
+  s = s.replace(/\n/g,'<br>');
+  s = s.replace(/(<br>\s*){3,}/g,'<br><br>');
+  return s;
+}
+
 async function sendChat(){
   const inp = document.getElementById('chat-q');
   const q = (inp?.value || '').trim();
@@ -4300,7 +4363,7 @@ async function sendChat(){
     const r = await fetch(API+'/api/chat',{
       method:'POST',
       headers:{'Content-Type':'application/json','Authorization':'Bearer '+tok},
-      body: JSON.stringify({messages: chatHistory, context: buildChatContext(), mode:'chat'})
+      body: JSON.stringify({messages: chatHistory, context: chatContext, mode:'chat'})
     });
     const data = await r.json();
     const t = document.getElementById('cm-thinking');
@@ -4314,7 +4377,7 @@ async function sendChat(){
     } else {
       const text = data.text || '';
       chatHistory.push({role:'assistant', content:text});
-      msgs.innerHTML += `<div class="cm cm-ai">${renderMd(text)}</div>`;
+      msgs.innerHTML += `<div class="cm cm-ai">${mdLite(text)}</div>`;
     }
   } catch(e){
     const t = document.getElementById('cm-thinking');
@@ -4966,7 +5029,7 @@ function initAssistant(){
       ? '<div class="cm cm-ai">Sveiki! Aš galiu atsakyti į klausimus apie šį konkursą — reikalavimus, terminus, rizikas ar strategiją.</div>'
       : '<div class="cm cm-ai">Sveiki! Galiu atsakyti į bendrus klausimus apie viešuosius pirkimus — kvalifikacijos reikalavimus, terminus, dažniausias klaidas ir pan. Jei norite konkretaus konkurso analizės, pirma atlikite analizę, ir aš žinosiu jo kontekstą.</div>';
   } else if(msgs && chatHistory.length > 0){
-    msgs.innerHTML = chatHistory.map(m=>`<div class="cm ${m.role==='user'?'cm-user':'cm-ai'}">${m.role==='user'?m.content.replace(/</g,'&lt;').replace(/\n/g,'<br>'):renderMd(m.content)}</div>`).join('');
+    msgs.innerHTML = chatHistory.map(m=>`<div class="cm ${m.role==='user'?'cm-user':'cm-ai'}">${m.content.replace(/</g,'&lt;').replace(/\n/g,'<br>')}</div>`).join('');
     msgs.scrollTop = msgs.scrollHeight;
   }
   if(typeof renderChatChips === 'function') renderChatChips();
@@ -4986,7 +5049,8 @@ async function sendFullChat(){
   const btn = document.getElementById('asst-send');
   if(!msgs) return;
   inp.value = ''; if(btn) btn.disabled = true;
-  chatContext = buildChatContext();
+  chatContext = curResult;
+  applyChatAttachmentsToContext(); // neprarandam pridėtų dokumentų
   chatHistory.push({role:'user', content:q});
   msgs.innerHTML += `<div class="cm cm-user">${q.replace(/</g,'&lt;')}</div>`;
   msgs.innerHTML += `<div class="cm cm-ai" id="asst-thinking" style="color:var(--text2);font-style:italic">⏳ Galvoju...</div>`;
@@ -5002,7 +5066,7 @@ async function sendFullChat(){
     } else {
       const text = data.text||'';
       chatHistory.push({role:'assistant',content:text});
-      msgs.innerHTML += `<div class="cm cm-ai">${renderMd(text)}</div>`;
+      msgs.innerHTML += `<div class="cm cm-ai">${mdLite(text)}</div>`;
     }
   } catch(e){
     const t = document.getElementById('asst-thinking'); if(t) t.remove();
@@ -5018,8 +5082,7 @@ async function sendFullChat(){
 // OPEN CHAT WITH CONTEXT
 // ══════════════════════════════════
 function openChat(result){
-  if(result && (typeof curResult!=='object' || !curResult)) curResult = result;
-  chatContext = buildChatContext() || result;
+  chatContext = result;
   chatHistory = [];
   chatAttachments = [];
   renderChatChips();
