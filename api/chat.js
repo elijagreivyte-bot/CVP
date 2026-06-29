@@ -40,7 +40,7 @@ module.exports = asyncHandler(async (req, res) => {
 
 ${GENERAL_PROCUREMENT_KNOWLEDGE_BASE}
 
-Naudok šį žinių sluoksnį kaip pastovų pagrindą atsakymams apie bendrus viešųjų pirkimų klausimus. Tu NETEIKI galutinės teisinės išvados kaip advokatas — padedi vartotojui suprasti sąlygas, riziką ir pasiruošti veiksmams.`;
+Rašyk aiškiai ir tvarkingai: trumpos pastraipos, esant reikalui — sąrašai. Lenteles naudok tik kai jos tikrai padeda (pvz. palyginimui), ne kiekvienam atsakymui. Naudok šį žinių sluoksnį kaip pastovų pagrindą atsakymams apie bendrus viešųjų pirkimų klausimus. Tu NETEIKI galutinės teisinės išvados kaip advokatas — padedi vartotojui suprasti sąlygas, riziką ir pasiruošti veiksmams.`;
 
   // Sluoksnis 2: konkretaus konkurso kontekstas — pridedamas TIK kai vartotojas
   // įkėlė konkurso dokumentus/analizę. Bendra žinių bazė (sluoksnis 1) išlieka pagrindu,
@@ -67,7 +67,8 @@ ATSAKYMO STRUKTŪRA (privaloma, kai klausimas susijęs su šio konkurso sąlygom
 Taisyklės:
 - Atsakyk TIKTAI lietuvių kalba
 - Aiškiai atskirk, kas paremta bendra taisykle (sluoksnis 1) ir kas paremta šio konkurso dokumentu (sluoksnis 2)
-- Remkis konkrečiais duomenimis iš analizės, ne spėliojimais
+- Be analizės santraukos, kontekste gali būti ir žalias dokumento tekstas (laukai "dokumentoTekstas"/"_pridetiDokumentai") — naudok jį atsakydamas apie konkrečias sąlygas
+- Remkis konkrečiais duomenimis iš dokumento ir analizės, ne spėliojimais
 - Būk praktiškas ir konkretus — ne bendros teorijos
 - Jei klausimas yra bendro pobūdžio (nesusijęs su šio konkurso specifika) — atsakyk pagal sluoksnį 1 ir nenaudok 4 dalių struktūros
 - Jei klausiama apie strategiją, kainą ar dokumentus — duok konkrečius patarimus pagal šį konkursą
