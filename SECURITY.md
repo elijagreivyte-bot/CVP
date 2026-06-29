@@ -1,104 +1,61 @@
-# Bidwise AI - Security Guide
+# Bidwise AI — Saugumo apžvalga
 
-## 🔒 Security Implementation
+Ši apžvalga atspindi **realią** dabartinę architektūrą: statinis frontend
+(`public/index.html`) + Vercel serverless funkcijos (`api/*.js`) + Supabase
+(Postgres, ES regionas). Express, Helmet ir `express-rate-limit` **nenaudojami** —
+tai serverless, ne ilgai veikiantis Node serveris.
 
-### 1. **Middleware Stack**
-- ✅ **Helmet.js** - Security headers
-- ✅ **CORS** - Origin validation
-- ✅ **Rate Limiting** - DDoS protection
-- ✅ **Input Sanitization** - XSS prevention
-- ✅ **JWT Auth** - Token-based authentication
+## Autentifikacija
+- Pasirinktinė JWT autentifikacija (ne Supabase Auth).
+- Žetonai pasirašomi `JWT_SECRET` (fail-closed: jei kintamojo nėra, sistema
+  atsisako generuoti/tikrinti žetonus — žr. `api/security.js`).
+- Žetonas galioja 30 d.; slaptažodžio atstatymo žetonas — 1 val.
+- Slaptažodžiai saugomi su `bcrypt` (10 raundų).
+- Apsaugotiems endpoint'ams būtina: `Authorization: Bearer <token>`.
 
-### 2. **Rate Limits**
-```
-Global:          100 req/min
-Auth endpoints:  5 attempts/15min per email
-API endpoints:   30 req/min per user
-Analyze:         3/hour (free), unlimited (pro/team)
-```
+## Autorizacija ir kvotos
+- Nuosavybės patikra: visi DB veiksmai filtruojami pagal `user_id`.
+- Nemokamo plano kvota (`free_analyses_left`) tikrinama IR mažinama
+  **serverio pusėje** (`api/analyze-agents.js`) — ne tik frontend'e. Išnaudojus
+  kvotą grąžinamas `403` su `code: QUOTA_EXCEEDED`.
+- `chat` režimas prieinamas tik `pro`/`team` planams.
 
-### 3. **Data Protection**
-- ✅ DOMPurify sanitization for HTML/XSS attacks
-- ✅ SQL injection pattern detection
-- ✅ Input validation with Joi
-- ✅ HTTPS redirect in production
-- ✅ Secure headers (CSP, X-Frame-Options, etc.)
+## Įvesties validacija
+- `Joi` schemos (`validation/analyzeSchema.js`) auth, profilio, projektų,
+  istorijos, chat ir checkout endpoint'ams (`stripUnknown: true`).
+- Dokumento tekstas serveryje valomas nuo HTML žymų prieš perduodant AI.
+- Profilio ir dokumento dydžio ribos taikomos prieš DB įrašymą.
 
-### 4. **Authentication**
-```javascript
-// Protected routes require JWT token
-Authorization: Bearer <token>
+## Mokėjimai (Stripe)
+- Checkout sesija kuriama serveryje (`api/checkout.js`); `client_reference_id`
+  ir `metadata.user_id` užtikrina patikimą vartotojo atpažinimą.
+- Webhook (`api/stripe-webhook.js`) tikrina parašą su **raw body**
+  (`bodyParser` išjungtas), naudoja `STRIPE_WEBHOOK_SECRET`.
 
-// Token expires in 30 days
-// Plan-based access control (free/pro/team)
-```
+## Duomenų apsauga
+- Originalūs failai NIEKADA nepasiekia serverio — tekstas ištraukiamas naršyklėje.
+- Dokumento tekstas ir chat žinutės saugomi Supabase (ES) pokalbio tęstinumui.
+- Paslaptys laikomos Vercel aplinkos kintamuosiuose, ne kode (žr. `.gitignore`).
 
-### 5. **CORS Configuration**
-Allowed origins:
-- http://localhost:3000 (dev)
-- http://localhost:3001 (dev)
-- https://bidwise.app (production)
-- https://www.bidwise.app (production)
+## CORS
+- Šiuo metu `Access-Control-Allow-Origin: *`. Tai priimtina, nes naudojami
+  Bearer žetonai (ne slapukai), todėl CSRF rizika minimali. Norint sugriežtinti —
+  apriboti iki `https://www.bidwiseai.lt` `api/security.js` faile.
 
-### 6. **Error Handling**
-- ✅ Never expose stack traces in production
-- ✅ Centralized error logging
-- ✅ User-friendly error messages
-- ✅ Proper HTTP status codes
+## Aplinkos kintamieji (būtini produkcijai)
+| Kintamasis | Paskirtis |
+|---|---|
+| `JWT_SECRET` | JWT pasirašymas (BŪTINA, fail-closed) |
+| `SUPABASE_URL`, `SUPABASE_SERVICE_KEY` | DB prieiga |
+| `ANTHROPIC_API_KEY` | AI analizė ir chat |
+| `RESEND_API_KEY`, `EMAIL_FROM` | Transakciniai el. laiškai |
+| `STRIPE_SECRET_KEY`, `STRIPE_WEBHOOK_SECRET` | Mokėjimai |
+| `STRIPE_PRICE_MONTHLY`, `STRIPE_PRICE_YEARLY` | Planų kainos |
+| `SITE_URL` | Kanoninis domenas (numatyta `https://www.bidwiseai.lt`) |
+| `CRON_SECRET` | Priminimų cron apsauga (BŪTINA produkcijai) |
 
-## 🚀 Best Practices
-
-### API Calls
-```bash
-# Always include auth token
-curl -H "Authorization: Bearer YOUR_TOKEN" \
-     -H "Content-Type: application/json" \
-     https://bidwise.app/api/protected/analyze
-```
-
-### Environment Variables
-- Store sensitive data in `.env` (not in code)
-- Use `.env.local` for development
-- Rotate API keys regularly
-- Keep `JWT_SECRET` at least 32 characters
-
-### Monitoring
-- All requests logged with IP, method, path, status
-- Error rates tracked automatically
-- Rate limit violations logged
-- Suspicious patterns detected
-
-## 🛡️ Common Attacks & Protection
-
-| Attack | Protection |
-|--------|-----------|
-| XSS | DOMPurify sanitization |
-| SQL Injection | Pattern detection + parameterized queries |
-| CSRF | SameSite cookies + CORS |
-| DDoS | Rate limiting + Helmet |
-| Clickjacking | X-Frame-Options header |
-| Headers | CSP, X-Content-Type-Options |
-
-## 📝 Security Checklist
-
-- [ ] Environment variables configured
-- [ ] JWT_SECRET is strong (32+ chars)
-- [ ] HTTPS enabled in production
-- [ ] Rate limits appropriate for your needs
-- [ ] CORS origins whitelist updated
-- [ ] Error logging enabled
-- [ ] No sensitive data in logs
-- [ ] Authentication tested
-- [ ] Rate limiting tested
-- [ ] CORS tested
-
-## 🔧 Production Deployment
-
-1. Set `NODE_ENV=production`
-2. Enable HTTPS redirect
-3. Set strong `JWT_SECRET`
-4. Configure proper CORS origins
-5. Enable error monitoring (Sentry)
-6. Use environment-specific API keys
-7. Set rate limits appropriate to capacity
-8. Monitor logs for suspicious activity
+## Rekomendacijos tolesniam sugriežtinimui
+- Užklausų dažnio ribojimas (rate limiting) per Vercel Edge Middleware arba
+  Upstash — serverless funkcijos pačios būsenos neturi.
+- El. pašto verifikacija registruojantis.
+- Atominis kvotos mažinimas per Postgres RPC (dabar — read-then-write).
