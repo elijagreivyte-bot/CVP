@@ -14,7 +14,7 @@ async function sendEmail(to, subject, html) {
       method: 'POST',
       headers: { 'Content-Type': 'application/json', 'Authorization': 'Bearer ' + process.env.RESEND_API_KEY },
       body: JSON.stringify({
-        from: 'Bidwise AI <noreply@bidwise.lt>',
+        from: process.env.EMAIL_FROM || 'Bidwise AI <noreply@bidwiseai.lt>',
         to: [to],
         subject,
         html
@@ -30,15 +30,15 @@ async function sendEmail(to, subject, html) {
 function reminderHtml(title, deadline, days) {
   return `<!DOCTYPE html><html><body style="font-family:sans-serif;max-width:600px;margin:0 auto;padding:24px">
     <div style="background:#1a56db;padding:20px;border-radius:12px 12px 0 0;text-align:center">
-      <img src="https://cvp.bidwise.lt/logo.png" style="height:48px" alt="Bidwise AI">
+      <img src="https://www.bidwiseai.lt/icon-192.png" style="height:48px" alt="Bidwise AI">
     </div>
     <div style="background:#f8faff;padding:28px;border-radius:0 0 12px 12px;border:1px solid #e2e8f0">
       <h2 style="color:#1a56db;margin:0 0 12px">${days === 1 ? '🚨 Rytoj terminas!' : '⚠️ Liko 7 dienos!'}</h2>
       <p style="color:#334155;font-size:15px"><strong>${title}</strong></p>
       <p style="color:#64748b">Pasiūlymo pateikimo terminas: <strong>${new Date(deadline).toLocaleString('lt-LT')}</strong></p>
-      <a href="https://bidwise.lt" style="display:inline-block;background:#1a56db;color:#fff;padding:12px 28px;border-radius:8px;text-decoration:none;font-weight:600;margin-top:16px">Atidaryti Bidwise</a>
+      <a href="https://www.bidwiseai.lt" style="display:inline-block;background:#1a56db;color:#fff;padding:12px 28px;border-radius:8px;text-decoration:none;font-weight:600;margin-top:16px">Atidaryti Bidwise</a>
     </div>
-    <p style="color:#94a3b8;font-size:12px;text-align:center;margin-top:16px">Bidwise AI · Atsisakyti priminimų: <a href="https://bidwise.lt/account">paskyros nustatymai</a></p>
+    <p style="color:#94a3b8;font-size:12px;text-align:center;margin-top:16px">Bidwise AI · Atsisakyti priminimų: <a href="https://www.bidwiseai.lt/account">paskyros nustatymai</a></p>
   </body></html>`;
 }
 
@@ -48,9 +48,15 @@ module.exports = asyncHandler(async (req, res) => {
 
   // Cron trigger
   if (req.method === 'GET') {
-    const cronSecret = req.headers['x-cron-secret'];
-    if (cronSecret !== process.env.CRON_SECRET && process.env.CRON_SECRET) {
-      throw new Error('Unauthorized cron');
+    // Autentifikacija: palaikome ir rankinį x-cron-secret, ir Vercel valdomą cron
+    // (Vercel siunčia Authorization: Bearer <CRON_SECRET>). Jei CRON_SECRET nenustatytas,
+    // cron leidžiamas (kad neblokuotų), bet PRODUKCIJOJE BŪTINA jį nustatyti.
+    if (process.env.CRON_SECRET) {
+      const headerSecret = req.headers['x-cron-secret'];
+      const bearer = (req.headers.authorization || '').replace('Bearer ', '');
+      if (headerSecret !== process.env.CRON_SECRET && bearer !== process.env.CRON_SECRET) {
+        return res.status(401).json({ error: 'Unauthorized cron' });
+      }
     }
 
     if (!process.env.SUPABASE_URL) return res.status(200).json({ sent: 0 });
