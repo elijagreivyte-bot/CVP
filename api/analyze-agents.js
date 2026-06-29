@@ -169,54 +169,6 @@ function buildProfileContext(profile) {
   return { hasProfile: true, contextText: ctx };
 }
 
-// ── Esminė analizė (atsarginis, fokusuotas kvietimas) ─────────
-// Jei pagrindinis (didelis) atsakymas nutrūko ar nesusiparsino, NEGRĄŽINAM
-// skurdaus fallback su ZIP failo pavadinimu. Vietoj to atliekam ANTRĄ, kur kas
-// mažesnį kvietimą, kuris paprašo tik esminių laukų — toks JSON beveik niekada
-// netrūksta, todėl analizė visada lieka tikra ir išspręsta (su tikru pavadinimu).
-async function essentialAnalysis(analyzableText, profileCtx) {
-  const sys = 'Tu esi Bidwise AI — viešųjų pirkimų sprendimų analitikas. Analizuok lietuviškai, objektyviai. Jei informacijos dokumente nėra — rašyk "Nenurodyta", NIEKADA neišgalvok. Grąžink TIK JSON, be jokio papildomo teksto, be markdown.';
-  const user = `${profileCtx.contextText}
-
-━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
-PIRKIMO DOKUMENTAS:
-${analyzableText}
-━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
-
-Pateik glaustą, bet TIKSLŲ šio konkurso vertinimą. Pavadinimą ir perkančiąją organizaciją ištrauk iš dokumento (jie ten yra). Grąžink TIKSLIAI tokios struktūros JSON:
-
-{
-  "pavadinimas": "tikslus pirkimo pavadinimas iš dokumento",
-  "perkanciojiOrganizacija": "perkančiosios organizacijos pavadinimas",
-  "pirkimoTipas": "pirkimo būdas",
-  "bendraVerte": "numatoma vertė arba Nenurodyta",
-  "cpt": "BVPŽ/CPV kodas",
-  "sprendimas": "GO | CLARIFY | NO-GO",
-  "sprendimoPriezastis": "1-2 sakiniai kodėl",
-  "score": 60,
-  "scoreLabel": "Geros / Vidutinės / Žemos galimybės",
-  "scorePaaiskinimas": "2-3 sakiniai",
-  "subBalai": {"tinkamumas": 60, "patrauklumas": 60, "rizikosLygis": "Vidutinė", "laimejimoPotencialas": 60},
-  "terminai": {"pasiulymoTerminas": "YYYY-MM-DD HH:MM arba Nenurodyta", "vokuAtplesimas": "Nenurodyta", "klausimaiIki": "Nenurodyta", "vykdymoTerminas": "Nenurodyta", "garantija": "Nenurodyta"},
-  "kvalifikacija": {"apyvarta": "Nenurodyta", "darbuotojai": "Nenurodyta", "patirtis": "Nenurodyta", "sertifikatai": "Nenurodyta", "finansinis": "Nenurodyta"},
-  "rizikos": ["rizika 1", "rizika 2"],
-  "galimybes": ["galimybė 1"],
-  "strategija": "trumpa rekomendacija (1 pastraipa)",
-  "isViso": "galutinė išvada ar verta dalyvauti (2-3 sakiniai)"
-}`;
-  try {
-    const out = await callClaude(sys, user, 6000);
-    const parsed = parseJSON(out, null);
-    if (parsed && parsed.pavadinimas) {
-      parsed._essential = true; // pažymim, kad tai sutrumpinta (bet pilnavertė) analizė
-      return parsed;
-    }
-  } catch (e) {
-    console.error('Esminės analizės klaida:', e.message);
-  }
-  return null;
-}
-
 module.exports = async (req, res) => {
   applyCors(res);
   if (req.method === 'OPTIONS') return res.status(200).end();
@@ -254,6 +206,11 @@ Prie kiekvienos rizikos/reikalavimo nurodyk:
 
 Blokuojanti sąlyga = tokia, dėl kurios pasiūlymas realiai gali būti atmestas (privalomas trūkstamas sertifikatas/dokumentas/EBVPD/kvalifikacija/techninis reikalavimas). Jei yra bent viena blokuojanti sąlyga ir tiekėjo profilyje nematyti, kad ji įvykdyta, bendras "sprendimas" NEGALI būti GO — turi būti CLARIFY arba NO-GO.
 
+DVIEJŲ ETAPŲ ANALIZĖ (PRIVALOMA):
+1) BENDRAS ETAPAS — pirma įvertink konkursą objektyviai: pirkimo objektas, privalomi kvalifikaciniai ir techniniai reikalavimai, blokuojančios sąlygos, terminai, kainodara ir vertinimo kriterijai. Šis etapas nepriklauso nuo kliento.
+2) PERSONALIZUOTAS ETAPAS — jei pateiktas KLIENTO ĮMONĖS PROFILIS, kiekvieną reikalavimą ir spec. grupę (kvalifikacija, ekonominis/finansinis pajėgumas, techninis/profesinis pajėgumas, sertifikatai, EBVPD/ESPD, subtiekimas ir kt.) vertink KONKREČIAI pagal kliento veiklos sferą, specializaciją, klausimyno atsakymus ir pajėgumus. Kiekvienoje grupėje aiškiai nurodyk: ar klientas atitinka, ko trūksta ir ką daryti. Balą (score) ir sprendimą (GO/CLARIFY/NO-GO) formuok pagal šį realų atitikimą, ne vien pagal bendrą sudėtingumą. Jei reikalavimo atitikimo iš profilio nustatyti negali, žymėk „Neaišku" ir nurodyk, kokios informacijos trūksta. Vertindamas atsižvelk į kliento veiklos sferą — tos pačios spec. grupės skirtingoms sferoms reiškia skirtingą riziką. Privalomai užpildyk lauką "personalizuotaAnalize" ir jo "specGrupes" KIEKVIENAI spec. grupei, kurią mini dokumentas, vertindamas atitiktį pagal kliento klausimyno atsakymus ir veiklos sferą (Atitinka / Iš dalies / Neatitinka / Neaišku).
+Jei kliento profilio NĖRA — atlik tik bendrą etapą, o atitikimo matricose „Tiekėjas turi?" žymėk „Neaišku".
+
 Grąžink TIK JSON, be jokio papildomo teksto.`;
 
     const analyzableText = await prepareDocText(docTextSafe);
@@ -284,6 +241,20 @@ Grąžink TIKSLIAI tokios struktūros JSON (jei nėra informacijos — rašyk "N
   "score": 65,
   "scoreLabel": "Geros galimybės / Vidutinės galimybės / Žemos galimybės",
   "scorePaaiskinimas": "2-3 sakiniai kodėl būtent toks balas šiai įmonei",
+
+  "personalizuotaAnalize": {
+    "bendrasVertinimas": "BENDRAS ETAPAS: objektyvus konkurso vertinimas, nepriklausomas nuo kliento (1-2 sakiniai)",
+    "sferosKontekstas": "kaip kliento veiklos sfera ir specializacija veikia šio konkurso atitiktį (1-2 sakiniai)",
+    "specGrupes": [
+      {"grupe": "Pašalinimo pagrindai", "reikalavimas": "ką reikalauja dokumentai", "atitiktis": "Atitinka | Iš dalies | Neatitinka | Neaišku", "pagrindimas": "kodėl — pagal kliento profilį, klausimyną ir veiklos sferą", "koTruksta": "ko trūksta arba Nieko", "kaDaryti": "konkretus veiksmas"},
+      {"grupe": "Teisė verstis veikla / kvalifikacija", "reikalavimas": "...", "atitiktis": "...", "pagrindimas": "...", "koTruksta": "...", "kaDaryti": "..."},
+      {"grupe": "Ekonominis ir finansinis pajėgumas", "reikalavimas": "...", "atitiktis": "...", "pagrindimas": "...", "koTruksta": "...", "kaDaryti": "..."},
+      {"grupe": "Techninis ir profesinis pajėgumas", "reikalavimas": "...", "atitiktis": "...", "pagrindimas": "...", "koTruksta": "...", "kaDaryti": "..."},
+      {"grupe": "Sertifikatai ir kokybės standartai", "reikalavimas": "...", "atitiktis": "...", "pagrindimas": "...", "koTruksta": "...", "kaDaryti": "..."},
+      {"grupe": "EBVPD/ESPD pildymas", "reikalavimas": "...", "atitiktis": "...", "pagrindimas": "...", "koTruksta": "...", "kaDaryti": "..."}
+    ],
+    "tinkamumoIsvada": "PERSONALIZUOTAS ETAPAS: galutinė išvada konkrečiai šiai įmonei pagal jos sferą ir klausimyną (2-3 sakiniai)"
+  },
 
   "subBalai": {
     "tinkamumas": 68,
@@ -381,30 +352,41 @@ Grąžink TIKSLIAI tokios struktūros JSON (jei nėra informacijos — rašyk "N
 
 Pastaba: ši analizė nėra galutinė teisinė išvada — tai praktinis sprendimų ir rizikų įrankis tiekėjui.`;
 
-    const aiRes = await callClaude(system, userMsg, 32000);
+    let aiRes = await callClaude(system, userMsg, 32000);
     let result = parseJSON(aiRes, null);
 
+    // 1) Vienas pakartojimas, jei JSON nesusiparsino — dažnai užtenka antro bandymo.
     if (!result || !result.pavadinimas) {
-      // Pagrindinis (didelis) atsakymas nutrūko ar nesusiparsino. Atliekam ANTRĄ,
-      // fokusuotą kvietimą — taip analizė visada lieka tikra ir išspręsta su realiu
-      // pavadinimu, o ne ZIP failo vardu. Jei pagrindinis grąžino dalinį JSON,
-      // sujungiam: paliekam tai, kas pavyko, ir užpildom trūkstamus esminius laukus.
-      const partial = (result && typeof result === 'object') ? result : {};
-      const essential = await essentialAnalysis(analyzableText, profileCtx);
-      if (essential) {
-        result = Object.assign({}, essential, partial); // dalinis turi pirmenybę ten, kur jis pilnas
-        if (!result.pavadinimas) result.pavadinimas = essential.pavadinimas;
-      } else {
-        // Net antras kvietimas nepavyko — kraštutinis atvejis. Vis tiek bandom
-        // bent ištraukti pavadinimą iš pirmos dokumento eilutės, kad kortelė nebūtų tuščia.
-        result = partial;
-        if (!result.pavadinimas) {
-          const firstLine = (docTextSafe.split(/\n/).map(l => l.trim()).find(l => l.length > 8) || '').slice(0, 140);
-          result.pavadinimas = firstLine || 'Konkurso analizė';
+      try {
+        const retry = await callClaude(
+          system,
+          userMsg + '\n\nSVARBU: ankstesnis atsakymas buvo netinkamas. Grąžink TIK GALIOJANTĮ, pilną JSON pagal nurodytą struktūrą — be jokio teksto aplink, be ```json.',
+          32000
+        );
+        const re = parseJSON(retry, null);
+        if (re && re.pavadinimas) { result = re; aiRes = retry; }
+      } catch (e) { console.error('Pakartotinė analizė nepavyko:', e.message); }
+    }
+
+    // 2) GARANTIJA: jei vis dar nėra struktūros, ištraukiam bazinę info mažu patikimu
+    //    kvietimu, kad ataskaita NIEKADA nebūtų tuščia ar be pavadinimo.
+    if (!result || !result.pavadinimas) {
+      result = (result && typeof result === 'object') ? result : {};
+      try {
+        const basicSys = 'Tu esi viešųjų pirkimų dokumentų ištraukėjas. Grąžink TIK JSON su laukais: pavadinimas, pirkejas, cpv, terminai, objektas, isViso (2-3 sakinių santrauka). Lietuviškai. Jei reikšmės dokumente nėra — "Nenurodyta".';
+        const basic = parseJSON(await callClaude(basicSys, 'Ištrauk bazinę informaciją iš šio pirkimo dokumento:\n\n' + docTextSafe.slice(0, 200000), 4000), null);
+        if (basic && typeof basic === 'object') {
+          result.pavadinimas = result.pavadinimas || basic.pavadinimas;
+          result.pirkejas    = result.pirkejas    || basic.pirkejas;
+          result.cpv         = result.cpv         || basic.cpv;
+          result.terminai    = result.terminai    || basic.terminai;
+          result.objektas    = result.objektas    || basic.objektas;
+          result.isViso      = result.isViso      || basic.isViso;
         }
-        result.isViso = result.isViso || 'Automatinė analizė šįkart nepilna — pagrindinė informacija gali būti dalinė. Rekomenduojama pakartoti arba įkelti pavienius dokumentus vietoj viso ZIP.';
-        result._fallback = true;
-      }
+      } catch (e) { console.error('Bazinės info ištraukimas nepavyko:', e.message); }
+      result.pavadinimas = result.pavadinimas || documentName || 'Konkurso analizė';
+      result.isViso = result.isViso || 'Pavyko ištraukti pagrindinę informaciją iš dokumento. Detalesnių klausimų užduokite pokalbyje — atsakysiu remdamasis dokumento tekstu.';
+      result._partial = true;
     }
 
     result.score = typeof result.score === 'number' ? result.score : 50;
@@ -420,6 +402,7 @@ Pastaba: ši analizė nėra galutinė teisinė išvada — tai praktinis sprendi
         user_id: user.id,
         document_name: documentName || result.pavadinimas || 'Analizė',
         score: result.score,
+        doc_text: docTextSafe.slice(0, 200000),
         result_json: result
       }).select('id').single();
       if (saved) result._analysisId = saved.id;
