@@ -178,7 +178,7 @@ module.exports = async (req, res) => {
   if (!user) return res.status(401).json({ error: 'Neprisijungta' });
   if (!ANTHROPIC_API_KEY) return res.status(500).json({ error: 'AI nepasiekiamas' });
 
-  const { documentText, text, documentName, companyProfile } = req.body || {};
+  const { documentText, text, documentName, companyProfile, projectId } = req.body || {};
   const docText = documentText || text || '';
   if (!docText || docText.length < 50) {
     return res.status(400).json({ error: 'Dokumento tekstas per trumpas arba tuščias' });
@@ -186,12 +186,35 @@ module.exports = async (req, res) => {
   const docTextSafe = String(docText).replace(/<[^>]*>/g, '').trim();
 
   try {
+    // Vartotojo planas + likusios nemokamos analizės + profilis — vienu užklausimu
     let profile = companyProfile || {};
-    if ((!profile || !profile.sector) && process.env.SUPABASE_URL) {
+    let userPlan = 'free';
+    let freeLeft = null;
+    if (process.env.SUPABASE_URL) {
       const supabase = createClient(process.env.SUPABASE_URL, process.env.SUPABASE_SERVICE_KEY);
-      const { data } = await supabase.from('users').select('company_profile').eq('id', user.id).single();
-      if (data && data.company_profile) profile = data.company_profile;
+      const { data: urow } = await supabase
+        .from('users')
+        .select('plan, free_analyses_left, company_profile')
+        .eq('id', user.id)
+        .single();
+      if (urow) {
+        userPlan = urow.plan || 'free';
+        freeLeft = (typeof urow.free_analyses_left === 'number') ? urow.free_analyses_left : null;
+        if ((!profile || !profile.sector) && urow.company_profile) profile = urow.company_profile;
+      }
     }
+
+    // ── KVOTOS APSAUGA (serverio pusėje) ──
+    // Be šito nemokami vartotojai gali neribotai kviesti /api/analyze tiesiogiai,
+    // apeidami frontend'o limitą. Frontend 403 atveju atidaro mokėjimo langą.
+    if (userPlan === 'free' && freeLeft !== null && freeLeft <= 0) {
+      return res.status(403).json({
+        error: 'Išnaudojote nemokamas analizes. Atnaujinkite planą, kad tęstumėte.',
+        code: 'QUOTA_EXCEEDED',
+        freeAnalysesLeft: 0
+      });
+    }
+
     const profileCtx = buildProfileContext(profile);
 
     const system = `Tu esi Bidwise AI — viešųjų pirkimų sprendimų analitikas. Tavo ataskaita nėra graži santrauka — tai praktinis sprendimų ir rizikų įrankis tiekėjui. Analizuok lietuviškai, objektyviai ir nuosekliai (tam pačiam dokumentui visada duok tą patį balą).
@@ -398,14 +421,29 @@ Pastaba: ši analizė nėra galutinė teisinė išvada — tai praktinis sprendi
 
     if (process.env.SUPABASE_URL) {
       const supabase = createClient(process.env.SUPABASE_URL, process.env.SUPABASE_SERVICE_KEY);
-      const { data: saved } = await supabase.from('analyses').insert({
+      const UUID_RE = /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i;
+      const insertRow = {
         user_id: user.id,
         document_name: documentName || result.pavadinimas || 'Analizė',
         score: result.score,
         doc_text: docTextSafe.slice(0, 200000),
         result_json: result
-      }).select('id').single();
+      };
+      // project_id — kad analizė priklausytų teisingam projektui (anksčiau nebuvo saugoma,
+      // todėl projektų grupavimas neveikė).
+      if (projectId && UUID_RE.test(String(projectId))) insertRow.project_id = projectId;
+
+      const { data: saved } = await supabase.from('analyses').insert(insertRow).select('id').single();
       if (saved) result._analysisId = saved.id;
+
+      // Nuskaitom vieną nemokamą analizę PO sėkmingo įvykdymo (tik free planui)
+      if (userPlan === 'free' && freeLeft !== null) {
+        const newLeft = Math.max(0, freeLeft - 1);
+        try {
+          await supabase.from('users').update({ free_analyses_left: newLeft }).eq('id', user.id);
+        } catch (e) { console.error('Kvotos nuskaitymas nepavyko:', e.message); }
+        result._freeAnalysesLeft = newLeft;
+      }
     }
 
     return res.status(200).json({ result });
