@@ -49,7 +49,7 @@ module.exports = asyncHandler(async (req, res) => {
       method: 'POST',
       headers: { 'Content-Type': 'application/json', 'Authorization': `Bearer ${process.env.RESEND_API_KEY}` },
       body: JSON.stringify({
-        from: process.env.FROM_EMAIL || 'info@bidwise.lt',
+        from: process.env.EMAIL_FROM || 'Bidwise AI <noreply@bidwiseai.lt>',
         to,
         subject: `Bidwise AI: ${result.pavadinimas || 'Konkurso analizė'} – ${result.score || 0}%`,
         html: buildEmailHTML(result)
