@@ -9,9 +9,15 @@ const { verifyToken, applyCors } = require('./security');
 const ANTHROPIC_API_KEY = process.env.ANTHROPIC_API_KEY;
 const MODEL = 'claude-sonnet-4-6';
 
-async function callClaude(system, user, maxTokens = 4000) {
+// callClaude — su konfigūruojamu laiko biudžetu ir (pasirinktinai) streaming'u.
+// Streaming PRIVALOMAS ilgiems atsakymams: laiko soketą gyvą (jokio idle-disconnect)
+// ir grąžina vos užbaigus generavimą, todėl patikimai telpame po Vercel 60s riba.
+// opts: { timeoutMs (numatyta 45s), stream (numatyta false) }
+async function callClaude(system, user, maxTokens = 4000, opts = {}) {
+  const timeoutMs = opts.timeoutMs || 45000;
+  const stream = opts.stream === true;
   const controller = new AbortController();
-  const timeout = setTimeout(() => controller.abort(), 280000);
+  const timeout = setTimeout(() => controller.abort(), timeoutMs);
   try {
     const r = await fetch('https://api.anthropic.com/v1/messages', {
       method: 'POST',
@@ -24,18 +30,53 @@ async function callClaude(system, user, maxTokens = 4000) {
         model: MODEL,
         max_tokens: maxTokens,
         temperature: 0,
+        stream,
         system,
         messages: [{ role: 'user', content: user }]
       }),
       signal: controller.signal
     });
-    clearTimeout(timeout);
+
     if (!r.ok) {
       const err = await r.text();
+      clearTimeout(timeout);
       throw new Error('Claude API klaida: ' + r.status + ' ' + err.slice(0, 200));
     }
-    const data = await r.json();
-    return data.content.map(c => c.text || '').join('\n');
+
+    if (!stream) {
+      const data = await r.json();
+      clearTimeout(timeout);
+      return data.content.map(c => c.text || '').join('\n');
+    }
+
+    // ── SSE streaming: kaupiam text delta'as ──
+    const reader = r.body.getReader();
+    const decoder = new TextDecoder();
+    let buffer = '';
+    let out = '';
+    while (true) {
+      const { done, value } = await reader.read();
+      if (done) break;
+      buffer += decoder.decode(value, { stream: true });
+      let nl;
+      while ((nl = buffer.indexOf('\n')) !== -1) {
+        const line = buffer.slice(0, nl).trim();
+        buffer = buffer.slice(nl + 1);
+        if (!line.startsWith('data:')) continue;
+        const payload = line.slice(5).trim();
+        if (!payload || payload === '[DONE]') continue;
+        try {
+          const ev = JSON.parse(payload);
+          if (ev.type === 'content_block_delta' && ev.delta && typeof ev.delta.text === 'string') {
+            out += ev.delta.text;
+          } else if (ev.type === 'error') {
+            throw new Error('Claude stream klaida: ' + (ev.error?.message || 'nežinoma'));
+          }
+        } catch (_) { /* nepilna SSE eilutė — praleidžiam */ }
+      }
+    }
+    clearTimeout(timeout);
+    return out;
   } catch (e) {
     clearTimeout(timeout);
     if (e.name === 'AbortError') throw new Error('Analizė užtruko per ilgai. Pabandykite atskirą dokumentą vietoj viso ZIP.');
@@ -88,15 +129,16 @@ function parseJSON(text, fallback = {}) {
 // tik su sprendimu susijusią informaciją, tada struktūrizuojame kondensuotą
 // tekstą. Taip galima kelti bet kokio dydžio failus (iki Vercel ~4.5MB
 // užklausos kūno ribos), nieko tyliai neapkerpant ir nemetant klaidos.
-const SINGLE_CALL_CHAR_LIMIT = 280000; // ~70K tok — telpa su sistema + atsakymu
+const SINGLE_CALL_CHAR_LIMIT = 160000; // ~40K tok — greitas time-to-first-token su sistema + atsakymu
 const CHUNK_CHARS = 120000;            // viena dalis ~30K tok
 const CHUNK_OVERLAP = 2000;            // persidengimas, kad nesukirstume reikalavimo per pusę
-const CHUNK_CONCURRENCY = 4;           // lygiagretūs kvietimai paketuose (rate limit apsauga)
+const CHUNK_CONCURRENCY = 6;           // lygiagretūs kvietimai (mažiau batch'ų = greičiau)
+const MAX_CONDENSE_CHUNKS = 6;         // saugiklis: didžiausių ZIP'ų neapdorojam neribotai (laiko biudžetas)
 
 async function condenseChunk(chunk, idx, total) {
   const sys = 'Tu esi viešųjų pirkimų dokumentų ištraukėjas. Iš pateiktos dokumento dalies ištrauk TIK su dalyvavimo sprendimu susijusią informaciją: pirkimo objektas, kvalifikaciniai ir techniniai reikalavimai, blokuojančios/privalomos sąlygos, terminai, kainodara ir vertinimo kriterijai, EBVPD/ESPD, reikalingi sertifikatai ir dokumentai, sutarties sąlygos bei baudos. Praleisk vandenį ir pasikartojimus. Cituok punktų numerius, jei matomi. Atsakyk glaustai lietuviškai, be įžangų.';
   try {
-    const out = await callClaude(sys, 'Dokumento dalis ' + (idx + 1) + '/' + total + ':\n\n' + chunk, 4000);
+    const out = await callClaude(sys, 'Dokumento dalis ' + (idx + 1) + '/' + total + ':\n\n' + chunk, 3000, { timeoutMs: 18000 });
     return (out || '').trim();
   } catch (e) {
     console.error('Kondensavimo klaida (dalis ' + (idx + 1) + '):', e.message);
@@ -109,7 +151,7 @@ async function prepareDocText(fullText) {
 
   const chunks = [];
   const stepSize = CHUNK_CHARS - CHUNK_OVERLAP;
-  for (let i = 0; i < fullText.length; i += stepSize) {
+  for (let i = 0; i < fullText.length && chunks.length < MAX_CONDENSE_CHUNKS; i += stepSize) {
     chunks.push(fullText.slice(i, i + CHUNK_CHARS));
   }
 
@@ -122,9 +164,10 @@ async function prepareDocText(fullText) {
   }
 
   const condensed = parts.filter(Boolean).join('\n\n────────── DOKUMENTO DALIS ──────────\n\n');
-  return condensed.length > SINGLE_CALL_CHAR_LIMIT
-    ? condensed.slice(0, SINGLE_CALL_CHAR_LIMIT)
-    : condensed;
+  // Jei kondensavimas nieko negrąžino (visos dalys nukrito) — naudojam pradžios fragmentą,
+  // kad analizė niekada nebūtų tuščia.
+  const safe = condensed.length > 200 ? condensed : fullText.slice(0, SINGLE_CALL_CHAR_LIMIT);
+  return safe.length > SINGLE_CALL_CHAR_LIMIT ? safe.slice(0, SINGLE_CALL_CHAR_LIMIT) : safe;
 }
 
 function buildProfileContext(profile) {
@@ -375,7 +418,10 @@ Grąžink TIKSLIAI tokios struktūros JSON (jei nėra informacijos — rašyk "N
 
 Pastaba: ši analizė nėra galutinė teisinė išvada — tai praktinis sprendimų ir rizikų įrankis tiekėjui.`;
 
-    let aiRes = await callClaude(system, userMsg, 32000);
+    // Pagrindinis kvietimas: streaming + 6000 tok riba (anksčiau 32000 — dėl to atsakymas
+    // generuodavosi 90–200s ir klientas nukrisdavo ties 180s). 6000 tok pakanka pilnai schemai;
+    // parseJSON turi atkūrimą jei vis tiek nutrūktų. 48s biudžetas telpa po Vercel 60s riba.
+    let aiRes = await callClaude(system, userMsg, 6000, { stream: true, timeoutMs: 48000 });
     let result = parseJSON(aiRes, null);
 
     // 1) Vienas pakartojimas, jei JSON nesusiparsino — dažnai užtenka antro bandymo.
@@ -384,7 +430,8 @@ Pastaba: ši analizė nėra galutinė teisinė išvada — tai praktinis sprendi
         const retry = await callClaude(
           system,
           userMsg + '\n\nSVARBU: ankstesnis atsakymas buvo netinkamas. Grąžink TIK GALIOJANTĮ, pilną JSON pagal nurodytą struktūrą — be jokio teksto aplink, be ```json.',
-          32000
+          6000,
+          { stream: true, timeoutMs: 30000 }
         );
         const re = parseJSON(retry, null);
         if (re && re.pavadinimas) { result = re; aiRes = retry; }
@@ -397,7 +444,7 @@ Pastaba: ši analizė nėra galutinė teisinė išvada — tai praktinis sprendi
       result = (result && typeof result === 'object') ? result : {};
       try {
         const basicSys = 'Tu esi viešųjų pirkimų dokumentų ištraukėjas. Grąžink TIK JSON su laukais: pavadinimas, pirkejas, cpv, terminai, objektas, isViso (2-3 sakinių santrauka). Lietuviškai. Jei reikšmės dokumente nėra — "Nenurodyta".';
-        const basic = parseJSON(await callClaude(basicSys, 'Ištrauk bazinę informaciją iš šio pirkimo dokumento:\n\n' + docTextSafe.slice(0, 200000), 4000), null);
+        const basic = parseJSON(await callClaude(basicSys, 'Ištrauk bazinę informaciją iš šio pirkimo dokumento:\n\n' + docTextSafe.slice(0, 120000), 2000, { timeoutMs: 25000 }), null);
         if (basic && typeof basic === 'object') {
           result.pavadinimas = result.pavadinimas || basic.pavadinimas;
           result.pirkejas    = result.pirkejas    || basic.pirkejas;
@@ -454,4 +501,4 @@ Pastaba: ši analizė nėra galutinė teisinė išvada — tai praktinis sprendi
   }
 };
 
-module.exports.config = { maxDuration: 300 };
+module.exports.config = { maxDuration: 60 };
