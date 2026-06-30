@@ -6,10 +6,10 @@
     { "src": "/(.*)", "dest": "/public/index.html" }
   ],
   "functions": {
-    "api/analyze.js": { "maxDuration": 300 },
-    "api/analyze-agents.js": { "maxDuration": 300 },
-    "api/tender-questionnaire.js": { "maxDuration": 300 },
-    "api/chat.js": { "maxDuration": 120 },
+    "api/analyze.js": { "maxDuration": 60 },
+    "api/analyze-agents.js": { "maxDuration": 60 },
+    "api/tender-questionnaire.js": { "maxDuration": 60 },
+    "api/chat.js": { "maxDuration": 60 },
     "api/po-question.js": { "maxDuration": 60 }
   },
   "crons": [
