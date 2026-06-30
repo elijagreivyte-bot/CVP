@@ -1344,7 +1344,7 @@ details[open] summary span:last-child{transform:rotate(45deg)}
       </div>
       <div style="text-align:right;margin:-2px 0 10px"><a onclick="openForgot()" style="font-size:12px;color:var(--text2);cursor:pointer">Pamiršau slaptažodį?</a></div>
       <div class="err" id="l-err"></div>
-      <button class="btn btn-primary" style="width:100%;justify-content:center" onclick="doLogin()">Prisijungti →</button>
+      <button class="btn btn-primary" style="width:100%;justify-content:center" onclick="doLogin(this)">Prisijungti →</button>
     </div>
 
     <!-- REGISTER -->
@@ -1358,7 +1358,7 @@ details[open] summary span:last-child{transform:rotate(45deg)}
         <div class="pw-wrap"><input class="inp" type="password" id="r-p2" placeholder="Pakartokite slaptažodį" onkeydown="if(event.key==='Enter')doRegister()"><button class="pw-eye" onclick="pwEye('r-p2',this)">👁</button></div>
       </div>
       <div class="err" id="r-err"></div>
-      <button class="btn btn-primary" style="width:100%;justify-content:center" onclick="doRegister()">Registruotis nemokamai →</button>
+      <button class="btn btn-primary" style="width:100%;justify-content:center" onclick="doRegister(this)">Registruotis nemokamai →</button>
       <div class="auth-terms">Registruodamiesi sutinkate su <a onclick="closeAuth();openTerms()">Paslaugų sąlygomis</a> ir <a onclick="closeAuth();openPrivacy()">Privatumo politika</a></div>
     </div>
   </div>
@@ -2490,24 +2490,26 @@ function pwEye(id,b){const e=document.getElementById(id);e.type=e.type==='passwo
 function se(id,m){const e=document.getElementById(id);e.textContent=m;e.classList.add('show')}
 function he(id){document.getElementById(id).classList.remove('show')}
 
-async function doLogin(){
+async function doLogin(b){
   he('l-err');
   const email=document.getElementById('l-e').value.trim();
   const pass=document.getElementById('l-p').value;
   if(!email||!pass)return se('l-err','Užpildykite visus laukus');
+  if(b){b.disabled=true;b.dataset.t=b.dataset.t||b.textContent;b.textContent='Jungiamasi…';}
+  const restore=()=>{if(b){b.disabled=false;b.textContent=b.dataset.t||'Prisijungti →';}};
   try{
     const r=await fetch(API+'/api/login',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({email,password:pass})});
     const d=await r.json();
-    if(!r.ok)return se('l-err',d.error||'Prisijungimo klaida');
+    if(!r.ok){restore();return se('l-err',d.error||'Prisijungimo klaida');}
     localStorage.setItem(TK,d.token);
     localStorage.setItem(UK,JSON.stringify(d.user));
     curUser=d.user;
     closeAuth();
     showApp();
-  }catch(e){se('l-err','Serverio klaida. Bandykite vėliau.')}
+  }catch(e){restore();se('l-err','Serverio klaida. Bandykite vėliau.')}
 }
 
-async function doRegister(){
+async function doRegister(b){
   he('r-err');
   const name=document.getElementById('r-n').value.trim();
   const email=document.getElementById('r-e').value.trim();
@@ -2516,17 +2518,19 @@ async function doRegister(){
   if(!name||!email||!pass)return se('r-err','Užpildykite visus laukus');
   if(pass!==pass2)return se('r-err','Slaptažodžiai nesutampa');
   if(pass.length<6)return se('r-err','Min. 6 simboliai');
+  if(b){b.disabled=true;b.dataset.t=b.dataset.t||b.textContent;b.textContent='Registruojama…';}
+  const restore=()=>{if(b){b.disabled=false;b.textContent=b.dataset.t||'Registruotis nemokamai →';}};
   try{
     const r=await fetch(API+'/api/register',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({name,email,password:pass})});
     const d=await r.json();
-    if(!r.ok)return se('r-err',d.error||'Registracijos klaida');
+    if(!r.ok){restore();return se('r-err',d.error||'Registracijos klaida');}
     localStorage.setItem(TK,d.token);
     localStorage.setItem(UK,JSON.stringify(d.user));
     curUser=d.user;
     closeAuth();
     // Show onboarding after register
     openOnboarding();
-  }catch(e){se('r-err','Serverio klaida')}
+  }catch(e){restore();se('r-err','Serverio klaida')}
 }
 
 function doLogout(){
@@ -2734,11 +2738,34 @@ document.getElementById('terms-modal').addEventListener('click',function(e){if(e
 // ── FILES ──
 function ondg(e,on){e.preventDefault();document.getElementById('drop').classList.toggle('over',!!on)}
 function ondp(e){e.preventDefault();ondg(e,0);addF(e.dataTransfer.files)}
+// ── FILE VALIDATION CONSTANTS ──
+const ALLOWED_EXT=['.pdf','.doc','.docx','.txt','.zip'];
+const MAX_FILE_BYTES=50*1024*1024;   // 50 MB vienam failui
+const MAX_TOTAL_BYTES=60*1024*1024;  // 60 MB iš viso
+const MAX_FILES=10;
+function fileExt(name){const i=(name||'').lastIndexOf('.');return i<0?'':name.slice(i).toLowerCase();}
+function fileToast(m,t,d){if(typeof toast==='function')toast(m,t||'warn',d||6000);else alert(m);}
+
 function addF(fs){
+  const skip={type:[],big:[],empty:[],dup:0};
+  let totalBytes=files.reduce((s,f)=>s+(f.size||0),0);
+  let hitLimit=false;
   for(const f of fs){
-    if(files.length>=10){alert('Maks. 10 failų');break}
-    if(!files.find(x=>x.name===f.name))files.push(f)
+    if(files.length>=MAX_FILES){fileToast('Maks. '+MAX_FILES+' failai vienai analizei','warn');break;}
+    const ext=fileExt(f.name);
+    if(!ALLOWED_EXT.includes(ext)){skip.type.push(f.name);continue;}
+    if(!f.size||f.size<=0){skip.empty.push(f.name);continue;}
+    if(f.size>MAX_FILE_BYTES){skip.big.push(f.name);continue;}
+    if(files.find(x=>x.name===f.name)){skip.dup++;continue;}
+    if(totalBytes+f.size>MAX_TOTAL_BYTES){hitLimit=true;break;}
+    files.push(f);
+    totalBytes+=f.size;
   }
+  if(skip.type.length)fileToast('Netinkamas formatas (priimama PDF, DOC, DOCX, TXT, ZIP): '+skip.type.join(', '),'error',9000);
+  if(skip.big.length)fileToast('Per dideli failai (maks. '+(MAX_FILE_BYTES/1048576|0)+' MB vienam): '+skip.big.join(', '),'error',9000);
+  if(skip.empty.length)fileToast('Tušti failai praleisti: '+skip.empty.join(', '),'warn');
+  if(skip.dup)fileToast(skip.dup+' failas (-ai) jau pridėtas (-i) — praleista','warn');
+  if(hitLimit)fileToast('Bendras failų dydis viršytų '+(MAX_TOTAL_BYTES/1048576|0)+' MB — kai kurie failai nepridėti','warn',8000);
   renderFL();
   document.getElementById('an-btn').disabled=files.length===0;
 }
@@ -2986,15 +3013,31 @@ async function startAn(){
     }
     extText=combined;
     updSZ(combined);
-    const tok=localStorage.getItem(TK);
     const docName=files.map(f=>f.name).join(', ');
     // Build rich client context string for more accurate AI analysis
     const clientContext = buildClientContext(companyProfile);
-    // Use multi-agent endpoint if ANY profile data exists
-    const endpoint = hasProfile ? '/api/analyze-agents' : '/api/analyze';
+    await _sendAnalysis(combined, companyProfile, clientContext, docName, hasProfile);
+  }catch(e){
+    loading.style.display='none';
+    if(window.aiProg && window.aiProg.stop) window.aiProg.stop();
+    if(typeof toast==='function') toast('Klaida: '+e.message, 'error', 7000);
+    else alert('Klaida: '+e.message);
+  }
+}
+
+async function _sendAnalysis(combined, companyProfile, clientContext, docName, hasProfile){
+  window._lastSend={combined,companyProfile,clientContext,docName,hasProfile};
+  const loading=document.getElementById('loading');
+  const tok=localStorage.getItem(TK);
+  const endpoint = hasProfile ? '/api/analyze-agents' : '/api/analyze';
+  const ctrl=new AbortController();
+  const TIMEOUT_MS=180000; // 3 min sauganti riba lėtam internetui / serverio apkrovai
+  const timer=setTimeout(()=>ctrl.abort(),TIMEOUT_MS);
+  try{
     const r=await fetch(API+endpoint,{
       method:'POST',
       headers:{'Content-Type':'application/json','Authorization':'Bearer '+tok},
+      signal:ctrl.signal,
       body:JSON.stringify({
         text:combined,
         documentText:combined,
@@ -3004,21 +3047,14 @@ async function startAn(){
         clientContext
       })
     });
-    const d=await r.json();
+    clearTimeout(timer);
+    let d={};
+    try{d=await r.json();}catch(_){d={error:'Serverio atsakymas neįskaitomas ('+r.status+')'};}
     if(!r.ok){
       loading.style.display='none';
+      if(window.aiProg && window.aiProg.stop) window.aiProg.stop();
       if(r.status===403){document.getElementById('pm').classList.add('open');}
-      else{
-        const errMsg=d.error||'Nežinoma klaida ('+r.status+')';
-        const errDiv=document.createElement('div');
-        errDiv.style.cssText='background:rgba(239,68,68,.1);border:1px solid rgba(239,68,68,.3);border-radius:12px;padding:16px 20px;margin-bottom:16px;font-size:13px;color:#fca5a5;line-height:1.6';
-        errDiv.innerHTML='<strong>⚠️ Analizės klaida</strong><br>'+errMsg+'<br><span style="font-size:11px;opacity:.7;margin-top:6px;display:block">Pabandykite su mažesniu failu arba atskirais PDF failais vietoj ZIP</span>';
-        const analyzeSection=document.getElementById('pg-analyze');
-        const existing=document.getElementById('an-error-msg');
-        if(existing)existing.remove();
-        errDiv.id='an-error-msg';
-        analyzeSection.insertBefore(errDiv,analyzeSection.querySelector('#result-view'));
-      }
+      else{showAnError(d.error||'Nežinoma klaida ('+r.status+')', false);}
       return;
     }
     // Update free analyses counter
@@ -3034,11 +3070,44 @@ async function startAn(){
       renderResult(d.result);
     },600);
   }catch(e){
+    clearTimeout(timer);
     loading.style.display='none';
     if(window.aiProg && window.aiProg.stop) window.aiProg.stop();
-    if(typeof toast==='function') toast('Klaida: '+e.message, 'error', 7000);
-    else alert('Klaida: '+e.message);
+    const isAbort=(e && e.name==='AbortError');
+    const msg=isAbort
+      ? 'Užklausa truko per ilgai — gali būti lėtas internetas arba serverio apkrova. Tekstas išsaugotas, galite bandyti iš naujo nepertraukdami failų.'
+      : 'Tinklo klaida — patikrinkite interneto ryšį. Tekstas išsaugotas, galite bandyti iš naujo.';
+    showAnError(msg, true);
   }
+}
+
+function showAnError(errMsg, retryable){
+  const analyzeSection=document.getElementById('pg-analyze');
+  if(!analyzeSection)return;
+  const existing=document.getElementById('an-error-msg');
+  if(existing)existing.remove();
+  const errDiv=document.createElement('div');
+  errDiv.id='an-error-msg';
+  errDiv.style.cssText='background:rgba(239,68,68,.1);border:1px solid rgba(239,68,68,.3);border-radius:12px;padding:16px 20px;margin-bottom:16px;font-size:13px;color:#fca5a5;line-height:1.6';
+  errDiv.innerHTML='<strong>⚠️ Analizės klaida</strong><br>'+errMsg+(
+    retryable
+      ? '<br><button onclick="retryAnalysis()" class="btn btn-primary btn-sm" style="margin-top:10px">↻ Bandyti dar kartą</button>'
+      : '<br><span style="font-size:11px;opacity:.7;margin-top:6px;display:block">Pabandykite su mažesniu failu arba atskirais PDF failais vietoj ZIP</span>'
+  );
+  analyzeSection.insertBefore(errDiv,analyzeSection.querySelector('#result-view'));
+}
+
+async function retryAnalysis(){
+  const s=window._lastSend;
+  const existing=document.getElementById('an-error-msg');
+  if(existing)existing.remove();
+  if(!s){startAn();return;}
+  const loading=document.getElementById('loading');
+  const rv=document.getElementById('result-view');
+  if(rv)rv.style.display='none';
+  if(loading)loading.style.display='flex';
+  if(typeof showAIProgress==='function')window.aiProg=showAIProgress(document.getElementById('ai-progress-target'), s.hasProfile);
+  await _sendAnalysis(s.combined, s.companyProfile, s.clientContext, s.docName, s.hasProfile);
 }
 
 function resetAn(){
@@ -3751,12 +3820,24 @@ async function createProject(){
   }
 }
 async function deleteProject(id){
+  if(!id) return;
   if(!confirm('Ar tikrai norite ištrinti projektą?'))return;
   const tok=localStorage.getItem(TK);
   try{
-    await fetch(API+'/api/projects',{method:'DELETE',headers:{'Content-Type':'application/json','Authorization':'Bearer '+tok},body:JSON.stringify({id})});
-    renderProjects();
-  }catch(e){}
+    const r=await fetch(API+'/api/projects',{method:'DELETE',headers:{'Content-Type':'application/json','Authorization':'Bearer '+tok},body:JSON.stringify({id})});
+    if(r.ok){
+      projects=projects.filter(p=>p.id!==id);
+      if(currentProject===id){currentProject=null;if(typeof refreshProjSelector==='function')refreshProjSelector();}
+      renderProjects();
+    }else{
+      let d={};try{d=await r.json();}catch(_){}
+      let msg=d.error||'Nepavyko ištrinti projekto ('+r.status+')';
+      if(r.status===401)msg='Sesija pasibaigė — prisijunkite iš naujo';
+      if(typeof toast==='function')toast('Klaida: '+msg,'error'); else alert('Klaida: '+msg);
+    }
+  }catch(e){
+    if(typeof toast==='function')toast('Ryšio klaida: '+e.message,'error'); else alert('Ryšio klaida: '+e.message);
+  }
 }
 
 // ── PAYMENT ──
