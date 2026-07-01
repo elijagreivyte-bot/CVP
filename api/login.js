@@ -40,6 +40,7 @@ module.exports = asyncHandler(async (req, res) => {
       email: user.email,
       plan: user.plan,
       free_analyses_left: user.free_analyses_left,
+      free_chat_left: (typeof user.free_chat_left === 'number') ? user.free_chat_left : 1,
       subscription_end: user.subscription_end,
       company_profile: user.company_profile
     }
