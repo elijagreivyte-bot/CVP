@@ -3115,7 +3115,21 @@ function renderResult(r){
     </div>`;
   };
 
+  const integrityWarnings=[];
+  if(r._partial) integrityWarnings.push('Nepavyko atlikti pilnos personalizuotos analizės — rodoma bazinė informacija, ištraukta iš dokumento. Detalesnių klausimų užduokite AI asistentui pokalbyje.');
+  if(r._truncated) integrityWarnings.push('AI atsakymas buvo per ilgas ir nutrūko generavimo metu — dalis rizikų ar reikalavimų sąraše gali trūkti. Rekomenduojame peržiūrėti originalų dokumentą kritinėms detalėms patikrinti.');
+  if(r._scoreDefaulted) integrityWarnings.push('Nepavyko apskaičiuoti tikslaus galimybių balo — rodoma numatytoji (neutrali) reikšmė, ne AI įvertinimas.');
+
   rb.innerHTML=`
+    ${integrityWarnings.length?`<div class="r-card r-full-width" style="margin-bottom:16px;background:rgba(245,158,11,.08);border:1px solid rgba(245,158,11,.3)">
+      <div style="display:flex;gap:10px;align-items:flex-start">
+        <div style="font-size:18px">⚠️</div>
+        <div>
+          <div style="font-size:13px;font-weight:700;color:#fbbf24;margin-bottom:4px">Ši analizė gali būti nepilna</div>
+          ${integrityWarnings.map(w=>`<div style="font-size:12px;color:var(--text2);line-height:1.6;margin-bottom:2px">• ${w}</div>`).join('')}
+        </div>
+      </div>
+    </div>`:''}
     <div class="r-card r-full-width" style="margin-bottom:16px;background:${decisionMeta.bg};border:1px solid ${decisionMeta.border}">
       <div style="display:flex;align-items:center;gap:16px;flex-wrap:wrap">
         <div style="font-size:22px;font-weight:900;color:${decisionMeta.color}">${decisionMeta.label}</div>
