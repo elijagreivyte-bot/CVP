@@ -2787,7 +2787,7 @@ function renderFL(){
     const ic=f.name.endsWith('.pdf')?'📕':f.name.endsWith('.zip')?'🗜️':f.name.endsWith('.txt')?'📝':'📘';
     const tc=f.name.endsWith('.pdf')?'pdf':f.name.endsWith('.docx')||f.name.endsWith('.doc')?'word':'zip';
     const tl=f.name.endsWith('.pdf')?'PDF':f.name.endsWith('.docx')||f.name.endsWith('.doc')?'WORD':f.name.endsWith('.zip')?'ZIP':'TXT';
-    return `<div class="fi"><span class="fi-ic">${ic}</span><span class="fi-name">${f.name}<span class="fi-tag ${tc}">${tl}</span></span><span class="fi-size">${(f.size/1024).toFixed(0)} KB</span><button class="fi-x" onclick="remF('${f.name}')">×</button></div>`;
+    return `<div class="fi"><span class="fi-ic">${ic}</span><span class="fi-name">${escHtml(f.name)}<span class="fi-tag ${tc}">${tl}</span></span><span class="fi-size">${(f.size/1024).toFixed(0)} KB</span><button class="fi-x" onclick="remF('${f.name}')">×</button></div>`;
   }).join('');
 }
 
@@ -3495,8 +3495,8 @@ function filterHistory(){
       const sc=a.score||0;
       const cl=sc>=70?'sc-hi':sc>=40?'sc-md':'sc-lo';
       const scColor=sc>=70?'var(--success)':sc>=40?'var(--warn)':'var(--danger)';
-      const title=(a.result_json&&a.result_json.pavadinimas)||a.document_name||'Nežinomas konkursas';
-      const org=(a.result_json&&a.result_json.perkanciojiOrganizacija)||'';
+      const title=escHtml((a.result_json&&a.result_json.pavadinimas)||a.document_name||'Nežinomas konkursas');
+      const org=escHtml((a.result_json&&a.result_json.perkanciojiOrganizacija)||'');
       const projName=a.project_name;
       const date=new Date(a.created_at).toLocaleDateString('lt-LT');
       const terminas=(a.result_json&&a.result_json.terminai&&a.result_json.terminai.pasiulymoTerminas)||'';
@@ -3520,9 +3520,9 @@ function filterHistory(){
             </div>
             <div style="font-size:12px;color:var(--text2);margin-bottom:6px">${org}</div>
             <div style="display:flex;gap:8px;flex-wrap:wrap;align-items:center">
-              ${projName?`<span style="font-size:11px;background:rgba(59,130,246,.1);color:var(--blue3);border:1px solid rgba(59,130,246,.2);padding:2px 8px;border-radius:10px">📁 ${projName}</span>`:''}
+              ${projName?`<span style="font-size:11px;background:rgba(59,130,246,.1);color:var(--blue3);border:1px solid rgba(59,130,246,.2);padding:2px 8px;border-radius:10px">📁 ${escHtml(projName)}</span>`:''}
               <span style="font-size:11px;color:var(--text3)">📅 ${date}</span>
-              ${terminas?`<span style="font-size:11px;color:${isExpired?'var(--danger)':'var(--text3)'}">⏰ ${terminas}</span>`:''}
+              ${terminas?`<span style="font-size:11px;color:${isExpired?'var(--danger)':'var(--text3)'}">⏰ ${escHtml(terminas)}</span>`:''}
             </div>
           </div>
           <div style="display:flex;gap:6px;flex-shrink:0;align-items:center">
@@ -3710,8 +3710,8 @@ async function renderProjects(){
             <div style="padding:20px 22px;display:flex;align-items:flex-start;gap:16px;cursor:pointer" onclick="toggleProjAnalyses('${p.id}')">
               <div style="font-size:28px;margin-top:2px">📁</div>
               <div style="flex:1">
-                <div style="font-family:Sora,sans-serif;font-size:16px;font-weight:700;margin-bottom:4px">${p.name}</div>
-                ${p.description?`<div style="font-size:12px;color:var(--text2);margin-bottom:8px">${p.description}</div>`:''}
+                <div style="font-family:Sora,sans-serif;font-size:16px;font-weight:700;margin-bottom:4px">${escHtml(p.name)}</div>
+                ${p.description?`<div style="font-size:12px;color:var(--text2);margin-bottom:8px">${escHtml(p.description)}</div>`:''}
                 <div style="display:flex;gap:10px;flex-wrap:wrap;align-items:center">
                   <span style="font-size:12px;color:var(--text3)">${count} analiz${count===1?'ė':'ės'}</span>
                   ${lastDate?`<span style="font-size:12px;color:var(--text3)">Paskutinė: ${lastDate}</span>`:''}
@@ -3785,7 +3785,7 @@ function refreshProjSelector(){
   if(!sel)return;
   const cur=sel.value;
   sel.innerHTML='<option value="">— Be projekto —</option>'+
-    projects.map(p=>`<option value="${p.id}"${cur===p.id?' selected':''}>${p.name}</option>`).join('');
+    projects.map(p=>`<option value="${escHtml(p.id)}"${cur===p.id?' selected':''}>${escHtml(p.name)}</option>`).join('');
   if(cur)sel.value=cur;
 }
 
@@ -4196,7 +4196,7 @@ function generateQuestionLetter(){
     container.innerHTML=suggested.map((q,i)=>`
       <div style="display:flex;align-items:flex-start;gap:10px;margin-bottom:8px;background:rgba(59,130,246,.06);border:1px solid rgba(59,130,246,.15);border-radius:8px;padding:10px 12px">
         <input type="checkbox" id="sq-${i}" checked style="margin-top:2px;accent-color:var(--blue3);flex-shrink:0">
-        <label for="sq-${i}" style="font-size:13px;color:var(--text);cursor:pointer;line-height:1.5">${q}</label>
+        <label for="sq-${i}" style="font-size:13px;color:var(--text);cursor:pointer;line-height:1.5">${escHtml(q)}</label>
       </div>`).join('');
   } else {
     container.innerHTML='<p style="font-size:13px;color:var(--text2);margin-bottom:12px">AI nenustatė specifinių klausimų — įveskite savo žemiau.</p>';
@@ -4442,6 +4442,11 @@ function toggleChat(){
 function showChatPanel(){
   const panel = document.getElementById('chat-panel');
   if(panel) panel.classList.add('show');
+}
+
+function escHtml(t){
+  if(t===null||t===undefined) return '';
+  return String(t).replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;').replace(/"/g,'&quot;').replace(/'/g,'&#39;');
 }
 
 function mdLite(t){
