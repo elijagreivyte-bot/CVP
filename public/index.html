@@ -690,7 +690,7 @@ details[open] summary span:last-child{transform:rotate(45deg)}
       <div class="hero-trust-item"><span>✓</span> 3 analizės nemokamai</div>
       <div class="hero-trust-item"><span>✓</span> Kortelės nesaugomos</div>
       <div class="hero-trust-item"><span>✓</span> GDPR atitinka</div>
-      <div class="hero-trust-item" style="opacity:.8"><span>📊</span> Jau išanalizuota <strong id="analyses-counter">...</strong> konkursų</div>
+      <div class="hero-trust-item" id="analyses-counter-wrap" style="opacity:.8;display:none"><span>📊</span> Jau išanalizuota <strong id="analyses-counter">...</strong> konkursų</div>
     </div>
   </div>
   <!-- RIGHT: live demo card -->
@@ -2323,21 +2323,22 @@ let chatContext=null, chatHistory=[], chatAttachments=[];
 
 // Live analyses counter
 (async function loadAnalysesCount(){
+  // Principas: niekada nerodome sugalvoto skaičiaus. Jei realių duomenų nėra
+  // arba užklausa nepavyko, elementas lieka paslėptas (žr. display:none HTML).
   try {
     const el = document.getElementById('analyses-counter');
-    if (!el) return;
+    const wrap = document.getElementById('analyses-counter-wrap');
+    if (!el || !wrap) return;
     const r = await fetch(API + '/api/analyses-count');
     if (r.ok) {
       const d = await r.json();
       const n = d.count || 0;
-      el.textContent = n > 0 ? n.toLocaleString('lt-LT') : '500+';
-    } else {
-      el.textContent = '500+';
+      if (n > 0) {
+        el.textContent = n.toLocaleString('lt-LT');
+        wrap.style.display = '';
+      }
     }
-  } catch { 
-    const el = document.getElementById('analyses-counter');
-    if (el) el.textContent = '500+';
-  }
+  } catch { /* tyliai nerodome — geriau nieko, nei sugalvotas skaičius */ }
 })();
 
 window.addEventListener('DOMContentLoaded',()=>{
