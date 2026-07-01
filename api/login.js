@@ -6,6 +6,9 @@ const jwt = require('jsonwebtoken');
 const { logger } = require('../middleware/logger');
 const { getJwtSecret, applyCors } = require('./security');
 
+const MAX_FAILED_ATTEMPTS = 5;
+const LOCKOUT_MINUTES = 15;
+
 module.exports = asyncHandler(async (req, res) => {
   applyCors(res);
   if (req.method === 'OPTIONS') return res.status(200).end();
@@ -23,10 +26,28 @@ module.exports = asyncHandler(async (req, res) => {
     throw authError('Neteisingas el. paštas arba slaptažodis');
   }
 
+  // Brute-force apsauga: jei paskyra užrakinta, atmetame net nebandydami tikrinti slaptažodžio.
+  if (user.locked_until && new Date(user.locked_until) > new Date()) {
+    const minutesLeft = Math.ceil((new Date(user.locked_until) - new Date()) / 60000);
+    logger.warn('Login blocked: account locked', { email, minutesLeft });
+    throw authError(`Per daug nesėkmingų bandymų. Paskyra užrakinta dar ${minutesLeft} min. Pabandykite vėliau arba atkurkite slaptažodį.`);
+  }
+
   const valid = await bcrypt.compare(password, user.password_hash);
   if (!valid) {
-    logger.warn('Login failed: invalid password', { email });
+    const attempts = (user.failed_login_attempts || 0) + 1;
+    const update = { failed_login_attempts: attempts };
+    if (attempts >= MAX_FAILED_ATTEMPTS) {
+      update.locked_until = new Date(Date.now() + LOCKOUT_MINUTES * 60000).toISOString();
+    }
+    await supabase.from('users').update(update).eq('id', user.id);
+    logger.warn('Login failed: invalid password', { email, attempts });
     throw authError('Neteisingas el. paštas arba slaptažodis');
+  }
+
+  // Sėkmingas prisijungimas — atstatome skaitiklį.
+  if (user.failed_login_attempts > 0 || user.locked_until) {
+    await supabase.from('users').update({ failed_login_attempts: 0, locked_until: null }).eq('id', user.id);
   }
 
   const token = jwt.sign({ id: user.id, email: user.email }, getJwtSecret(), { expiresIn: '30d' });
