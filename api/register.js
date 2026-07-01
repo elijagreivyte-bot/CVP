@@ -6,6 +6,14 @@ const jwt = require('jsonwebtoken');
 const { logger } = require('../middleware/logger');
 const { getJwtSecret, applyCors } = require('./security');
 
+const MAX_REGISTRATIONS_PER_HOUR = 5; // vienam IP — apsauga nuo nemokamų analizių fermų
+
+function getClientIp(req) {
+  const fwd = req.headers['x-forwarded-for'];
+  if (fwd) return String(fwd).split(',')[0].trim();
+  return req.socket?.remoteAddress || 'unknown';
+}
+
 module.exports = asyncHandler(async (req, res) => {
   applyCors(res);
   if (req.method === 'OPTIONS') return res.status(200).end();
@@ -16,6 +24,24 @@ module.exports = asyncHandler(async (req, res) => {
   const { name, email, password, companyProfile } = validation.value;
 
   const supabase = createClient(process.env.SUPABASE_URL, process.env.SUPABASE_SERVICE_KEY);
+
+  // ── IP throttling: apsauga nuo automatinio registracijų skriptavimo, kuris
+  // fermintų nemokamas analizes (kiekviena registracija = 3 realūs Claude API kvietimai). ──
+  const ip = getClientIp(req);
+  const oneHourAgo = new Date(Date.now() - 60 * 60000).toISOString();
+  const { count } = await supabase
+    .from('registration_attempts')
+    .select('id', { count: 'exact', head: true })
+    .eq('ip', ip)
+    .gte('created_at', oneHourAgo);
+  if ((count || 0) >= MAX_REGISTRATIONS_PER_HOUR) {
+    logger.warn('Registration throttled: too many attempts from IP', { ip, count });
+    throw validationError([{ field: 'email', message: 'Per daug registracijų iš šio tinklo per trumpą laiką. Pabandykite vėliau.' }]);
+  }
+  await supabase.from('registration_attempts').insert({ ip });
+  // Progine valymas — pašalinam senesnius nei 24h įrašus, kad lentelė neaugtų be ribų.
+  supabase.from('registration_attempts').delete().lt('created_at', new Date(Date.now() - 24 * 3600000).toISOString()).then(() => {}, () => {});
+
   const { data: existing } = await supabase.from('users').select('id').eq('email', email).single();
   
   if (existing) {
