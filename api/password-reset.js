@@ -115,7 +115,7 @@ module.exports = async (req, res) => {
     try {
       const { data: user } = await supabase
         .from('users')
-        .select('id, name, email, plan, free_analyses_left, subscription_end, company_profile, password_hash')
+        .select('id, name, email, plan, free_analyses_left, free_chat_left, subscription_end, company_profile, password_hash')
         .eq('id', payload.uid).single();
 
       if (!user) return res.status(400).json({ error: 'Vartotojas nerastas' });
@@ -140,6 +140,7 @@ module.exports = async (req, res) => {
           email: user.email,
           plan: user.plan,
           free_analyses_left: user.free_analyses_left,
+          free_chat_left: (typeof user.free_chat_left === 'number') ? user.free_chat_left : 1,
           subscription_end: user.subscription_end,
           company_profile: user.company_profile
         }
