@@ -107,7 +107,7 @@ function buildReportHtml(result, senderName) {
   <div style="background:#f8faff;border-top:1px solid #e2e8f0;padding:20px 32px;text-align:center">
     <div style="font-size:12px;color:#94a3b8">Ataskaita sugeneruota: ${new Date().toLocaleString('lt-LT')}</div>
     ${senderName ? `<div style="font-size:12px;color:#94a3b8;margin-top:4px">Siuntė: ${senderName}</div>` : ''}
-    <div style="font-size:11px;color:#cbd5e1;margin-top:8px">Bidwise AI · Išmani CVP analizė · bidwise.lt</div>
+    <div style="font-size:11px;color:#cbd5e1;margin-top:8px">Bidwise AI · Išmani CVP analizė · bidwiseai.lt</div>
   </div>
 </div>
 </body></html>`;
