@@ -3074,6 +3074,7 @@ async function _sendAnalysis(combined, companyProfile, clientContext, docName, h
     setTimeout(()=>{
       loading.style.display='none';
       curResult=d.result;
+      invalidateAnalyses();
       renderResult(d.result);
     },600);
   }catch(e){
@@ -3447,12 +3448,24 @@ function loadH(result){
 }
 
 // ── HISTORY ──
-async function renderHist(){
+// Analizių sąrašo cache — išvengia pakartotinio /api/history krovimo perjungiant skiltis (dashboard/istorija/projektai)
+let _histCache=null,_histAt=0;
+const HIST_TTL=30000; // 30s; po mutacijų (nauja analizė, trynimas, rezultatas) invaliduojama iškart
+async function getAnalyses(force){
   const tok=localStorage.getItem(TK);
+  if(!force && _histCache && (Date.now()-_histAt)<HIST_TTL){ allAnalyses=_histCache; return _histCache; }
+  const r=await fetch(API+'/api/history',{headers:{'Authorization':'Bearer '+tok}});
+  const d=await r.json();
+  _histCache=d.analyses||[];
+  _histAt=Date.now();
+  allAnalyses=_histCache;
+  return _histCache;
+}
+function invalidateAnalyses(){ _histCache=null; _histAt=0; }
+
+async function renderHist(){
   try{
-    const r=await fetch(API+'/api/history',{headers:{'Authorization':'Bearer '+tok}});
-    const d=await r.json();
-    allAnalyses=d.analyses||[];
+    allAnalyses=await getAnalyses();
     const hf=document.getElementById('hist-filters');
     if(hf)hf.style.display=allAnalyses.length>=5?'flex':'none';
     filterHistory();
@@ -3652,15 +3665,13 @@ async function renderProjects(){
   const pl=document.getElementById('proj-list');
   pl.innerHTML='<div style="display:flex;align-items:center;gap:12px;padding:32px;color:var(--text2)"><div class="spin"></div><span>Kraunama...</span></div>';
   try{
-    // Load projects and all analyses in parallel
-    const [rp,ra]=await Promise.all([
+    // Load projects (fresh) and analyses (cached) in parallel
+    const [rp,analyses]=await Promise.all([
       fetch(API+'/api/projects',{headers:{'Authorization':'Bearer '+tok}}),
-      fetch(API+'/api/history',{headers:{'Authorization':'Bearer '+tok}})
+      getAnalyses()
     ]);
     const dp=await rp.json();
-    const da=await ra.json();
     projects=dp.projects||[];
-    const analyses=da.analyses||[];
     allAnalyses=analyses; // keep in sync
 
     if(!projects.length){
@@ -5225,6 +5236,7 @@ async function deleteAnalysis(id){
     });
     if(r.ok){
       allAnalyses = allAnalyses.filter(a => a.id !== id);
+      invalidateAnalyses();
       filterHistory();
     } else {
       const d = await r.json();
@@ -5276,11 +5288,9 @@ async function renderDashboard(){
     const looksReal = nm && nm.includes(' ') && !/\d/.test(nm);
     g.textContent = looksReal ? sal + ', ' + nm + '!' : sal + '!';
   }
-  // Fetch analyses
+  // Fetch analyses (su cache)
   try {
-    const r = await fetch(API+'/api/history',{headers:{'Authorization':'Bearer '+tok}});
-    const d = await r.json();
-    const items = d.analyses || [];
+    const items = await getAnalyses();
     renderDashStats(items);
     renderDashDistribution(items);
     renderDashRecent(items);
@@ -5393,6 +5403,7 @@ async function trackOutcome(analysisId, outcome){
       body: JSON.stringify({id: analysisId, outcome})
     });
     if(r.ok){
+      invalidateAnalyses();
       const tip = document.createElement('div');
       tip.style.cssText = 'position:fixed;top:80px;right:24px;background:#10b981;color:#fff;padding:12px 18px;border-radius:10px;font-size:13px;z-index:999;box-shadow:0 4px 20px rgba(0,0,0,.3)';
       const lbl = outcome === 'won' ? '🏆 Laimėjimas užfiksuotas!' : outcome === 'lost' ? 'Užfiksuota' : outcome === 'participated' ? 'Užfiksuota' : 'Užfiksuota';
