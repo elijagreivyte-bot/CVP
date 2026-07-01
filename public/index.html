@@ -4383,7 +4383,7 @@ async function sendChat(){
     if(t) t.remove();
     if(!r.ok){
       if(r.status===403){
-        msgs.innerHTML += '<div class="cm cm-ai" style="color:var(--warn)">🔒 AI asistentas prieinamas tik Pro ir Komanda planams.<br><button onclick="selP(&quot;pro&quot;);goChk()" style="background:var(--grad);border:none;color:#fff;padding:6px 14px;border-radius:6px;cursor:pointer;font-size:12px;margin-top:6px">Gauti Pro →</button></div>';
+        msgs.innerHTML += '<div class="cm cm-ai" style="color:var(--warn)">🔒 Išnaudojote nemokamą AI asistento klausimą. Atnaujinkite į Pro planą, kad tęstumėte.<br><button onclick="selP(&quot;pro&quot;);goChk()" style="background:var(--grad);border:none;color:#fff;padding:6px 14px;border-radius:6px;cursor:pointer;font-size:12px;margin-top:6px">Gauti Pro →</button></div>';
       } else {
         msgs.innerHTML += `<div class="cm cm-ai" style="color:var(--danger)">${data.error||'Asistentas laikinai neprieinamas. Bandykite dar kartą.'}</div>`;
       }
@@ -4391,6 +4391,18 @@ async function sendChat(){
       const text = data.text || '';
       chatHistory.push({role:'assistant', content:text});
       msgs.innerHTML += `<div class="cm cm-ai">${mdLite(text)}</div>`;
+      if(typeof data.freeChatLeft === 'number' && curUser){
+        curUser.free_chat_left = data.freeChatLeft;
+        localStorage.setItem(UK, JSON.stringify(curUser));
+        if(data.freeChatLeft <= 0){
+          const wall = document.getElementById('chat-pro-wall');
+          const wallText = document.getElementById('chat-pro-wall-text');
+          const inp2 = document.getElementById('chat-input-area');
+          if(wallText) wallText.innerHTML = 'AI asistentas prieinamas tik <strong>Pro</strong> ir <strong>Komanda</strong> planams. Jau išnaudojote nemokamą klausimą.';
+          if(wall) wall.classList.remove('hidden');
+          if(inp2) inp2.style.display = 'none';
+        }
+      }
     }
   } catch(e){
     const t = document.getElementById('cm-thinking');
@@ -5074,12 +5086,16 @@ async function sendFullChat(){
     const data = await r.json();
     const t = document.getElementById('asst-thinking'); if(t) t.remove();
     if(!r.ok){
-      if(r.status===403) msgs.innerHTML += '<div class="cm cm-ai" style="color:var(--warn)">🔒 AI asistentas prieinamas tik Pro ir Komanda planams.<button onclick="selP(&quot;pro&quot;);goChk()" style="background:var(--grad);border:none;color:#fff;padding:4px 12px;border-radius:6px;cursor:pointer;font-size:12px;margin-left:8px">Gauti Pro →</button></div>';
+      if(r.status===403) msgs.innerHTML += '<div class="cm cm-ai" style="color:var(--warn)">🔒 Išnaudojote nemokamą AI asistento klausimą. Atnaujinkite į Pro planą, kad tęstumėte.<button onclick="selP(&quot;pro&quot;);goChk()" style="background:var(--grad);border:none;color:#fff;padding:4px 12px;border-radius:6px;cursor:pointer;font-size:12px;margin-left:8px">Gauti Pro →</button></div>';
       else msgs.innerHTML += `<div class="cm cm-ai" style="color:var(--danger)">${data.error||'Asistentas laikinai neprieinamas. Bandykite dar kartą.'}</div>`;
     } else {
       const text = data.text||'';
       chatHistory.push({role:'assistant',content:text});
       msgs.innerHTML += `<div class="cm cm-ai">${mdLite(text)}</div>`;
+      if(typeof data.freeChatLeft === 'number' && curUser){
+        curUser.free_chat_left = data.freeChatLeft;
+        localStorage.setItem(UK, JSON.stringify(curUser));
+      }
     }
   } catch(e){
     const t = document.getElementById('asst-thinking'); if(t) t.remove();
@@ -5100,20 +5116,27 @@ function openChat(result){
   chatAttachments = [];
   renderChatChips();
   const pro = (curUser && (curUser.plan==='pro' || curUser.plan==='team'));
+  const freeLeft = curUser ? (curUser.free_chat_left ?? 1) : 0;
+  const canChat = pro || freeLeft > 0;
   const msgs = document.getElementById('chat-msgs');
   const label = document.getElementById('chat-context-label');
   const noAn = document.getElementById('chat-no-analysis');
   const wall = document.getElementById('chat-pro-wall');
+  const wallText = document.getElementById('chat-pro-wall-text');
   const inp = document.getElementById('chat-input-area');
 
   if(label) label.textContent = (result.pavadinimas||'Konkursas').slice(0,40);
   if(noAn) noAn.style.display = 'none';
-  if(wall) wall.classList.toggle('hidden', pro);
+  if(wall) wall.classList.toggle('hidden', canChat);
+  if(wallText) wallText.innerHTML = pro ? '' : 'AI asistentas prieinamas tik <strong>Pro</strong> ir <strong>Komanda</strong> planams. Jau išnaudojote nemokamą klausimą.';
   if(msgs){
-    msgs.style.display = pro ? 'flex' : 'none';
-    if(pro) msgs.innerHTML = '<div class="cm cm-ai">Išanalizavau <strong>'+(result.pavadinimas||'šį konkursą')+'</strong>. Atsakinėsiu remdamasis šio konkurso dokumentų faktais ir viešųjų pirkimų teise. Jei informacijos dokumente nėra — pasakysiu. Kuo galiu padėti?</div>';
+    msgs.style.display = canChat ? 'flex' : 'none';
+    if(canChat){
+      const introExtra = (!pro && freeLeft>0) ? ' <span style="color:var(--warn)">(1 nemokamas klausimas — po jo reikės Pro plano)</span>' : '';
+      msgs.innerHTML = '<div class="cm cm-ai">Išanalizavau <strong>'+(result.pavadinimas||'šį konkursą')+'</strong>. Atsakinėsiu remdamasis šio konkurso dokumentų faktais ir viešųjų pirkimų teise. Jei informacijos dokumente nėra — pasakysiu. Kuo galiu padėti?'+introExtra+'</div>';
+    }
   }
-  if(inp) inp.style.display = pro ? 'flex' : 'none';
+  if(inp) inp.style.display = canChat ? 'flex' : 'none';
   initAssistant();
 }
 
@@ -5619,7 +5642,7 @@ function openBlog(){ window.location.href='/blog/'; }
     </div>
     <div id="chat-pro-wall" class="chat-pro-wall hidden">
       <div style="font-size:32px;margin-bottom:12px">🔒</div>
-      <p>AI asistentas prieinamas tik <strong>Pro</strong> ir <strong>Komanda</strong> planams.</p>
+      <p id="chat-pro-wall-text">AI asistentas prieinamas tik <strong>Pro</strong> ir <strong>Komanda</strong> planams.</p>
       <button class="btn btn-primary btn-sm" onclick="selP('pro');goChk()">Gauti Pro →</button>
     </div>
     <div id="chat-msgs" class="chat-msgs" style="display:none">
