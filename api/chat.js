@@ -20,18 +20,40 @@ module.exports = asyncHandler(async (req, res) => {
   if (!process.env.ANTHROPIC_API_KEY) throw serverError('ANTHROPIC_API_KEY nenustatytas');
 
   let plan = 'free';
+  let freeChatLeft = null;
+  let supabase = null;
   if (process.env.SUPABASE_URL && process.env.SUPABASE_SERVICE_KEY) {
     try {
-      const supabase = createClient(process.env.SUPABASE_URL, process.env.SUPABASE_SERVICE_KEY);
-      const { data } = await supabase.from('users').select('plan').eq('id', user.id).single();
-      if (data) plan = data.plan || 'free';
+      supabase = createClient(process.env.SUPABASE_URL, process.env.SUPABASE_SERVICE_KEY);
+      const { data } = await supabase.from('users').select('plan, free_chat_left').eq('id', user.id).single();
+      if (data) {
+        plan = data.plan || 'free';
+        freeChatLeft = (typeof data.free_chat_left === 'number') ? data.free_chat_left : 1;
+      }
     } catch (e) {
       logger.warn('DB error on plan check:', e.message);
     }
   }
 
+  // Nemokamas vartotojas gauna 1 AI asistento klausimą nemokamai — kad pamatytų
+  // produkto vertę prieš pereidamas į Pro. Po to — įprastas Pro sienos apribojimas.
   if (mode === 'chat' && plan === 'free') {
-    throw validationError([{ field: 'mode', message: 'AI asistentas prieinamas tik Pro ir Komanda planams.' }]);
+    const avail = (typeof freeChatLeft === 'number') ? freeChatLeft : 0;
+    if (avail <= 0) {
+      throw validationError([{ field: 'mode', message: 'Išnaudojote nemokamą AI asistento klausimą. Atnaujinkite į Pro planą, kad tęstumėte.', code: 'CHAT_QUOTA_EXCEEDED' }]);
+    }
+    if (supabase) {
+      const { data: rez } = await supabase
+        .from('users')
+        .update({ free_chat_left: avail - 1 })
+        .eq('id', user.id)
+        .eq('free_chat_left', avail) // CAS: tik jei reikšmė nepasikeitė lygiagrečiu kvietimu
+        .select('free_chat_left');
+      if (!rez || !rez.length) {
+        throw validationError([{ field: 'mode', message: 'Išnaudojote nemokamą AI asistento klausimą. Atnaujinkite į Pro planą, kad tęstumėte.', code: 'CHAT_QUOTA_EXCEEDED' }]);
+      }
+      freeChatLeft = avail - 1;
+    }
   }
 
   // Sluoksnis 1: bendras viešųjų pirkimų žinių pagrindas — veikia visada,
@@ -117,7 +139,7 @@ Taisyklės:
     const text = data.content?.[0]?.text || '';
 
     logger.info('Chat completed', { userId: user.id, mode });
-    return res.status(200).json({ text, plan });
+    return res.status(200).json({ text, plan, freeChatLeft: (mode === 'chat' && plan === 'free') ? freeChatLeft : undefined });
 
   } catch (error) {
     logger.error('Chat error:', error);
