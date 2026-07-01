@@ -9,15 +9,9 @@ const { verifyToken, applyCors } = require('./security');
 const ANTHROPIC_API_KEY = process.env.ANTHROPIC_API_KEY;
 const MODEL = 'claude-sonnet-4-6';
 
-// callClaude — su konfigūruojamu laiko biudžetu ir (pasirinktinai) streaming'u.
-// Streaming PRIVALOMAS ilgiems atsakymams: laiko soketą gyvą (jokio idle-disconnect)
-// ir grąžina vos užbaigus generavimą, todėl patikimai telpame po Vercel 60s riba.
-// opts: { timeoutMs (numatyta 45s), stream (numatyta false) }
-async function callClaude(system, user, maxTokens = 4000, opts = {}) {
-  const timeoutMs = opts.timeoutMs || 45000;
-  const stream = opts.stream === true;
+async function callClaude(system, user, maxTokens = 4000) {
   const controller = new AbortController();
-  const timeout = setTimeout(() => controller.abort(), timeoutMs);
+  const timeout = setTimeout(() => controller.abort(), 280000);
   try {
     const r = await fetch('https://api.anthropic.com/v1/messages', {
       method: 'POST',
@@ -30,53 +24,18 @@ async function callClaude(system, user, maxTokens = 4000, opts = {}) {
         model: MODEL,
         max_tokens: maxTokens,
         temperature: 0,
-        stream,
         system,
         messages: [{ role: 'user', content: user }]
       }),
       signal: controller.signal
     });
-
+    clearTimeout(timeout);
     if (!r.ok) {
       const err = await r.text();
-      clearTimeout(timeout);
       throw new Error('Claude API klaida: ' + r.status + ' ' + err.slice(0, 200));
     }
-
-    if (!stream) {
-      const data = await r.json();
-      clearTimeout(timeout);
-      return data.content.map(c => c.text || '').join('\n');
-    }
-
-    // ── SSE streaming: kaupiam text delta'as ──
-    const reader = r.body.getReader();
-    const decoder = new TextDecoder();
-    let buffer = '';
-    let out = '';
-    while (true) {
-      const { done, value } = await reader.read();
-      if (done) break;
-      buffer += decoder.decode(value, { stream: true });
-      let nl;
-      while ((nl = buffer.indexOf('\n')) !== -1) {
-        const line = buffer.slice(0, nl).trim();
-        buffer = buffer.slice(nl + 1);
-        if (!line.startsWith('data:')) continue;
-        const payload = line.slice(5).trim();
-        if (!payload || payload === '[DONE]') continue;
-        try {
-          const ev = JSON.parse(payload);
-          if (ev.type === 'content_block_delta' && ev.delta && typeof ev.delta.text === 'string') {
-            out += ev.delta.text;
-          } else if (ev.type === 'error') {
-            throw new Error('Claude stream klaida: ' + (ev.error?.message || 'nežinoma'));
-          }
-        } catch (_) { /* nepilna SSE eilutė — praleidžiam */ }
-      }
-    }
-    clearTimeout(timeout);
-    return out;
+    const data = await r.json();
+    return data.content.map(c => c.text || '').join('\n');
   } catch (e) {
     clearTimeout(timeout);
     if (e.name === 'AbortError') throw new Error('Analizė užtruko per ilgai. Pabandykite atskirą dokumentą vietoj viso ZIP.');
@@ -129,16 +88,15 @@ function parseJSON(text, fallback = {}) {
 // tik su sprendimu susijusią informaciją, tada struktūrizuojame kondensuotą
 // tekstą. Taip galima kelti bet kokio dydžio failus (iki Vercel ~4.5MB
 // užklausos kūno ribos), nieko tyliai neapkerpant ir nemetant klaidos.
-const SINGLE_CALL_CHAR_LIMIT = 160000; // ~40K tok — greitas time-to-first-token su sistema + atsakymu
+const SINGLE_CALL_CHAR_LIMIT = 280000; // ~70K tok — telpa su sistema + atsakymu
 const CHUNK_CHARS = 120000;            // viena dalis ~30K tok
 const CHUNK_OVERLAP = 2000;            // persidengimas, kad nesukirstume reikalavimo per pusę
-const CHUNK_CONCURRENCY = 6;           // lygiagretūs kvietimai (mažiau batch'ų = greičiau)
-const MAX_CONDENSE_CHUNKS = 6;         // saugiklis: didžiausių ZIP'ų neapdorojam neribotai (laiko biudžetas)
+const CHUNK_CONCURRENCY = 4;           // lygiagretūs kvietimai paketuose (rate limit apsauga)
 
 async function condenseChunk(chunk, idx, total) {
   const sys = 'Tu esi viešųjų pirkimų dokumentų ištraukėjas. Iš pateiktos dokumento dalies ištrauk TIK su dalyvavimo sprendimu susijusią informaciją: pirkimo objektas, kvalifikaciniai ir techniniai reikalavimai, blokuojančios/privalomos sąlygos, terminai, kainodara ir vertinimo kriterijai, EBVPD/ESPD, reikalingi sertifikatai ir dokumentai, sutarties sąlygos bei baudos. Praleisk vandenį ir pasikartojimus. Cituok punktų numerius, jei matomi. Atsakyk glaustai lietuviškai, be įžangų.';
   try {
-    const out = await callClaude(sys, 'Dokumento dalis ' + (idx + 1) + '/' + total + ':\n\n' + chunk, 3000, { timeoutMs: 18000 });
+    const out = await callClaude(sys, 'Dokumento dalis ' + (idx + 1) + '/' + total + ':\n\n' + chunk, 4000);
     return (out || '').trim();
   } catch (e) {
     console.error('Kondensavimo klaida (dalis ' + (idx + 1) + '):', e.message);
@@ -151,7 +109,7 @@ async function prepareDocText(fullText) {
 
   const chunks = [];
   const stepSize = CHUNK_CHARS - CHUNK_OVERLAP;
-  for (let i = 0; i < fullText.length && chunks.length < MAX_CONDENSE_CHUNKS; i += stepSize) {
+  for (let i = 0; i < fullText.length; i += stepSize) {
     chunks.push(fullText.slice(i, i + CHUNK_CHARS));
   }
 
@@ -164,10 +122,9 @@ async function prepareDocText(fullText) {
   }
 
   const condensed = parts.filter(Boolean).join('\n\n────────── DOKUMENTO DALIS ──────────\n\n');
-  // Jei kondensavimas nieko negrąžino (visos dalys nukrito) — naudojam pradžios fragmentą,
-  // kad analizė niekada nebūtų tuščia.
-  const safe = condensed.length > 200 ? condensed : fullText.slice(0, SINGLE_CALL_CHAR_LIMIT);
-  return safe.length > SINGLE_CALL_CHAR_LIMIT ? safe.slice(0, SINGLE_CALL_CHAR_LIMIT) : safe;
+  return condensed.length > SINGLE_CALL_CHAR_LIMIT
+    ? condensed.slice(0, SINGLE_CALL_CHAR_LIMIT)
+    : condensed;
 }
 
 function buildProfileContext(profile) {
@@ -228,6 +185,8 @@ module.exports = async (req, res) => {
   }
   const docTextSafe = String(docText).replace(/<[^>]*>/g, '').trim();
 
+  let reserved = false; // ar rezervuota nemokama analizė (grąžinama klaidos atveju)
+
   try {
     // Vartotojo planas + likusios nemokamos analizės + profilis — vienu užklausimu
     let profile = companyProfile || {};
@@ -245,17 +204,29 @@ module.exports = async (req, res) => {
         freeLeft = (typeof urow.free_analyses_left === 'number') ? urow.free_analyses_left : null;
         if ((!profile || !profile.sector) && urow.company_profile) profile = urow.company_profile;
       }
-    }
 
-    // ── KVOTOS APSAUGA (serverio pusėje) ──
-    // Be šito nemokami vartotojai gali neribotai kviesti /api/analyze tiesiogiai,
-    // apeidami frontend'o limitą. Frontend 403 atveju atidaro mokėjimo langą.
-    if (userPlan === 'free' && freeLeft !== null && freeLeft <= 0) {
-      return res.status(403).json({
-        error: 'Išnaudojote nemokamas analizes. Atnaujinkite planą, kad tęstumėte.',
-        code: 'QUOTA_EXCEEDED',
-        freeAnalysesLeft: 0
-      });
+      // ── ATOMINĖ KVOTOS REZERVACIJA (prieš brangų Claude kvietimą) ──
+      // Rezervuojam vieną analizę IŠ KARTO, ne po sėkmės. Compare-and-swap apsaugo nuo
+      // lygiagrečių kvietimų: jei du kvietimai bando nurašyti tą pačią reikšmę, pavyksta tik vienam.
+      // Taip nemokamas vartotojas negali vienu metu paleisti kelių analizių ir apeiti limito.
+      if (userPlan === 'free') {
+        const avail = (typeof freeLeft === 'number') ? freeLeft : 0;
+        if (avail <= 0) {
+          return res.status(403).json({ error: 'Išnaudojote nemokamas analizes. Atnaujinkite planą, kad tęstumėte.', code: 'QUOTA_EXCEEDED', freeAnalysesLeft: 0 });
+        }
+        const { data: rez } = await supabase
+          .from('users')
+          .update({ free_analyses_left: avail - 1 })
+          .eq('id', user.id)
+          .eq('free_analyses_left', avail) // CAS: tik jei reikšmė nepasikeitė
+          .select('free_analyses_left');
+        if (!rez || !rez.length) {
+          const { data: fresh } = await supabase.from('users').select('free_analyses_left').eq('id', user.id).single();
+          return res.status(403).json({ error: 'Išnaudojote nemokamas analizes. Atnaujinkite planą, kad tęstumėte.', code: 'QUOTA_EXCEEDED', freeAnalysesLeft: (fresh && fresh.free_analyses_left) || 0 });
+        }
+        reserved = true;
+        freeLeft = avail - 1;
+      }
     }
 
     const profileCtx = buildProfileContext(profile);
@@ -418,10 +389,7 @@ Grąžink TIKSLIAI tokios struktūros JSON (jei nėra informacijos — rašyk "N
 
 Pastaba: ši analizė nėra galutinė teisinė išvada — tai praktinis sprendimų ir rizikų įrankis tiekėjui.`;
 
-    // Pagrindinis kvietimas: streaming + 6000 tok riba (anksčiau 32000 — dėl to atsakymas
-    // generuodavosi 90–200s ir klientas nukrisdavo ties 180s). 6000 tok pakanka pilnai schemai;
-    // parseJSON turi atkūrimą jei vis tiek nutrūktų. 48s biudžetas telpa po Vercel 60s riba.
-    let aiRes = await callClaude(system, userMsg, 6000, { stream: true, timeoutMs: 48000 });
+    let aiRes = await callClaude(system, userMsg, 32000);
     let result = parseJSON(aiRes, null);
 
     // 1) Vienas pakartojimas, jei JSON nesusiparsino — dažnai užtenka antro bandymo.
@@ -430,8 +398,7 @@ Pastaba: ši analizė nėra galutinė teisinė išvada — tai praktinis sprendi
         const retry = await callClaude(
           system,
           userMsg + '\n\nSVARBU: ankstesnis atsakymas buvo netinkamas. Grąžink TIK GALIOJANTĮ, pilną JSON pagal nurodytą struktūrą — be jokio teksto aplink, be ```json.',
-          6000,
-          { stream: true, timeoutMs: 30000 }
+          32000
         );
         const re = parseJSON(retry, null);
         if (re && re.pavadinimas) { result = re; aiRes = retry; }
@@ -444,7 +411,7 @@ Pastaba: ši analizė nėra galutinė teisinė išvada — tai praktinis sprendi
       result = (result && typeof result === 'object') ? result : {};
       try {
         const basicSys = 'Tu esi viešųjų pirkimų dokumentų ištraukėjas. Grąžink TIK JSON su laukais: pavadinimas, pirkejas, cpv, terminai, objektas, isViso (2-3 sakinių santrauka). Lietuviškai. Jei reikšmės dokumente nėra — "Nenurodyta".';
-        const basic = parseJSON(await callClaude(basicSys, 'Ištrauk bazinę informaciją iš šio pirkimo dokumento:\n\n' + docTextSafe.slice(0, 120000), 2000, { timeoutMs: 25000 }), null);
+        const basic = parseJSON(await callClaude(basicSys, 'Ištrauk bazinę informaciją iš šio pirkimo dokumento:\n\n' + docTextSafe.slice(0, 200000), 4000), null);
         if (basic && typeof basic === 'object') {
           result.pavadinimas = result.pavadinimas || basic.pavadinimas;
           result.pirkejas    = result.pirkejas    || basic.pirkejas;
@@ -483,13 +450,9 @@ Pastaba: ši analizė nėra galutinė teisinė išvada — tai praktinis sprendi
       const { data: saved } = await supabase.from('analyses').insert(insertRow).select('id').single();
       if (saved) result._analysisId = saved.id;
 
-      // Nuskaitom vieną nemokamą analizę PO sėkmingo įvykdymo (tik free planui)
+      // Kvota jau rezervuota prieš analizę (atominiu CAS) — čia tik pranešam likutį
       if (userPlan === 'free' && freeLeft !== null) {
-        const newLeft = Math.max(0, freeLeft - 1);
-        try {
-          await supabase.from('users').update({ free_analyses_left: newLeft }).eq('id', user.id);
-        } catch (e) { console.error('Kvotos nuskaitymas nepavyko:', e.message); }
-        result._freeAnalysesLeft = newLeft;
+        result._freeAnalysesLeft = Math.max(0, freeLeft);
       }
     }
 
@@ -497,8 +460,16 @@ Pastaba: ši analizė nėra galutinė teisinė išvada — tai praktinis sprendi
 
   } catch (e) {
     console.error('Analizės klaida:', e);
+    // Grąžinam rezervuotą nemokamą analizę, jei įvyko klaida (best-effort)
+    if (reserved && process.env.SUPABASE_URL) {
+      try {
+        const sb = createClient(process.env.SUPABASE_URL, process.env.SUPABASE_SERVICE_KEY);
+        const { data: cur } = await sb.from('users').select('free_analyses_left').eq('id', user.id).single();
+        if (cur) await sb.from('users').update({ free_analyses_left: (cur.free_analyses_left || 0) + 1 }).eq('id', user.id);
+      } catch (_) {}
+    }
     return res.status(500).json({ error: 'Analizės klaida: ' + e.message });
   }
 };
 
-module.exports.config = { maxDuration: 60 };
+module.exports.config = { maxDuration: 300 };
