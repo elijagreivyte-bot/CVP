@@ -32,7 +32,7 @@ module.exports = asyncHandler(async (req, res) => {
   if (req.method === 'GET') {
     const { data, error } = await supabase
       .from('users')
-      .select('id, name, email, plan, free_analyses_left, company_profile')
+      .select('id, name, email, plan, free_analyses_left, free_chat_left, company_profile')
       .eq('id', user.id)
       .single();
     if (error) throw serverError(error.message);
