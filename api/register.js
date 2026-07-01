@@ -24,7 +24,7 @@ module.exports = asyncHandler(async (req, res) => {
   }
 
   const password_hash = await bcrypt.hash(password, 10);
-  const insertData = { name, email, password_hash, plan: 'free', free_analyses_left: 3 };
+  const insertData = { name, email, password_hash, plan: 'free', free_analyses_left: 3, free_chat_left: 1 };
   if (companyProfile) insertData.company_profile = companyProfile;
 
   const { data: user, error } = await supabase.from('users').insert([insertData]).select().single();
@@ -41,6 +41,7 @@ module.exports = asyncHandler(async (req, res) => {
       email: user.email,
       plan: user.plan,
       free_analyses_left: user.free_analyses_left,
+      free_chat_left: (typeof user.free_chat_left === 'number') ? user.free_chat_left : 1,
       company_profile: user.company_profile
     }
   });
