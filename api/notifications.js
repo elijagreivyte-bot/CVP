@@ -18,7 +18,7 @@ async function sendEmail({ to, subject, html }) {
       Authorization: `Bearer ${process.env.RESEND_API_KEY}`
     },
     body: JSON.stringify({
-      from: process.env.FROM_EMAIL || 'Bidwise AI <noreply@bidwise.lt>',
+      from: process.env.FROM_EMAIL || 'Bidwise AI <noreply@bidwiseai.lt>',
       to: Array.isArray(to) ? to : [to],
       subject,
       html
@@ -274,7 +274,7 @@ function reminderHtml(title, deadline, days) {
 <body style="font-family:sans-serif;max-width:600px;margin:0 auto;padding:24px">
 
 <div style="background:#1a56db;padding:20px;border-radius:12px 12px 0 0;text-align:center">
-  <img src="https://cvp.bidwise.lt/logo.png" style="height:48px" alt="Bidwise AI">
+  <img src="https://www.bidwiseai.lt/logo.png" style="height:48px" alt="Bidwise AI">
 </div>
 
 <div style="background:#f8faff;padding:28px;border-radius:0 0 12px 12px;border:1px solid #e2e8f0">
@@ -292,7 +292,7 @@ function reminderHtml(title, deadline, days) {
     <strong>${new Date(deadline).toLocaleString('lt-LT')}</strong>
   </p>
 
-  <a href="https://bidwise.lt"
+  <a href="https://www.bidwiseai.lt"
      style="display:inline-block;background:#1a56db;color:#fff;padding:12px 28px;border-radius:8px;text-decoration:none;font-weight:600;margin-top:16px">
      Atidaryti Bidwise AI →
   </a>
@@ -301,7 +301,7 @@ function reminderHtml(title, deadline, days) {
 
 <p style="color:#94a3b8;font-size:12px;text-align:center;margin-top:16px">
   Bidwise AI · Atsisakyti priminimų:
-  <a href="https://bidwise.lt/account">paskyros nustatymai</a>
+  <a href="https://www.bidwiseai.lt/account">paskyros nustatymai</a>
 </p>
 
 </body>
