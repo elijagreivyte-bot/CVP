@@ -1,1 +1,169 @@
+<!DOCTYPE html>
+<html lang="lt">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width,initial-scale=1.0">
+<meta name="robots" content="noindex, nofollow">
+<title>Bidwise AI · Admin</title>
+<style>
+  :root{--navy:#0a0e1a;--card:#131826;--text:#e2e8f0;--text2:#94a3b8;--blue:#3b82f6;--green:#10b981;--red:#ef4444;--border:#1e293b}
+  *{box-sizing:border-box}
+  body{background:var(--navy);color:var(--text);font-family:'Inter',sans-serif;margin:0;padding:32px 20px}
+  .wrap{max-width:900px;margin:0 auto}
+  h1{font-size:22px;margin-bottom:4px}
+  .sub{color:var(--text2);font-size:13px;margin-bottom:28px}
+  .gate{max-width:360px;margin:80px auto;text-align:center}
+  .gate input{width:100%;padding:12px 14px;border-radius:8px;border:1px solid var(--border);background:var(--card);color:var(--text);font-size:14px;margin-bottom:12px}
+  .gate button{width:100%;padding:12px;border-radius:8px;border:none;background:var(--blue);color:#fff;font-weight:600;cursor:pointer;font-size:14px}
+  .grid{display:grid;grid-template-columns:repeat(auto-fit,minmax(200px,1fr));gap:14px;margin-bottom:24px}
+  .card{background:var(--card);border:1px solid var(--border);border-radius:12px;padding:18px}
+  .card .label{font-size:12px;color:var(--text2);margin-bottom:6px;text-transform:uppercase;letter-spacing:.5px}
+  .card .value{font-size:26px;font-weight:800}
+  .card .change{font-size:12px;margin-top:4px}
+  .up{color:var(--green)} .down{color:var(--red)} .flat{color:var(--text2)}
+  .warn-box{background:rgba(239,68,68,.08);border:1px solid rgba(239,68,68,.3);border-radius:10px;padding:16px;margin-bottom:24px}
+  .ok-box{background:rgba(16,185,129,.08);border:1px solid rgba(16,185,129,.3);border-radius:10px;padding:14px 16px;margin-bottom:24px;color:var(--green);font-size:13px}
+  .err{color:var(--red);font-size:13px;margin-top:8px}
+  .posthog-link{display:block;margin-top:8px;color:var(--blue);font-size:13px;text-decoration:none}
+  #app{display:none}
+</style>
+</head>
+<body>
 
+<div class="gate" id="gate">
+  <h1>🔒 Admin</h1>
+  <p class="sub">Įveskite administratoriaus raktą (ADMIN_SECRET)</p>
+  <input type="password" id="secret" placeholder="Raktas">
+  <button onclick="load()">Prisijungti</button>
+  <div class="err" id="err"></div>
+</div>
+
+<div class="wrap" id="app">
+  <h1>Bidwise AI · Produkto panelė</h1>
+  <div class="sub" id="ts"></div>
+
+  <div id="regressions"></div>
+
+  <div class="grid">
+    <div class="card"><div class="label">Vartotojai iš viso</div><div class="value" id="m-total">–</div></div>
+    <div class="card"><div class="label">Free / Pro / Team</div><div class="value" id="m-byplan" style="font-size:18px">–</div></div>
+    <div class="card"><div class="label">Naujos reg. (7d)</div><div class="value" id="m-new7d">–</div><div class="change" id="m-new7d-c"></div></div>
+    <div class="card"><div class="label">MRR</div><div class="value" id="m-mrr">–</div></div>
+    <div class="card"><div class="label">Mokantys / konversija</div><div class="value" id="m-paying">–</div></div>
+    <div class="card"><div class="label">Analizių iš viso</div><div class="value" id="m-analyses">–</div></div>
+    <div class="card"><div class="label">Analizės (7d)</div><div class="value" id="m-analyses7d">–</div><div class="change" id="m-analyses7d-c"></div></div>
+    <div class="card"><div class="label">Vid. analizių / vartotojui</div><div class="value" id="m-avg">–</div></div>
+    <div class="card"><div class="label">Chat naudojimas (free)</div><div class="value" id="m-chat">–</div></div>
+    <div class="card"><div class="label">Užrakintos paskyros dabar</div><div class="value" id="m-locked">–</div></div>
+  </div>
+
+  <p class="sub">Funnel'ai, retention (7/30d), DAU/WAU/MAU, sesijos trukmė — žr. PostHog:</p>
+  <a class="posthog-link" href="https://eu.posthog.com" target="_blank">→ Atidaryti PostHog dashboard</a>
+
+  <h1 style="margin-top:36px">🧠 Mokymosi ciklas (30 d.)</h1>
+  <div id="quality-section"></div>
+
+  <h1 style="margin-top:36px">📚 Knowledge Base</h1>
+  <div id="kb-section"></div>
+</div>
+
+<script>
+async function load(){
+  const secret = document.getElementById('secret').value.trim();
+  if(!secret) return;
+  const err = document.getElementById('err');
+  err.textContent = '';
+  try{
+    const r = await fetch('/api/admin-stats', { headers: { 'x-admin-secret': secret } });
+    const d = await r.json();
+    if(!r.ok){ err.textContent = d.error || 'Klaida'; return; }
+    sessionStorage.setItem('admin_secret', secret);
+    render(d);
+    renderQuality(d.quality);
+    renderKnowledgeBase(d.knowledgeBase);
+  }catch(e){ err.textContent = 'Tinklo klaida: ' + e.message; }
+}
+
+function renderKnowledgeBase(kb){
+  const el = document.getElementById('kb-section');
+  if(!el || !kb) return;
+  el.innerHTML = `<div class="grid">
+    <div class="card"><div class="label">Analizių iš viso</div><div class="value">${kb.totalAnalysesAllTime}</div></div>
+    <div class="card"><div class="label">Skirtingų CPV kodų</div><div class="value">${kb.distinctCpvCodes}</div></div>
+    <div class="card"><div class="label">Skirtingų organizacijų</div><div class="value">${kb.distinctOrganizations}</div></div>
+  </div>
+  <p class="sub" style="margin-top:8px">Procurement Intelligence įžvalgos vartotojams rodomos tik kai konkrečiam CPV/organizacijai yra ≥3 ankstesnės analizės.</p>`;
+}
+
+function renderQuality(q){
+  const el = document.getElementById('quality-section');
+  if(!el) return;
+  if(!q || q.insufficientData){
+    el.innerHTML = '<div class="ok-box" style="color:var(--text2)">'+(q?q.message:'Nėra duomenų')+'</div>';
+    return;
+  }
+  const listBox = (title, items, labelKey, countKey) => items.length ? `
+    <div class="card" style="grid-column:span 2">
+      <div class="label">${title}</div>
+      <div style="margin-top:8px">${items.map(i=>'<div style="display:flex;justify-content:space-between;font-size:13px;padding:3px 0;border-top:1px solid var(--border)"><span>'+(i[labelKey]||i.code+' — '+i.title)+'</span><span style="color:var(--text2)">'+i[countKey]+'x</span></div>').join('')}</div>
+    </div>` : '';
+  el.innerHTML = `
+    <div class="grid">
+      <div class="card"><div class="label">Analizių (30d)</div><div class="value">${q.totalAnalyses}</div></div>
+      <div class="card"><div class="label">Vid. Confidence</div><div class="value">${q.avgConfidence}%</div></div>
+      <div class="card"><div class="label">Validatoriaus nesutarimas</div><div class="value">${q.validator.disagreementRate ?? 'n/a'}%</div></div>
+      <div class="card"><div class="label">Neigiamas atsiliepimas</div><div class="value">${q.feedback.negativeRate ?? 'n/a'}%</div></div>
+      <div class="card"><div class="label">Prompt Quality Score</div><div class="value">${q.promptQualityScore ?? '—'}</div><div class="change flat">${q.promptQualityScoreNote}</div></div>
+    </div>
+    <div class="grid">
+      ${listBox('TOP Rule Engine radiniai', q.topRules, 'title', 'count')}
+      ${listBox('TOP CPV kodai', q.topCpv, 'value', 'count')}
+      ${listBox('TOP Perkančiosios organizacijos', q.topPerkanciosios, 'value', 'count')}
+      ${listBox('TOP dokumentų tipai', q.topDocumentTypes, 'value', 'count')}
+    </div>
+  `;
+}
+
+function fmtEUR(n){ return n.toLocaleString('lt-LT') + '€'; }
+function changeEl(pct){
+  const cls = pct > 0 ? 'up' : pct < 0 ? 'down' : 'flat';
+  const sign = pct > 0 ? '+' : '';
+  return `<span class="${cls}">${sign}${pct}% vs praėjusi savaitė</span>`;
+}
+
+function render(d){
+  document.getElementById('gate').style.display = 'none';
+  document.getElementById('app').style.display = 'block';
+  const m = d.metrics;
+  document.getElementById('ts').textContent = 'Atnaujinta: ' + new Date(m.generated_at).toLocaleString('lt-LT');
+
+  const regBox = document.getElementById('regressions');
+  if(d.regressions && d.regressions.length){
+    regBox.innerHTML = '<div class="warn-box"><strong style="color:var(--red)">⚠️ Prioritetinės problemos</strong><br>' +
+      d.regressions.map(r=>'<div style="font-size:13px;margin-top:6px">• '+r+'</div>').join('') + '</div>';
+  } else {
+    regBox.innerHTML = '<div class="ok-box">✓ Jokių KPI kritimų >10% nerasta</div>';
+  }
+
+  document.getElementById('m-total').textContent = m.users.total;
+  document.getElementById('m-byplan').textContent = m.users.free+' / '+m.users.pro+' / '+m.users.team;
+  document.getElementById('m-new7d').textContent = m.new_users_7d;
+  document.getElementById('m-new7d-c').innerHTML = changeEl(m.new_users_change_pct);
+  document.getElementById('m-mrr').textContent = fmtEUR(m.revenue.mrr);
+  document.getElementById('m-paying').textContent = m.revenue.paying_users + ' (' + m.revenue.conversion_rate_pct + '%)';
+  document.getElementById('m-analyses').textContent = m.analyses.total;
+  document.getElementById('m-analyses7d').textContent = m.analyses.last_7d;
+  document.getElementById('m-analyses7d-c').innerHTML = changeEl(m.analyses.change_pct);
+  document.getElementById('m-avg').textContent = m.analyses.avg_per_user;
+  document.getElementById('m-chat').textContent = m.chat_engagement_rate_pct + '%';
+  document.getElementById('m-locked').textContent = m.security.locked_accounts_now;
+}
+
+// Jei raktas jau įvestas šioje sesijoje, prisijungti automatiškai
+(function(){
+  const saved = sessionStorage.getItem('admin_secret');
+  if(saved){ document.getElementById('secret').value = saved; load(); }
+})();
+</script>
+</body>
+</html>
