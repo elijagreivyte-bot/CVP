@@ -643,8 +643,13 @@ footer{background:var(--navy2);border-top:1px solid var(--border);padding:48px 3
 details summary span:last-child{transition:transform .2s}
 details[open] summary span:last-child{transform:rotate(45deg)}
 </style>
+<!-- PostHog analytics — įrašyk savo projekto raktą žemiau (posthog.com → Project Settings → API keys) -->
+<script>
+  !function(t,e){var o,n,p,r;e.__SV||(window.posthog=e,e._i=[],e.init=function(i,s,a){function g(t,e){var o=e.split(".");2==o.length&&(t=t[o[0]],e=o[1]),t[e]=function(){t.uid.push([e].concat(Array.prototype.slice.call(arguments,0)))}}(p=t.createElement("script")).type="text/javascript",p.crossOrigin="anonymous",p.async=!0,p.src=s.api_host.replace(".i.posthog.com","-assets.i.posthog.com")+"/static/array.js",(r=t.getElementsByTagName("script")[0]).parentNode.insertBefore(p,r);var u=e;for(void 0!==a?u=e[a]=[]:a="posthog",u.people=u.people||[],u.toString=function(t){var e="posthog";return"posthog"!==a&&(e+="."+a),t||(e+=" (stub)"),e},u.people.toString=function(){return u.toString(1)+".people (stub)"},o="init capture register register_once register_for_session unregister unregister_for_session getFeatureFlag getFeatureFlagPayload isFeatureEnabled reloadFeatureFlags updateEarlyAccessFeatureEnrollment getEarlyAccessFeatures on onFeatureFlags onSessionId getSurveys getActiveMatchingSurveys renderSurvey canRenderSurvey identify setPersonProperties group resetGroups setPersonPropertiesForFlags resetPersonPropertiesForFlags setGroupPropertiesForFlags resetGroupPropertiesForFlags reset get_distinct_id getGroups get_session_id get_session_replay_url alias set_config startSessionRecording stopSessionRecording sessionRecordingStarted captureException loadToolbar get_property getSessionProperty createPersonProfile opt_in_capturing opt_out_capturing has_opted_in_capturing has_opted_out_capturing clear_opt_in_out_capturing debug".split(" "),n=0;n<o.length;n++)g(u,o[n]);e._i.push([i,s,a])},e.__SV=1)}(document,window.posthog||[]);
+  posthog.init('POSTHOG_PROJEKTO_RAKTAS_CIA', { api_host: 'https://eu.i.posthog.com', person_profiles: 'identified_only' });
+  window.track = function(event, props){ try{ if(window.posthog) posthog.capture(event, props||{}); }catch(e){} };
+</script>
 </head>
-<body>
 
 <!-- ═══════════════════ LANDING ═══════════════════ -->
 <div id="landing">
@@ -1213,9 +1218,9 @@ details[open] summary span:last-child{transform:rotate(45deg)}
 </div><!-- /landing -->
 
 <!-- ═══════════════════ AUTH MODAL ═══════════════════ -->
-<div class="overlay" id="auth-modal">
+<div class="overlay" id="auth-modal" role="dialog" aria-modal="true" aria-label="Prisijungimas">
   <div class="auth-box">
-    <button class="auth-close" onclick="closeAuth()">×</button>
+    <button class="auth-close" onclick="closeAuth()" aria-label="Uždaryti">×</button>
     <div class="auth-logo">
       <div class="auth-logo-icon">
         <img src="/logo.png" alt="Bidwise" onerror="this.parentElement.innerHTML='🏆'">
@@ -1257,9 +1262,9 @@ details[open] summary span:last-child{transform:rotate(45deg)}
 </div>
 
 <!-- ═══════════════════ FORGOT PASSWORD MODAL ═══════════════════ -->
-<div class="overlay" id="forgot-modal">
+<div class="overlay" id="forgot-modal" role="dialog" aria-modal="true" aria-label="Slaptažodžio priminimas">
   <div class="auth-box">
-    <button class="auth-close" onclick="closeForgot()">×</button>
+    <button class="auth-close" onclick="closeForgot()" aria-label="Uždaryti">×</button>
     <h2 style="font-family:Sora,sans-serif;font-size:22px;font-weight:800;margin-bottom:6px">Pamiršote slaptažodį?</h2>
     <p style="font-size:13px;color:var(--text2);margin-bottom:18px">Įveskite el. paštą — atsiųsime nuorodą naujam slaptažodžiui nustatyti.</p>
     <div class="fg"><label>El. paštas</label><input class="inp" type="email" id="fp-e" placeholder="jusu@imone.lt" onkeydown="if(event.key==='Enter')doForgotRequest()"></div>
@@ -1271,9 +1276,9 @@ details[open] summary span:last-child{transform:rotate(45deg)}
 </div>
 
 <!-- ═══════════════════ RESET PASSWORD MODAL ═══════════════════ -->
-<div class="overlay" id="reset-modal">
+<div class="overlay" id="reset-modal" role="dialog" aria-modal="true" aria-label="Slaptažodžio atstatymas">
   <div class="auth-box">
-    <button class="auth-close" onclick="closeReset()">×</button>
+    <button class="auth-close" onclick="closeReset()" aria-label="Uždaryti">×</button>
     <h2 style="font-family:Sora,sans-serif;font-size:22px;font-weight:800;margin-bottom:6px">Naujas slaptažodis</h2>
     <p style="font-size:13px;color:var(--text2);margin-bottom:18px">Sukurkite naują slaptažodį savo paskyrai.</p>
     <div class="fg"><label>Naujas slaptažodis</label>
@@ -1694,9 +1699,9 @@ details[open] summary span:last-child{transform:rotate(45deg)}
   </div>
 
   <!-- NEW PROJECT MODAL -->
-  <div class="modal" id="newProjModal">
+  <div class="modal" id="newProjModal" role="dialog" aria-modal="true" aria-label="Naujas projektas">
     <div class="modal-box" style="max-width:520px">
-      <button class="modal-close" onclick="document.getElementById('newProjModal').classList.remove('open')">×</button>
+      <button class="modal-close" onclick="document.getElementById('newProjModal').classList.remove('open')" aria-label="Uždaryti">×</button>
       <div style="font-size:36px;margin-bottom:14px;text-align:center">📁</div>
       <h3>Naujas projektas</h3>
       <p>Pavadinkite projektą ir parašykite trumpą aprašymą</p>
@@ -2152,9 +2157,9 @@ details[open] summary span:last-child{transform:rotate(45deg)}
 </div>
 
 <!-- EMAIL MODAL -->
-<div class="modal" id="em">
+<div class="modal" id="em" role="dialog" aria-modal="true" aria-label="El. pašto siuntimas">
   <div class="modal-box">
-    <button class="modal-close" onclick="document.getElementById('em').classList.remove('open')">×</button>
+    <button class="modal-close" onclick="document.getElementById('em').classList.remove('open')" aria-label="Uždaryti">×</button>
     <div style="font-size:36px;margin-bottom:14px">✉️</div>
     <h3>Siųsti el. paštu</h3>
     <p>Išsiųsime pilną HTML ataskaitą su visomis analizės sekcijomis.</p>
@@ -2169,9 +2174,9 @@ details[open] summary span:last-child{transform:rotate(45deg)}
 </div>
 
 <!-- EBVPD/ESPD QUESTIONNAIRE MODAL -->
-<div class="modal" id="tqModal">
+<div class="modal" id="tqModal" role="dialog" aria-modal="true" aria-label="Klausimynas">
   <div class="modal-box" style="max-width:760px;max-height:85vh;overflow-y:auto">
-    <button class="modal-close" onclick="document.getElementById('tqModal').classList.remove('open')">×</button>
+    <button class="modal-close" onclick="document.getElementById('tqModal').classList.remove('open')" aria-label="Uždaryti">×</button>
     <div style="font-size:36px;margin-bottom:14px">📋</div>
     <h3>EBVPD/ESPD klausimynas</h3>
     <p style="margin-bottom:16px">Klausimynas sugeneruotas iš įkeltų pirkimo dokumentų — padės pasiruošti EBVPD/ESPD ir surinkti AI analizei reikalingus duomenis.</p>
@@ -2182,9 +2187,9 @@ details[open] summary span:last-child{transform:rotate(45deg)}
 </div>
 
 <!-- PAY MODAL -->
-<div class="modal" id="pm">
+<div class="modal" id="pm" role="dialog" aria-modal="true" aria-label="Plano pasirinkimas">
   <div class="modal-box">
-    <button class="modal-close" onclick="document.getElementById('pm').classList.remove('open')">×</button>
+    <button class="modal-close" onclick="document.getElementById('pm').classList.remove('open')" aria-label="Uždaryti">×</button>
     <div style="font-size:48px;margin-bottom:14px">🔒</div>
     <h3>Nemokamos analizės baigėsi</h3>
     <p>Panaudojote visas 3 nemokamas analizes. Atnaujinkite į Pro planą norėdami tęsti.</p>
@@ -2242,7 +2247,7 @@ window.addEventListener('DOMContentLoaded',()=>{
   const p=new URLSearchParams(location.search);
   if(p.get('success')==='true'){
     const u2=JSON.parse(localStorage.getItem(UK)||'{}');
-    if(u2.id){u2.plan='pro';localStorage.setItem(UK,JSON.stringify(u2));alert('✓ Sėkmingai atnaujinta į Pro!');history.replaceState({},'','/')}
+    if(u2.id){u2.plan='pro';localStorage.setItem(UK,JSON.stringify(u2));if(window.track)track('checkout_completed');alert('✓ Sėkmingai atnaujinta į Pro!');history.replaceState({},'','/')}
   }
   checkResetLink();
 });
@@ -2399,6 +2404,7 @@ async function doLogin(b){
     localStorage.setItem(TK,d.token);
     localStorage.setItem(UK,JSON.stringify(d.user));
     curUser=d.user;
+    if(window.track){track('user_logged_in');if(window.posthog)posthog.identify(d.user.id,{email:d.user.email,plan:d.user.plan});}
     closeAuth();
     showApp();
   }catch(e){restore();se('l-err','Serverio klaida. Bandykite vėliau.')}
@@ -2422,6 +2428,7 @@ async function doRegister(b){
     localStorage.setItem(TK,d.token);
     localStorage.setItem(UK,JSON.stringify(d.user));
     curUser=d.user;
+    if(window.track){track('user_registered');if(window.posthog)posthog.identify(d.user.id,{email:d.user.email,plan:d.user.plan});}
     closeAuth();
     // Show onboarding after register
     openOnboarding();
@@ -2867,8 +2874,10 @@ async function startAn(){
   const u=curUser;
   if(!u)return;
   if(u.plan==='free'&&(u.free_analyses_left??3)<=0){
+    if(window.track)track('paywall_shown',{reason:'free_analyses_exhausted'});
     document.getElementById('pm').classList.add('open');return;
   }
+  if(window.track)track('analysis_started');
   document.getElementById('result-view').style.display='none';
   const loading=document.getElementById('loading');
   loading.style.display='flex';
@@ -2898,6 +2907,7 @@ async function startAn(){
         failedFiles.push(f.name);
       }
     }
+    if(window.track)track('document_upload_result',{total_files:files.length,failed_files:failedFiles.length,succeeded_files:files.length-failedFiles.length});
     if(failedFiles.length && typeof toast==='function'){
       toast('Nepavyko perskaityti '+failedFiles.length+' failo(-ų). Jei atidaryti Word/PDF programoje — uždarykite ir bandykite vėl.', 'warn', 9000);
     }
@@ -2948,7 +2958,8 @@ async function _sendAnalysis(combined, companyProfile, clientContext, docName, h
     if(!r.ok){
       loading.style.display='none';
       if(window.aiProg && window.aiProg.stop) window.aiProg.stop();
-      if(r.status===403){document.getElementById('pm').classList.add('open');}
+      if(r.status===403){if(window.track)track('paywall_shown',{reason:'analysis_403'});document.getElementById('pm').classList.add('open');}
+      else if(r.status===422 && d.hardStop){if(window.track)track('analysis_hard_stop',{code:d.code});showAnError(d.error, false);}
       else{showAnError(d.error||'Nežinoma klaida ('+r.status+')', false);}
       return;
     }
@@ -2958,6 +2969,7 @@ async function _sendAnalysis(combined, companyProfile, clientContext, docName, h
       localStorage.setItem(UK,JSON.stringify(curUser));
       updSB();
     }
+    if(window.track)track('analysis_completed',{score:d.result?.score,sprendimas:d.result?.sprendimas,partial:!!d.result?._partial});
     stopStages();
     setTimeout(()=>{
       loading.style.display='none';
@@ -3032,6 +3044,45 @@ function deadlineClass(dateStr){
   if(diff<=7)return 'r-deadline-urgent';
   if(diff<=21)return 'r-deadline-soon';
   return '';
+}
+
+const CHECKLIST_STATES = ['nepateikta','pateikta','tikslinti'];
+const CHECKLIST_LABELS = {nepateikta:'☐ Nepateikta', pateikta:'☑ Pateikta', tikslinti:'⚠ Reikia patikslinti'};
+const CHECKLIST_COLORS = {nepateikta:'var(--text3)', pateikta:'#10b981', tikslinti:'#f59e0b'};
+function checklistKey(analysisId,i){ return 'checklist:'+(analysisId||'demo')+':'+i; }
+function getChecklistStatus(analysisId,i){ return localStorage.getItem(checklistKey(analysisId,i)) || 'nepateikta'; }
+function renderChecklistItem(d,i,analysisId){
+  const status = getChecklistStatus(analysisId,i);
+  const name = d.dokumentas||d;
+  const note = d.pastaba||'';
+  return '<div class="r-item" style="align-items:center;gap:10px">'+
+    '<div style="flex:1"><span style="color:'+CHECKLIST_COLORS[status]+'">'+name+'</span>'+(note?'<div style="font-size:11px;color:var(--text3);margin-top:2px">'+note+'</div>':'')+'</div>'+
+    '<select onchange="setChecklistStatus(\''+(analysisId||'demo')+'\','+i+',this.value)" style="background:var(--card2);color:'+CHECKLIST_COLORS[status]+';border:1px solid var(--border);border-radius:6px;padding:4px 8px;font-size:12px;cursor:pointer">'+
+    CHECKLIST_STATES.map(s=>'<option value="'+s+'"'+(s===status?' selected':'')+'>'+CHECKLIST_LABELS[s]+'</option>').join('')+
+    '</select></div>';
+}
+function setChecklistStatus(analysisId,i,status){
+  localStorage.setItem(checklistKey(analysisId,i),status);
+  const el=document.getElementById('doc-checklist');
+  if(el && curResult && curResult.butinaiIttraukti){
+    el.innerHTML = curResult.butinaiIttraukti.map((d,idx)=>renderChecklistItem(d,idx,analysisId)).join('');
+  }
+}
+
+async function sendAnalysisFeedback(analysisId, feedback, btn){
+  const bar = document.getElementById('feedback-bar');
+  try{
+    const tok=localStorage.getItem(TK);
+    await fetch(API+'/api/analysis-feedback',{
+      method:'POST',
+      headers:{'Content-Type':'application/json','Authorization':'Bearer '+tok},
+      body:JSON.stringify({analysisId,feedback})
+    });
+    if(window.track)track('analysis_feedback',{feedback});
+    if(bar) bar.innerHTML = '<span style="font-size:13px;color:var(--text2)">Ačiū už atsiliepimą! 🙏</span>';
+  }catch(e){
+    if(typeof toast==='function') toast('Nepavyko išsiųsti atsiliepimo','error');
+  }
 }
 
 function renderResult(r){
@@ -3129,6 +3180,44 @@ function renderResult(r){
           ${integrityWarnings.map(w=>`<div style="font-size:12px;color:var(--text2);line-height:1.6;margin-bottom:2px">• ${w}</div>`).join('')}
         </div>
       </div>
+    </div>`:''}
+    ${r.executiveSummary?`<div class="r-card r-full-width" style="margin-bottom:16px;background:rgba(59,130,246,.06);border:1px solid rgba(59,130,246,.25)">
+      <div style="font-size:11px;font-weight:700;letter-spacing:.5px;text-transform:uppercase;color:var(--blue3);margin-bottom:8px">⚡ Santrauka per 5 minutes</div>
+      <div style="font-size:14px;line-height:1.6"><strong>Kas perkama:</strong> ${r.executiveSummary.kasPerkama||'Nenurodyta'}</div>
+      <div style="font-size:14px;line-height:1.6;margin-top:4px"><strong>Ar verta dalyvauti:</strong> ${r.executiveSummary.kodel||'Nenurodyta'}</div>
+    </div>`:''}
+    ${r.procurementIntelligence?`<div class="r-card r-full-width" style="margin-bottom:16px;background:rgba(16,185,129,.05);border:1px solid rgba(16,185,129,.2)">
+      <div style="font-size:11px;font-weight:700;letter-spacing:.5px;text-transform:uppercase;color:#10b981;margin-bottom:4px">📊 Procurement Intelligence</div>
+      <div style="font-size:11px;color:var(--text3);margin-bottom:10px;font-style:italic">Šios įžvalgos paremtos ${r.procurementIntelligence.sampleSize} anksčiau analizuotais panašiais pirkimais. Tai NE šio konkurso faktas — tik istorinė tendencija.</div>
+      ${r.procurementIntelligence.avgScore!=null?`<div style="font-size:13px;margin-bottom:4px"><strong>Vidutinis balas panašiuose pirkimuose:</strong> ${r.procurementIntelligence.avgScore}%</div>`:''}
+      ${r.procurementIntelligence.commonQualifications&&r.procurementIntelligence.commonQualifications.length?`<div style="font-size:13px;margin-bottom:4px"><strong>Dažni kvalifikacijos reikalavimai:</strong> ${r.procurementIntelligence.commonQualifications.map(q=>q.value).join(', ')}</div>`:''}
+      ${r.procurementIntelligence.commonRequiredDocuments&&r.procurementIntelligence.commonRequiredDocuments.length?`<div style="font-size:13px;margin-bottom:4px"><strong>Dažnai reikalaujami dokumentai:</strong> ${r.procurementIntelligence.commonRequiredDocuments.map(d=>d.value).join(', ')}</div>`:''}
+      ${r.procurementIntelligence.commonRiskClasses&&r.procurementIntelligence.commonRiskClasses.length?`<div style="font-size:13px"><strong>Dažniausios rizikų klasės:</strong> ${r.procurementIntelligence.commonRiskClasses.map(rc=>rc.value+' ('+rc.count+'x)').join(', ')}</div>`:''}
+    </div>`:''}
+    ${r.patikimumoLentele?(()=>{
+      const pl=r.patikimumoLentele;
+      const c=pl.galutinisPasitikejimas>=80?'#10b981':pl.galutinisPasitikejimas>=50?'#f59e0b':'#ef4444';
+      const row=(k,v)=>v==null||v===''?'':`<div class="r-item"><span class="r-item-k">${k}</span><span class="r-item-v">${v}</span></div>`;
+      return `<div class="r-card r-full-width" style="margin-bottom:16px">
+        <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:10px">
+          <h4 style="margin:0">🛡️ Patikimumo lentelė</h4>
+          <div style="font-size:22px;font-weight:900;color:${c}">${pl.galutinisPasitikejimas}%</div>
+        </div>
+        <div style="font-size:11px;color:var(--text3);margin-bottom:10px">${pl.validacijaVykdyta?'Nepriklausomai patikrinta Validatoriaus':(pl.validatoriausPraleistasKodel?'⚠ Validatorius nevykdytas: '+pl.validatoriausPraleistasKodel:'⚠ Validacija nevykdyta — žemesnis pasitikėjimas dėl to')}</div>
+        ${row('Generatoriaus įvertinimas', pl.generatoriausIvertinimas!=null?pl.generatoriausIvertinimas+'%':'—')}
+        ${row('Validatoriaus vertinimas', pl.validatoriausVertinimas)}
+        ${row('Citatų padengimas', pl.citatuPadengimasPct!=null?pl.citatuPadengimasPct+'%':'Nepatikrinta')}
+        ${row('Dokumento kokybė', pl.dokumentoKokybe)}
+        ${row('OCR kokybė', pl.ocrKokybe)}
+        ${pl.trukstamiDuomenys&&pl.trukstamiDuomenys.length?row('Trūkstami duomenys', pl.trukstamiDuomenys.join(', ')):''}
+        ${pl.ruleCoverage?row('Rule Engine padengimas', pl.ruleCoverage.applied+'/'+pl.ruleCoverage.totalRules+' taisyklių ('+pl.ruleCoverage.appliedPct+'%)'):''}
+        ${pl.ruleEngineRadiniai&&pl.ruleEngineRadiniai.length?`<details style="margin-top:10px"><summary style="font-size:12px;color:var(--text3);cursor:pointer">Rule Engine radiniai (${pl.ruleEngineRadiniai.length})</summary><div style="margin-top:6px">${pl.ruleEngineRadiniai.map(f=>`<div style="font-size:12px;color:var(--text2);padding:4px 0;border-top:1px solid var(--border)"><span style="color:var(--text3);font-family:monospace;font-size:11px">${f.code}</span> — <strong>${f.title}</strong><div style="color:var(--text3);font-size:11px;margin-top:2px">${f.reason}</div></div>`).join('')}</div></details>`:''}
+        ${pl.skaiciavimoDetales&&pl.skaiciavimoDetales.length?`<details style="margin-top:10px"><summary style="font-size:12px;color:var(--text3);cursor:pointer">Kaip apskaičiuota (${pl.skaiciavimoDetales.length} faktoriai)</summary><div style="margin-top:6px">${pl.skaiciavimoDetales.map(d=>`<div style="font-size:12px;color:var(--text2);padding:2px 0">${d.delta>0?'+':''}${d.delta}% — ${d.label}</div>`).join('')}</div></details>`:''}
+      </div>`;
+    })():''}
+    ${r.validatoriausNesutarimai&&r.validatoriausNesutarimai.length?`<div class="r-card r-full-width" style="margin-bottom:16px;background:rgba(239,68,68,.06);border:1px solid rgba(239,68,68,.25)">
+      <h4 style="color:#ef4444;margin-top:0">⚡ Generatorius ir Validatorius nesutaria</h4>
+      ${r.validatoriausNesutarimai.map(n=>`<div style="margin-bottom:10px;font-size:13px"><strong>${n.tema}</strong><div style="margin-top:4px;color:var(--text2)"><span style="color:var(--blue3)">Generatorius:</span> ${n.generatoriausPozicija}</div><div style="color:var(--text2)"><span style="color:#ef4444">Validatorius:</span> ${n.validatoriausPozicija}</div></div>`).join('')}
     </div>`:''}
     <div class="r-card r-full-width" style="margin-bottom:16px;background:${decisionMeta.bg};border:1px solid ${decisionMeta.border}">
       <div style="display:flex;align-items:center;gap:16px;flex-wrap:wrap">
@@ -3261,7 +3350,7 @@ function renderResult(r){
     ${(r.vertinimoKriterijai&&r.vertinimoKriterijai.length)?`
     <div class="r-card" style="margin-bottom:16px">
       <h4>⚖️ Vertinimo kriterijai</h4>
-      ${r.vertinimoKriterijai.map(k=>`<div class="r-item"><span class="r-item-k">${k.kriterijus}</span><span class="r-item-v"><span class="badge badge-blue">${k.svoris}</span></span></div>`).join('')}
+      ${r.vertinimoKriterijai.map(k=>`<div class="r-item" style="flex-direction:column;align-items:flex-start;gap:4px"><div style="display:flex;justify-content:space-between;width:100%"><span class="r-item-k">${k.kriterijus}</span><span class="r-item-v"><span class="badge badge-blue">${k.svoris}</span></span></div>${k.paaiskinimas?`<div style="font-size:12px;color:var(--text3);line-height:1.5">${k.paaiskinimas}</div>`:''}</div>`).join('')}
     </div>`:''}
 
     ${matrixTable('Vertinimo kriterijų simuliatorius','🧮',r.vertinimoSimuliacija,[
@@ -3287,14 +3376,19 @@ function renderResult(r){
     </div>`:''}
 
     ${r.butinaiIttraukti&&r.butinaiIttraukti.length?`
-    <div class="r-card" style="margin-bottom:16px">
-      <h4>📎 Būtini dokumentai</h4>
-      <ul class="r-list r-list-doc">${r.butinaiIttraukti.map(d=>`<li><span>${d.dokumentas||d}</span><span style="font-size:11px;color:var(--text2)">${d.pastaba||''}</span></li>`).join('')}</ul>
+    <div class="r-card r-full-width" style="margin-bottom:16px">
+      <h4>📎 Dokumentų kontrolinis sąrašas</h4>
+      <div id="doc-checklist">${r.butinaiIttraukti.map((d,i)=>renderChecklistItem(d,i,r._analysisId)).join('')}</div>
     </div>`:''}
 
     ${r.scorePaaiskinimas?`<div style="background:rgba(59,130,246,.05);border:1px solid rgba(59,130,246,.12);border-radius:12px;padding:16px 20px;margin-bottom:16px;font-size:13px;color:var(--text2);line-height:1.65"><strong style="color:var(--text)">📊 Balo pagrindimas:</strong> ${r.scorePaaiskinimas}</div>`:''}
     ${r.prioritetiniaiZingsniai&&r.prioritetiniaiZingsniai.length?`<div class="r-card r-full-width" style="margin-bottom:16px"><h4>📋 PRIORITETINIAI ŽINGSNIAI</h4>${r.prioritetiniaiZingsniai.map(z=>'<div class="r-item"><span class="r-item-k">'+(z.terminas||'')+'</span><span class="r-item-v" style="text-align:left">'+(z.zingsnis||z)+'</span></div>').join('')}</div>`:''}
     ${r.pasleptosNuostatos&&r.pasleptosNuostatos.length?`<div style="background:rgba(245,158,11,.05);border:1px solid rgba(245,158,11,.15);border-radius:12px;padding:14px 18px;margin-bottom:16px"><strong style="color:var(--warn);font-size:12px">⚠️ PASLĖPTOS NUOSTATOS</strong><ul style="list-style:none;margin-top:8px">${r.pasleptosNuostatos.map(n=>'<li style="font-size:13px;color:var(--text2);padding:4px 0">• '+n+'</li>').join('')}</ul></div>`:''}
+    ${r.neiprastosSalygos&&r.neiprastosSalygos.length?`<div style="background:rgba(168,85,247,.05);border:1px solid rgba(168,85,247,.2);border-radius:12px;padding:14px 18px;margin-bottom:16px">
+      <strong style="color:#a855f7;font-size:12px">🔍 NEĮPRASTOS / GALIMAI RIBOJANČIOS SĄLYGOS</strong>
+      <div style="font-size:11px;color:var(--text3);margin-top:4px;margin-bottom:10px;font-style:italic">Tai AI pastebėjimas, NE teisinė išvada. Jei tai svarbu jūsų sprendimui, pasitarkite su teisininku.</div>
+      ${r.neiprastosSalygos.map(s=>`<div style="font-size:13px;color:var(--text2);padding:6px 0;border-top:1px solid rgba(168,85,247,.1)"><span class="badge" style="background:rgba(168,85,247,.15);color:#a855f7;font-size:10px;margin-right:6px">${s.tipas||'Pastebėjimas'}</span>${s.aprasymas||''}${s.saltinisPunktas?` <span style="color:var(--text3)">(${s.saltinisPunktas})</span>`:''}</div>`).join('')}
+    </div>`:''}
 
     ${r.isvadaStruktura?`
     <div class="r-summ">
@@ -3307,6 +3401,11 @@ function renderResult(r){
       ${r.isvadaStruktura.rekomenduojamaKainodara?`<p><strong>Rekomenduojama kainodara:</strong> ${r.isvadaStruktura.rekomenduojamaKainodara}</p>`:''}
       ${r.isvadaStruktura.artiVertaDalyvauti?`<p><strong>Ar verta dalyvauti:</strong> ${r.isvadaStruktura.artiVertaDalyvauti}</p>`:''}
     </div>`:(r.isViso?`<div class="r-summ"><h4>📝 Išvada</h4><p>${r.isViso}</p></div>`:'')}
+    ${r._analysisId?`<div id="feedback-bar" style="display:flex;align-items:center;justify-content:center;gap:12px;margin-top:16px;padding:14px;background:var(--card2);border-radius:12px">
+      <span style="font-size:13px;color:var(--text2)">Ar ši analizė buvo naudinga?</span>
+      <button onclick="sendAnalysisFeedback('${r._analysisId}','up',this)" style="background:none;border:1px solid var(--border);border-radius:8px;padding:6px 12px;cursor:pointer;font-size:16px">👍</button>
+      <button onclick="sendAnalysisFeedback('${r._analysisId}','down',this)" style="background:none;border:1px solid var(--border);border-radius:8px;padding:6px 12px;cursor:pointer;font-size:16px">👎</button>
+    </div>`:''}
     <div style="font-size:11px;color:var(--text3);text-align:center;margin-top:8px">Šis vertinimas yra praktinis sprendimų ir rizikų įrankis, ne galutinė teisinė išvada.</div>
   `;
   rv.scrollIntoView({behavior:'smooth',block:'start'});
@@ -3767,6 +3866,7 @@ function selP(p){
   document.getElementById('pm-yr').classList.toggle('on',p==='yearly');
 }
 async function goChk(){
+  if(window.track)track('checkout_started',{plan:selPlan});
   const tok=localStorage.getItem(TK);
   try{
     const r=await fetch(API+'/api/checkout',{method:'POST',headers:{'Content-Type':'application/json','Authorization':'Bearer '+tok},body:JSON.stringify({plan:selPlan})});
@@ -3777,7 +3877,7 @@ async function goChk(){
 }
 
 // ── EMAIL ──
-function openEmailM(){document.getElementById('em').classList.add('open')}
+function openEmailM(){if(window.track)track('feature_used',{feature:'send_email'});document.getElementById('em').classList.add('open')}
 async function sendEmail(){
   const to=document.getElementById('et').value.trim();
   const ee=document.getElementById('ee'),eo=document.getElementById('eo');
@@ -3795,6 +3895,7 @@ async function sendEmail(){
 // ── PDF EXPORT ──
 function exportPDF(){
   if(!curResult) return;
+  if(window.track)track('feature_used',{feature:'export_pdf'});
   const r = curResult;
   const sc = r.score||0;
   const scColor = sc>=70?'#10b981':sc>=40?'#f59e0b':'#ef4444';
@@ -4085,6 +4186,7 @@ function renderTenderQuestionnaire(q){
 
 // ── KLAUSIMŲ RAŠTAS ──
 function generateQuestionLetter(){
+  if(window.track)track('feature_used',{feature:'po_question_letter'});
   if(!curResult)return;
   const modal=document.getElementById('letter-modal');
   modal.style.display='flex';
@@ -4173,6 +4275,7 @@ Pagarbiai,
 }
 
 function downloadLetterWord(){
+  if(window.track)track('feature_used',{feature:'download_letter_word'});
   const text=window._letterText||'';
   const title=(curResult&&curResult.pavadinimas)||'Klausimai';
   const html='<html><head><meta charset="UTF-8"><style>body{font-family:"Times New Roman",serif;font-size:12pt;margin:2.5cm;line-height:1.6;color:#000}p{margin-bottom:0.5em}</style></head><body>'+
@@ -4187,6 +4290,7 @@ function downloadLetterWord(){
 
 // ── TIEKĖJŲ / PASIŪLYMO PARENGIMAS ──
 async function generateSupplierSuggestions(){
+  if(window.track)track('feature_used',{feature:'supplier_suggestions'});
   if(!curResult)return;
   const modal=document.getElementById('supplier-modal');
   modal.style.display='flex';
@@ -4409,6 +4513,7 @@ async function sendChat(){
         curUser.free_chat_left = data.freeChatLeft;
         localStorage.setItem(UK, JSON.stringify(curUser));
         if(data.freeChatLeft <= 0){
+          if(window.track)track('paywall_shown',{reason:'free_chat_exhausted'});
           const wall = document.getElementById('chat-pro-wall');
           const wallText = document.getElementById('chat-pro-wall-text');
           const inp2 = document.getElementById('chat-input-area');
@@ -5125,6 +5230,7 @@ async function sendFullChat(){
 // OPEN CHAT WITH CONTEXT
 // ══════════════════════════════════
 function openChat(result){
+  if(window.track)track('chat_opened');
   chatContext = result;
   chatHistory = [];
   chatAttachments = [];
@@ -5669,7 +5775,7 @@ function openBlog(){ window.location.href='/blog/'; }
       <textarea id="chat-q" placeholder="Klauskite apie konkursą... (Shift+Enter — nauja eilutė)" rows="1" 
         oninput="autoResizeTextarea(this)"
         onkeydown="if(event.key==='Enter'&&!event.shiftKey){event.preventDefault();sendChat()}"></textarea>
-      <button class="chat-send-btn" onclick="sendChat()" id="chat-send-btn" title="Siųsti (Enter)">↑</button>
+      <button class="chat-send-btn" onclick="sendChat()" id="chat-send-btn" title="Siųsti (Enter)" aria-label="Siųsti žinutę">↑</button>
     </div>
   </div>
   <button class="chat-bubble" onclick="toggleChat()" title="AI Asistentas">💬</button>
