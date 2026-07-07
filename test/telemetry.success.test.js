@@ -1,42 +1,32 @@
 // ═══════════════════════════════════════════════════════════
-// TEST 3: pirmas Generatoriaus atsakymas netinkamas (nesusiparsina),
-// suveikia retry → llmCallLog turi turėti 2 įrašus: "generator" ir
-// "generator_retry", abu su pilna telemetrija.
+// TEST 1: sėkmingas Generatoriaus kvietimas → teisingai suformuotas
+// llm_calls įrašas. Šis testas būtų sugavęs "step: undefined" bug'ą,
+// nes tikrina, kad step lauko reikšmė IŠLIEKA po telemetryOf() spread.
 // ═══════════════════════════════════════════════════════════
 process.env.ANTHROPIC_API_KEY = 'test-key';
-const { installMock, restoreFetch, assert } = require('./_helpers');
+const { mockFetchSuccess, installMock, restoreFetch, assert } = require('./_helpers');
 const { _test } = require('../api/analyze-agents');
 
 async function run() {
-  let callCount = 0;
-  installMock(async () => {
-    callCount++;
-    const text = callCount === 1 ? 'ne JSON, o šiukšlė' : '{"pavadinimas":"Test po retry"}';
-    return { ok: true, json: async () => ({ id: 'msg_' + callCount, content: [{ text }], usage: { input_tokens: 500, output_tokens: 50 } }) };
-  });
+  installMock(mockFetchSuccess('{"pavadinimas":"Test konkursas"}'));
+  try {
+    const res = await _test.callClaude('sistema', 'vartotojas', 4000);
+    const entry = { step: 'generator', ..._test.telemetryOf(res) };
 
-  // Atkartojame tikslų analyze-agents.js generatoriaus+retry šabloną
-  const llmCallLog = [];
-  const genRes = await _test.callClaude('sistema', 'vartotojas', 32000);
-  llmCallLog.push({ step: 'generator', ..._test.telemetryOf(genRes) });
+    assert(entry.step === 'generator', `step turėtų būti "generator", gavome "${entry.step}"`);
+    assert(entry.status === 'success', `status turėtų būti "success", gavome "${entry.status}"`);
+    assert(entry.started_at !== null && entry.started_at !== undefined, 'started_at neturėtų būti tuščias');
+    assert(entry.finished_at !== null && entry.finished_at !== undefined, 'finished_at neturėtų būti tuščias');
+    assert(typeof entry.duration_ms === 'number' && entry.duration_ms >= 0, `duration_ms turėtų būti >= 0, gavome ${entry.duration_ms}`);
+    assert(entry.input_tokens === 1000, `input_tokens turėtų būti 1000, gavome ${entry.input_tokens}`);
+    assert(entry.output_tokens === 200, `output_tokens turėtų būti 200, gavome ${entry.output_tokens}`);
+    assert(entry.error === null, 'error turėtų būti null sėkmės atveju');
+    assert(entry.provider_request_id !== null, 'provider_request_id turėtų būti užpildytas');
 
-  const parsed = tryParse(genRes.text);
-  if (!parsed || !parsed.pavadinimas) {
-    const retryRes = await _test.callClaude('sistema', 'vartotojas + retry instrukcija', 32000);
-    llmCallLog.push({ step: 'generator_retry', ..._test.telemetryOf(retryRes) });
+    console.log('✓ TEST 1 PASSED: sėkmingas kvietimas → teisingas llm_calls įrašas');
+  } finally {
+    restoreFetch();
   }
-
-  assert(llmCallLog.length === 2, `llmCallLog turėtų turėti 2 įrašus, gavome ${llmCallLog.length}`);
-  assert(llmCallLog[0].step === 'generator', `pirmas įrašas turėtų būti "generator", gavome "${llmCallLog[0].step}"`);
-  assert(llmCallLog[1].step === 'generator_retry', `antras įrašas turėtų būti "generator_retry", gavome "${llmCallLog[1].step}"`);
-  assert(llmCallLog[0].status === 'success' && llmCallLog[1].status === 'success', 'abu įrašai turėtų būti "success" (mock visada grąžina 200 OK)');
-
-  restoreFetch();
-  console.log('✓ TEST 3 PASSED: retry scenarijus → 2 teisingi llm_calls įrašai (generator, generator_retry)');
 }
 
-function tryParse(text) {
-  try { return JSON.parse(text); } catch { return null; }
-}
-
-run().catch(e => { console.error('✗ TEST 3 FAILED:', e.message); process.exit(1); });
+run().catch(e => { console.error('✗ TEST 1 FAILED:', e.message); process.exit(1); });
