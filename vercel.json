@@ -13,6 +13,8 @@
     "api/po-question.js": { "maxDuration": 60 }
   },
   "crons": [
-    { "path": "/api/reminders", "schedule": "0 8 * * *" }
+    { "path": "/api/reminders", "schedule": "0 8 * * *" },
+    { "path": "/api/daily-report", "schedule": "30 7 * * *" },
+    { "path": "/api/weekly-quality-report", "schedule": "0 6 * * 1" }
   ]
 }
