@@ -5,13 +5,13 @@
 // ═══════════════════════════════════════════════════════════
 const { createClient } = require('@supabase/supabase-js');
 const { verifyToken, applyCors } = require('./security');
-const { checkHardStops } = require('./validation-engine/hard-stops');
-const { runRuleEngine } = require('./validation-engine/rule-engine');
-const { buildConfidence } = require('./validation-engine/confidence');
-const { shouldRunValidator, buildFocusInstruction } = require('./validation-engine/gate');
-const { getRuleEngineVersion } = require('./validation-engine/version');
-const { classifyAllRisks } = require('./validation-engine/risk-classifier');
-const { getProcurementIntelligence } = require('./validation-engine/knowledge-base');
+const { checkHardStops } = require('./_validation-engine/hard-stops');
+const { runRuleEngine } = require('./_validation-engine/rule-engine');
+const { buildConfidence } = require('./_validation-engine/confidence');
+const { shouldRunValidator, buildFocusInstruction } = require('./_validation-engine/gate');
+const { getRuleEngineVersion } = require('./_validation-engine/version');
+const { classifyAllRisks } = require('./_validation-engine/risk-classifier');
+const { getProcurementIntelligence } = require('./_validation-engine/knowledge-base');
 
 const ANTHROPIC_API_KEY = process.env.ANTHROPIC_API_KEY;
 const MODEL = 'claude-sonnet-4-6';
@@ -259,6 +259,7 @@ function buildProfileContext(profile) {
     ctx += `• Sertifikatai: ${profile.sertifikatai.join(', ')}\n`;
   if (Array.isArray(profile.stiprybes) && profile.stiprybes.length)
     ctx += `• Stiprybės: ${profile.stiprybes.join('; ')}\n`;
+  if (profile.pagrindiniaiPranasumai) ctx += `• Pagrindiniai konkurenciniai pranašumai (naudok formuluojant strategiją): ${profile.pagrindiniaiPranasumai}\n`;
   if (Array.isArray(profile.silpnybes) && profile.silpnybes.length)
     ctx += `• Silpnybės: ${profile.silpnybes.join('; ')}\n`;
   if (Array.isArray(profile.vengia) && profile.vengia.length)
@@ -359,6 +360,11 @@ Prie kiekvienos rizikos/reikalavimo nurodyk:
 Blokuojanti sąlyga = tokia, dėl kurios pasiūlymas realiai gali būti atmestas (privalomas trūkstamas sertifikatas/dokumentas/EBVPD/kvalifikacija/techninis reikalavimas). Jei yra bent viena blokuojanti sąlyga ir tiekėjo profilyje nematyti, kad ji įvykdyta, bendras "sprendimas" NEGALI būti GO — turi būti CLARIFY arba NO-GO.
 
 PENKIŲ MINUČIŲ TAISYKLĖ: kiekviena analizė turi atsakyti į klausimą "Jeigu būčiau šios įmonės konkursų vadovas, ką norėčiau žinoti per pirmas penkias minutes?" — "executiveSummary" laukas yra tam skirtas: 3 sakiniai, jokio vandens, tik esmė.
+
+ĮMONĖS PROFILIO NAUDOJIMAS (kai profilis užpildytas): profilis nėra papildomas tekstas — tai vienas svarbiausių analizės šaltinių. Kiekvienam kvalifikacijos/techniniam reikalavimui privalai:
+1) KVALIFIKACIJOS ATITIKIMAS: palygink kiekvieną reikalavimą (apyvarta, darbuotojai, sertifikatai, patirtis, referencijos, specialistai, finansiniai rodikliai) su profilyje nurodytais duomenimis. Jei profilyje šios informacijos NĖRA — lauke "tiekejasTuri" rašyk "Nepakanka duomenų įvertinti", NIEKADA nedaryk prielaidos, kad įmonė reikalavimą atitinka ar neatitinka.
+2) STRATEGINĖS REKOMENDACIJOS: kai įmonė neatitinka reikalavimo, apsvarstyk (jei tai realu pagal LT viešųjų pirkimų praktiką) — ar galima remtis trečiojo asmens/partnerio pajėgumais (jungtinė veikla), ar dokumente leidžiama pateikti lygiaverčius įrodymus vietoj konkretaus sertifikato. Tai pasiūlyk TIK jei profilyje yra duomenų, pagrindžiančių, kad tai realu (pvz. profilyje nurodyti partneriai/subtiekėjai) — priešingu atveju parašyk tai kaip bendrą galimybę patikrinti, ne kaip faktą apie šią įmonę.
+3) Panaudok profilio "Pagrindiniai pranašumai" lauką formuluodamas strategiją — tai stipriausias argumentas, kodėl ši konkreti įmonė turėtų/neturėtų dalyvauti.
 
 NEĮPRASTOS/RIBOJANČIOS SĄLYGOS: ieškok perteklinių reikalavimų, neproporcingų terminų, konkretaus gamintojo/prekės ženklo požymių (be "arba lygiavertis"), konkurenciją ribojančių sąlygų. Tai VISADA AI įtarimas, NIEKADA teisinė išvada — kiekvienam įrašui "neiprastosSalygos" masyve privalai tiksliai palikti "isTeisinesIsvados": false.
 
