@@ -38,4 +38,3 @@ Kai atsiras pirmas realus incidentas (Anthropic klaida, neaiškus rezultatas):
 Kai pasieksite bent kelis šimtus analizių IR/ARBA nuspręsite pradėti
 Growth etapo architektūros darbus (Queue, Redis, Priority Queue —
 žr. ankstesnę architektūros diskusiją). Ne anksčiau.
-
