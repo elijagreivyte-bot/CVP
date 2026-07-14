@@ -27,8 +27,18 @@ module.exports = asyncHandler(async (req, res) => {
   // NESAUGIAI neatskleidžiant viso rakto. Matoma TIK Vercel Function Logs, ne vartotojui. ──
   const _u = process.env.SUPABASE_URL || '';
   const _k = process.env.SUPABASE_SERVICE_KEY || '';
+  let _jwtInfo = 'ne JWT arba tuščias';
+  try {
+    const parts = _k.split('.');
+    if (parts.length === 3) {
+      const payload = JSON.parse(Buffer.from(parts[1], 'base64').toString('utf8'));
+      _jwtInfo = `role="${payload.role}" ref="${payload.ref}" iss="${payload.iss}"`;
+    } else if (_k.startsWith('sb_secret_')) {
+      _jwtInfo = 'naujo formato sb_secret_ raktas (ne JWT, tai OK)';
+    }
+  } catch (e) { _jwtInfo = 'JWT dekodavimo klaida: ' + e.message; }
   console.error('[DIAGNOSTIKA] SUPABASE_URL =', JSON.stringify(_u));
-  console.error('[DIAGNOSTIKA] SUPABASE_SERVICE_KEY ilgis =', _k.length, ', pradžia =', JSON.stringify(_k.slice(0, 12)), ', pabaiga =', JSON.stringify(_k.slice(-6)));
+  console.error('[DIAGNOSTIKA] SUPABASE_SERVICE_KEY ilgis =', _k.length, ', pradžia =', JSON.stringify(_k.slice(0, 12)), ', pabaiga =', JSON.stringify(_k.slice(-6)), ', info =', _jwtInfo);
 
   const supabase = createClient(process.env.SUPABASE_URL, process.env.SUPABASE_SERVICE_KEY);
 
@@ -44,7 +54,7 @@ module.exports = asyncHandler(async (req, res) => {
   if (throttleErr) {
     // Supabase užklausa nepavyko (pvz. neteisingas raktas) — parodome saugią diagnostiką
     // tiesiai vartotojui matomame pranešime, kad nereikėtų kasti per Vercel Logs.
-    throw serverError(`Registracijos klaida: DB ryšys nepavyko (${throttleErr.message}). URL="${_u}" | RAKTO ilgis=${_k.length} | pradžia="${_k.slice(0,12)}" | pabaiga="${_k.slice(-6)}"`);
+    throw serverError(`Registracijos klaida: DB ryšys nepavyko (${throttleErr.message}). URL="${_u}" | RAKTO ilgis=${_k.length} | pradžia="${_k.slice(0,12)}" | pabaiga="${_k.slice(-6)}" | ${_jwtInfo}`);
   }
   if ((count || 0) >= MAX_REGISTRATIONS_PER_HOUR) {
     logger.warn('Registration throttled: too many attempts from IP', { ip, count });
