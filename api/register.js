@@ -23,17 +23,29 @@ module.exports = asyncHandler(async (req, res) => {
   if (validation.error) throw validationError(validation.details);
   const { name, email, password, companyProfile } = validation.value;
 
+  // ── DIAGNOSTIKA (laikina) — parodo, ką funkcija realiai gauna iš Vercel env,
+  // NESAUGIAI neatskleidžiant viso rakto. Matoma TIK Vercel Function Logs, ne vartotojui. ──
+  const _u = process.env.SUPABASE_URL || '';
+  const _k = process.env.SUPABASE_SERVICE_KEY || '';
+  console.error('[DIAGNOSTIKA] SUPABASE_URL =', JSON.stringify(_u));
+  console.error('[DIAGNOSTIKA] SUPABASE_SERVICE_KEY ilgis =', _k.length, ', pradžia =', JSON.stringify(_k.slice(0, 12)), ', pabaiga =', JSON.stringify(_k.slice(-6)));
+
   const supabase = createClient(process.env.SUPABASE_URL, process.env.SUPABASE_SERVICE_KEY);
 
   // ── IP throttling: apsauga nuo automatinio registracijų skriptavimo, kuris
   // fermintų nemokamas analizes (kiekviena registracija = 3 realūs Claude API kvietimai). ──
   const ip = getClientIp(req);
   const oneHourAgo = new Date(Date.now() - 60 * 60000).toISOString();
-  const { count } = await supabase
+  const { count, error: throttleErr } = await supabase
     .from('registration_attempts')
     .select('id', { count: 'exact', head: true })
     .eq('ip', ip)
     .gte('created_at', oneHourAgo);
+  if (throttleErr) {
+    // Supabase užklausa nepavyko (pvz. neteisingas raktas) — parodome saugią diagnostiką
+    // tiesiai vartotojui matomame pranešime, kad nereikėtų kasti per Vercel Logs.
+    throw serverError(`Registracijos klaida: DB ryšys nepavyko (${throttleErr.message}). URL="${_u}" | RAKTO ilgis=${_k.length} | pradžia="${_k.slice(0,12)}" | pabaiga="${_k.slice(-6)}"`);
+  }
   if ((count || 0) >= MAX_REGISTRATIONS_PER_HOUR) {
     logger.warn('Registration throttled: too many attempts from IP', { ip, count });
     throw validationError([{ field: 'email', message: 'Per daug registracijų iš šio tinklo per trumpą laiką. Pabandykite vėliau.' }]);
