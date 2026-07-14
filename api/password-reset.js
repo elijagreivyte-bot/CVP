@@ -71,6 +71,17 @@ module.exports = async (req, res) => {
       const { data: user } = await supabase
         .from('users').select('id, name, email, password_hash').eq('email', email).single();
 
+      // ── LAIKINA DIAGNOSTIKA (pašalinti, kai laiškai pradės veikti) ──
+      const _diag = {
+        userFound: !!user,
+        resendKeyPresent: !!process.env.RESEND_API_KEY,
+        resendKeyLength: (process.env.RESEND_API_KEY || '').length,
+        fromEmail: process.env.EMAIL_FROM || '(numatytoji: onboarding@resend.dev)',
+        siteUrl: SITE_URL,
+        sendError: null
+      };
+      console.error('[DIAGNOSTIKA reset]', JSON.stringify(_diag));
+
       // Siunčiam tik jei vartotojas rastas IR sukonfigūruotas Resend.
       if (user && process.env.RESEND_API_KEY) {
         const token = jwt.sign(
@@ -83,14 +94,16 @@ module.exports = async (req, res) => {
           await sendViaResend(user.email, 'Bidwise AI — slaptažodžio atstatymas', resetEmailHtml(user.name, link));
         } catch (e) {
           console.error('Reset el. laiško siuntimo klaida:', e.message);
-          // Tyliai — neatskleidžiam vartotojo egzistavimo ar siuntimo būklės.
+          _diag.sendError = e.message;
+          // Tyliai — neatskleidžiam vartotojo egzistavimo ar siuntimo būklės (išskyrus laikiną diagnostiką žemiau).
         }
       }
-      // VISADA tas pats atsakymas — neatskleidžiam, ar paštas registruotas.
-      return res.status(200).json({ ok: true });
+      // VISADA tas pats atsakymas — neatskleidžiam, ar paštas registruotas (IŠSKYRUS laikiną _diag lauką).
+      console.error('[DIAGNOSTIKA reset GALUTINE]', JSON.stringify(_diag));
+      return res.status(200).json({ ok: true, _diag });
     } catch (e) {
       console.error('Reset request klaida:', e.message);
-      return res.status(200).json({ ok: true });
+      return res.status(200).json({ ok: true, _diagError: e.message });
     }
   }
 
