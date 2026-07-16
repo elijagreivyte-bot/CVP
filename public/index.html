@@ -3571,6 +3571,46 @@ function clearHistoryFilters(){
   filterHistory();
 }
 
+// ── PROFILIO IŠSAMUMAS (vieninga, svertinė formulė abiem kortelėms) ──
+function isRealValue(v){
+  if(v===null || v===undefined) return false;
+  if(Array.isArray(v)) return v.length>0 && v.some(isRealValue);
+  const s=String(v).trim();
+  if(!s) return false;
+  const placeholderRe=/^(nenustatyta|nenurodyta|neaišku|negalima nustatyti|nepakanka duomenų|veiklos nenustatytos|neinformatyvus)/i;
+  return !placeholderRe.test(s);
+}
+const PROFILE_WEIGHTS = [
+  { keys:['name'],                    weight:0.05 },
+  { keys:['sector'],                  weight:0.05 },
+  { keys:['specializacija','activity'], weight:0.05 },
+  { keys:['veiklosSritys','veiklos'], weight:0.05 },
+  { keys:['regionai'],                weight:0.03 },
+  { keys:['apyvarta'],                weight:0.12 },
+  { keys:['darbuotojuSkaicius'],      weight:0.05 },
+  { keys:['finansiniaiRodikliai'],    weight:0.08 },
+  { keys:['maxProjektoVerte'],        weight:0.05 },
+  { keys:['patirtis'],                weight:0.10 },
+  { keys:['referensai'],              weight:0.12 },
+  { keys:['viesPirkPatirtis','vpPatirtis'], weight:0.08 },
+  { keys:['sertifikatai'],            weight:0.10 },
+  { keys:['cpvKodai'],                weight:0.05 },
+  { keys:['specialistai'],            weight:0.05 },
+  { keys:['pagrindiniaiPranasumai','stiprybes'], weight:0.05 },
+  { keys:['partneriai'],              weight:0.02 },
+];
+function calcProfileCompleteness(cp){
+  cp = cp || {};
+  let score = 0, filled = 0;
+  PROFILE_WEIGHTS.forEach(item=>{
+    if(item.keys.some(k => isRealValue(cp[k]))){ score += item.weight; filled++; }
+  });
+  const pct = Math.round(Math.min(score,1) * 100);
+  const color = pct>=75 ? 'var(--success)' : pct>=40 ? 'var(--warn)' : 'var(--danger)';
+  const label = pct>=75 ? 'Tikslus AI profilis' : pct>=40 ? 'Geras profilis' : 'Bazinis profilis';
+  return { pct, filled, total: PROFILE_WEIGHTS.length, label, color };
+}
+
 // ── ACCOUNT ──
 async function renderAcc(){
   const tok=localStorage.getItem(TK);
@@ -3582,6 +3622,7 @@ async function renderAcc(){
   const u=curUser||{};
   const pro=u.plan==='pro';
   const cp=u.company_profile||{};
+  const comp=calcProfileCompleteness(cp);
   document.getElementById('ac').innerHTML=`
     <div class="acc-card">
       <h3>👤 Asmeninė informacija</h3>
@@ -3596,52 +3637,44 @@ async function renderAcc(){
       <button class="btn btn-outline btn-sm" onclick="downloadMyData()" style="width:100%;margin-bottom:8px">⬇️ Atsisiųsti mano duomenis (JSON)</button>
       <button class="btn btn-outline btn-sm" onclick="window.location.href='mailto:elija@bidwiseai.lt?subject=Prašau ištrinti mano paskyrą'" style="width:100%;color:var(--danger,#ef4444);border-color:rgba(239,68,68,.3)">🗑️ Prašyti ištrinti paskyrą</button>
     </div>
-    <div class="acc-card">
+    <div class="acc-card" style="grid-column:1/-1">
       <h3>🏢 Įmonės profilis</h3>
-      ${ri2('Pavadinimas',cp.name||'–')}
-      ${ri2('Sritis',cp.sector||'–')}
-      ${cp.activity?ri2('Veikla',cp.activity):''}
-      ${cp.specializacija?ri2('Specializacija',cp.specializacija):''}
-      ${cp.veiklos&&cp.veiklos.length?ri2('Paslaugos',(cp.veiklos||[]).join(', ')):''}
-      ${cp.regionai&&cp.regionai.length?ri2('Regionai',(cp.regionai||[]).join(', ')):''}
-      ${cp.maxProjektoVerte?ri2('Max projekto vertė',cp.maxProjektoVerte):''}
-      ${cp.apyvarta?ri2('Apyvarta',cp.apyvarta):''}
-      ${cp.patirtis?ri2('Patirtis',cp.patirtis):''}
-      ${cp.viesPirkPatirtis?ri2('VP patirtis',cp.viesPirkPatirtis):''}
-      ${cp.sertifikatai?ri2('Sertifikatai',Array.isArray(cp.sertifikatai)?cp.sertifikatai.join(', '):cp.sertifikatai):''}
-      ${(cp.stiprybes&&cp.stiprybes.length)?ri2('Stiprybės',(cp.stiprybes||[]).join(', ')):''}
-      ${(()=>{
-        const fields=[cp.name,cp.sector,cp.specializacija||cp.activity,cp.patirtis,cp.sertifikatai,cp.apyvarta||cp.maxProjektoVerte,(cp.stiprybes&&cp.stiprybes.length)||(cp.veiklos&&cp.veiklos.length),cp.profilioSantrauka];
-        const filled=fields.filter(Boolean).length;
-        const pct=Math.round((filled/fields.length)*100);
-        const color=pct>=75?'var(--success)':pct>=40?'var(--warn)':'var(--danger)';
-        return '<div style="margin:12px 0 6px"><div style="display:flex;justify-content:space-between;font-size:11px;color:var(--text2);margin-bottom:4px"><span>Profilio išsamumas</span><span style=\"color:'+color+';font-weight:700\">'+pct+'%</span></div><div style=\"height:6px;background:var(--card2);border-radius:4px;overflow:hidden\"><div style=\"height:100%;width:'+pct+'%;background:'+color+';border-radius:4px;transition:width .4s\"></div></div></div>';
-      })()}
-      ${cp.profilioSantrauka?`<div style="background:rgba(16,185,129,.05);border:1px solid rgba(16,185,129,.15);border-radius:10px;padding:12px;margin-top:8px;font-size:12px;color:var(--text2);line-height:1.6"><strong style="color:var(--success)">AI profilio santrauka:</strong><br>${cp.profilioSantrauka}</div>`:''}
+      <div style="margin:6px 0 16px">
+        <div style="display:flex;justify-content:space-between;font-size:11px;color:var(--text2);margin-bottom:6px"><span>Profilio išsamumas · <strong style="color:${comp.color}">${comp.label}</strong></span><span style="color:${comp.color};font-weight:700">${comp.pct}%</span></div>
+        <div style="height:6px;background:var(--card2);border-radius:4px;overflow:hidden"><div style="height:100%;width:${comp.pct}%;background:${comp.color};border-radius:4px;transition:width .4s"></div></div>
+      </div>
+      <div style="display:grid;grid-template-columns:repeat(auto-fit,minmax(220px,1fr));gap:2px 24px">
+        ${ri2('Pavadinimas',cp.name||'–')}
+        ${ri2('Sritis',cp.sector||'–')}
+        ${cp.activity?ri2('Veikla',cp.activity):''}
+        ${isRealValue(cp.specializacija)?ri2('Specializacija',cp.specializacija):''}
+        ${(cp.veiklos&&cp.veiklos.length&&isRealValue(cp.veiklos))?ri2('Paslaugos',(cp.veiklos||[]).join(', ')):''}
+        ${cp.regionai&&cp.regionai.length?ri2('Regionai',(cp.regionai||[]).join(', ')):''}
+        ${cp.maxProjektoVerte?ri2('Max projekto vertė',cp.maxProjektoVerte):''}
+        ${cp.apyvarta?ri2('Apyvarta',cp.apyvarta):''}
+        ${isRealValue(cp.patirtis)?ri2('Patirtis',cp.patirtis):''}
+        ${isRealValue(cp.viesPirkPatirtis)?ri2('VP patirtis',cp.viesPirkPatirtis):''}
+        ${isRealValue(cp.sertifikatai)?ri2('Sertifikatai',Array.isArray(cp.sertifikatai)?cp.sertifikatai.join(', '):cp.sertifikatai):''}
+        ${(cp.stiprybes&&cp.stiprybes.length)?ri2('Stiprybės',(cp.stiprybes||[]).join(', ')):''}
+      </div>
+      ${cp.profilioSantrauka?`<div style="background:rgba(16,185,129,.05);border:1px solid rgba(16,185,129,.15);border-radius:10px;padding:12px;margin-top:14px;font-size:12px;color:var(--text2);line-height:1.6"><strong style="color:var(--success)">AI profilio santrauka:</strong><br>${cp.profilioSantrauka}</div>`:''}
       <button class="btn btn-outline btn-sm" style="margin-top:14px" onclick="openOnboardingEdit()">✏️ ${cp.profilioSantrauka?'Atnaujinti profilį':'Užpildyti profilį'}</button>
-      ${!cp.profilioSantrauka?`<div style="background:rgba(245,158,11,.07);border:1px solid rgba(245,158,11,.2);border-radius:8px;padding:10px 12px;margin-top:10px;font-size:12px;line-height:1.6"><strong style="color:var(--warn)">⚠️ Profilis neužpildytas</strong><br><span style="color:var(--text2)">Užpildykite profilį — AI analizė taps tikslingesnė: atitiks jūsų įmonės pajėgumus, sertifikatus ir patirtį, o laimėjimo tikimybės balas bus apskaičiuotas konkrečiai jums.</span></div>`:''}
+      ${comp.pct<50?`<div style="background:rgba(245,158,11,.07);border:1px solid rgba(245,158,11,.2);border-radius:8px;padding:10px 12px;margin-top:10px;font-size:12px;line-height:1.6"><strong style="color:var(--warn)">⚠️ Profilis neišsamus</strong><br><span style="color:var(--text2)">Užpildykite profilį — AI analizė taps tikslingesnė: atitiks jūsų įmonės pajėgumus, sertifikatus ir patirtį, o laimėjimo tikimybės balas bus apskaičiuotas konkrečiai jums.</span></div>`:''}
     </div>
     <div class="acc-card" style="grid-column:1/-1">
       <h3>🎯 Kvalifikacijos ir pajėgumų profilis</h3>
       <p style="font-size:13px;color:var(--text2);margin-bottom:6px;line-height:1.6"><strong style="color:var(--text)">Ši informacija naudojama kiekvienos analizės metu.</strong> Analizuodama konkretų konkursą, AI automatiškai palygina jūsų įmonės kvalifikaciją su konkurso reikalavimais ir įvertina realias laimėjimo galimybes — ne bendrai, o būtent jūsų įmonei. Kuo išsamesnis profilis, tuo tikslesnės rekomendacijos.</p>
-      ${(()=>{
-        const dpFields=[cp.apyvarta,cp.darbuotojuSkaicius,cp.sertifikatai,cp.cpvKodai,cp.referensai,cp.veiklosSritys,cp.vpPatirtis,cp.specialistai,cp.partneriai,cp.finansiniaiRodikliai,cp.pagrindiniaiPranasumai];
-        const filled=dpFields.filter(Boolean).length;
-        const pct=Math.round((filled/dpFields.length)*100);
-        const lygis=pct>=75?'Aukštas':pct>=40?'Vidutinis':'Žemas';
-        const color=pct>=75?'var(--success)':pct>=40?'var(--warn)':'var(--danger)';
-        return `<div style="margin:14px 0 20px">
-          <div style="display:flex;justify-content:space-between;font-size:12px;color:var(--text2);margin-bottom:6px"><span>Profilio užpildymas</span><span style="color:${color};font-weight:700">${pct}%</span></div>
-          <div style="height:8px;background:var(--card2);border-radius:4px;overflow:hidden"><div style="height:100%;width:${pct}%;background:${color};border-radius:4px;transition:width .4s"></div></div>
-          <div style="font-size:12px;color:var(--text2);margin-top:6px">AI analizės tikslumas šiai įmonei: <strong style="color:${color}">${lygis}</strong></div>
-        </div>`;
-      })()}
+      <div style="margin:14px 0 20px">
+        <div style="display:flex;justify-content:space-between;font-size:12px;color:var(--text2);margin-bottom:6px"><span>Profilio užpildymas</span><span style="color:${comp.color};font-weight:700">${comp.pct}%</span></div>
+        <div style="height:8px;background:var(--card2);border-radius:4px;overflow:hidden"><div style="height:100%;width:${comp.pct}%;background:${comp.color};border-radius:4px;transition:width .4s"></div></div>
+        <div style="font-size:12px;color:var(--text2);margin-top:6px">AI analizės tikslumas šiai įmonei: <strong style="color:${comp.color}">${comp.label}</strong></div>
+      </div>
       <div style="display:grid;grid-template-columns:1fr 1fr;gap:12px">
         <div class="fg" style="grid-column:1/-1"><label style="font-size:12px;color:var(--text2)">🏆 Pagrindiniai pranašumai — kuo jūsų įmonė stipriausia?</label><textarea class="inp" id="dp-pranasumai" rows="2" placeholder="pvz. dirbame tik su ligoninėmis, turime nuosavą servisą, esame gamintojas, 24/7 aptarnavimas, dirbame visoje Lietuvoje, esame oficialus gamintojo atstovas...">${esc(cp.pagrindiniaiPranasumai)}</textarea></div>
         <div class="fg"><label style="font-size:12px;color:var(--text2)">💰 Finansai — metinė apyvarta (paskutiniai 3 m.)</label><input class="inp" id="dp-apyvarta" value="${esc(cp.apyvarta)}" placeholder="pvz. 1.2 mln EUR (2023), 0.9 mln (2022)..."></div>
         <div class="fg"><label style="font-size:12px;color:var(--text2)">💰 Finansai — darbuotojų skaičius</label><input class="inp" id="dp-darbuotojai" value="${esc(cp.darbuotojuSkaicius)}" placeholder="pvz. 24"></div>
         <div class="fg" style="grid-column:1/-1"><label style="font-size:12px;color:var(--text2)">💰 Finansai — finansiniai rodikliai (likvidumas, mokumas ir pan.)</label><textarea class="inp" id="dp-finansai" rows="2" placeholder="pvz. Mokumo koeficientas 1.4, nuosavo kapitalo dalis 35%...">${esc(cp.finansiniaiRodikliai)}</textarea></div>
-        <div class="fg"><label style="font-size:12px;color:var(--text2)">🎓 Sertifikatai / licencijos</label><input class="inp" id="dp-sertifikatai" value="${esc(cp.sertifikatai)}" placeholder="pvz. ISO 9001, ISO 27001"></div>
+        <div class="fg"><label style="font-size:12px;color:var(--text2)">🎓 Sertifikatai / licencijos</label><input class="inp" id="dp-sertifikatai" value="${esc(Array.isArray(cp.sertifikatai)?cp.sertifikatai.join(', '):cp.sertifikatai)}" placeholder="pvz. ISO 9001, ISO 27001"></div>
         <div class="fg"><label style="font-size:12px;color:var(--text2)">🎓 BVPŽ kodai (jūsų veiklos)</label><input class="inp" id="dp-cpv" value="${esc(cp.cpvKodai)}" placeholder="pvz. 72000000, 48000000"></div>
         <div class="fg" style="grid-column:1/-1"><label style="font-size:12px;color:var(--text2)">📈 Patirtis — referensai / ankstesnės įvykdytos sutartys</label><textarea class="inp" id="dp-referensai" rows="2" placeholder="pvz. 2022 m. įvykdyta sutartis su X, vertė 150 000 EUR...">${esc(cp.referensai)}</textarea></div>
         <div class="fg"><label style="font-size:12px;color:var(--text2)">📈 Patirtis — veiklos sritys</label><input class="inp" id="dp-veiklossritys" value="${esc(cp.veiklosSritys)}" placeholder="pvz. IT infrastruktūra, kibernetinis saugumas"></div>
