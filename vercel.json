@@ -6,8 +6,8 @@
     { "src": "/(.*)", "dest": "/public/index.html" }
   ],
   "functions": {
-    "api/analyze.js": { "maxDuration": 60 },
-    "api/analyze-agents.js": { "maxDuration": 60 },
+    "api/analyze.js": { "maxDuration": 60, "memory": 3008 },
+    "api/analyze-agents.js": { "maxDuration": 60, "memory": 3008 },
     "api/tender-questionnaire.js": { "maxDuration": 60 },
     "api/chat.js": { "maxDuration": 60 },
     "api/po-question.js": { "maxDuration": 60 }
